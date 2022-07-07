@@ -1,0 +1,27 @@
+{% extends 'header.html' %} {% block content %}
+<div class="movieStats">
+    <div class="statsTitle">
+        <h1>Title :</h1>
+        <h2>{{ movieSlug["title"] }}</h2>
+    </div>
+    <div class="statsDesc">
+        <h1>Description :</h1>
+        <h2>{{ movieSlug["description"] }}</h2>
+    </div>
+    <div class="statsNote">
+        <h1>Note :</h1>
+        <h2>{{ movieSlug["note"] }}/10</h2>
+    </div>
+</div>
+<div id='playerWrapper'>
+
+
+    <link href="https://vjs.zencdn.net/7.10.2/video-js.min.css" rel="stylesheet">
+
+    <video id="movie" class="video-js" controls preload="auto" data-setup="{}">
+        <source src="{{ movieUrl }}">
+    </video>
+    <script src="https://vjs.zencdn.net/7.10.2/video.min.js"></script>
+</div>
+
+{% endblock %}

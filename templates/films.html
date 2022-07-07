@@ -1,0 +1,13 @@
+{% extends 'header.html' %} {% block content %}
+<div class="movies">
+    {% for searchedFilm in searchedFilms %}
+    <div class="cover">
+        <a href="{{ url_for('movie', slug=searchedFilm['slug']) }}"><img src="{{ searchedFilm['cover'] }}" class="cover_movie" title="{{ searchedFilm['title'] }}" alt="{{ searchedFilm['title'] }}" />
+            <p>{{ searchedFilm['title'] }}</p>
+        </a>
+    </div>
+    {% endfor %} {% if conditionIfOne %}
+    <h1 style="text-align: center;width: 100vw">Verify your path</h1>
+    {% endif %}
+</div>
+{% endblock %}

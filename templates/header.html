@@ -1,0 +1,38 @@
+<html lang="fr">
+
+<head>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/style.css') }}" />
+    <script src="{{ url_for('static',filename='js/main.js') }}" defer></script>
+
+    <script src="https://kit.fontawesome.com/eaf190d37c.js" crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/material-design-iconic-font/2.2.0/css/material-design-iconic-font.min.css">
+
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chocolate</title>
+    <link rel="shortcut icon" href="{{ url_for('static',filename='img/logo.ico') }}" type="image/x-icon">
+</head>
+<header>
+    <div class="logo_svg" onclick=window.location.href='{{ url_for( "home") }}'>
+        <img class="logo" id="logo" src="{{ url_for('static',filename='img/logo.png') }}" />
+        <h1 class="title">Chocolate</h1>
+    </div>
+    <div class="form_group field">
+        <form>
+            <input type="input" class="form_field" />
+            <i class="fas fa-search search_icon"></i>
+        </form>
+    </div>
+    <a class="settings" href="{{ url_for('settings') }}">
+        <i class="fa fa-cog fa-2x" aria-hidden="true"></i>
+    </a>
+</header>
+
+
+<body>
+    {% block content %} {% endblock %}
+</body>
+
+</html>

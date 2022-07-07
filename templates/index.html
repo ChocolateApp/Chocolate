@@ -1,0 +1,5 @@
+{% extends 'header.html' %} {% block content %} {% if moviesExist %}
+<a class="card movieCard" href="{{ url_for('films') }}">
+    <img class="movieCardImage" src="{{ url_for('static',filename='img/movies.png') }}">
+    <p>Movies</p>
+</a> {% endif %} {% endblock %}

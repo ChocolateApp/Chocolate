@@ -1,0 +1,327 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@500&family=Open+Sans:wght@300;400;500;600;700;800&display=swap');
+* {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background: linear-gradient(104.29deg, #08E1FF 0%, #9903D5 100%);
+    background-attachment: fixed;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+a,
+p,
+input {
+    font-family: 'Inter', Arial, Helvetica, sans-serif;
+    text-decoration: none;
+    color: #3C72CE;
+}
+
+:active,
+ :focus,
+ :visited {
+    text-decoration: none;
+}
+
+::-webkit-scrollbar {
+    display: none;
+}
+
+.wave_top {
+    transform: scale(-1);
+    position: relative;
+}
+
+header {
+    width: 95vw;
+    height: 7.5vh;
+    left: 2.5vw;
+    top: 2.5vh;
+    position: absolute;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(50px);
+    border-radius: 3vw;
+}
+
+.form_group {
+    position: absolute;
+    right: 12vw;
+    top: 3vh;
+}
+
+.form_field {
+    position: absolute;
+    left: -14vmax;
+    bottom: -2.75vmin;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2vw;
+    width: 17vw;
+    height: 4vh;
+    border: none;
+    padding-left: 0.5vw;
+    font-size: 3vh;
+}
+
+.form_field:focus {
+    outline: none;
+}
+
+.search_icon {
+    color: #3C72CE;
+    position: absolute;
+    top: -0.25vh;
+    font-size: 2vh;
+    left: 1vw;
+}
+
+.cover {
+    width: 21vw;
+    display: block;
+    flex-grow: 6;
+    flex-shrink: 1;
+    flex-basis: auto;
+    align-self: auto;
+    order: 0;
+    margin: 2vw;
+    text-align: center;
+    font-size: 3vh;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(50px);
+    border-radius: 2vw;
+    height: 62vh;
+    -webkit-order: 0;
+    -ms-flex-order: 0;
+    order: 0;
+    -webkit-flex: 0 1 auto;
+    -ms-flex: 0 1 auto;
+    flex: 0 1 auto;
+    -webkit-align-self: auto;
+    -ms-flex-item-align: auto;
+    align-self: auto;
+}
+
+.movies {
+    margin: 12vh;
+    margin-top: 20vh;
+    gap: 2vw;
+    display: -ms-flexbox;
+    display: -webkit-flex;
+    display: flex;
+    -webkit-flex-direction: row;
+    -ms-flex-direction: row;
+    flex-direction: row;
+    -webkit-flex-wrap: wrap;
+    -ms-flex-wrap: wrap;
+    flex-wrap: wrap;
+    -webkit-justify-content: space-between;
+    -ms-flex-pack: justify;
+    justify-content: space-between;
+    -webkit-align-content: flex-start;
+    -ms-flex-line-pack: start;
+    align-content: flex-start;
+    -webkit-align-items: flex-start;
+    -ms-flex-align: start;
+    align-items: flex-start;
+}
+
+.cover_movie {
+    width: 20vw;
+    height: 50vh;
+    object-fit: cover;
+    border-radius: 2vw;
+    margin-top: 2vh;
+    left: 1vw;
+}
+
+.cover a p {
+    margin-left: 1vw;
+    width: 20vw;
+    margin-top: 2vh;
+    color: #0056ff;
+}
+
+.not_seen {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+}
+
+.cover_movie_not_seen {
+    -ms-flex: 0 1 auto;
+    flex: 0 1 auto;
+}
+
+.card {
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(50px);
+    border-radius: 2vw;
+    top: 25vh;
+    width: 22vw;
+    height: 58vh;
+    position: absolute;
+    color: #3E72CE;
+}
+
+.card p {
+    text-align: center;
+    margin-top: 3vh;
+    font-size: 3vh;
+}
+
+.serieCardImage,
+.movieCardImage {
+    width: 19vw;
+    margin-left: 1.5vw;
+    border-radius: 2vw;
+    margin-top: 5vh;
+}
+
+.movieCard {
+    left: 20vw;
+}
+
+.serieCard {
+    right: 20vw;
+}
+
+.logo_svg {
+    cursor: pointer;
+}
+
+.logo {
+    position: absolute;
+    width: 7vh;
+    left: 4vmin;
+    top: 0.75vmin;
+}
+
+.title {
+    position: absolute;
+    left: 7vw;
+    top: 1.75vh;
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 500;
+    font-size: 2vw;
+    line-height: 4vh;
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: #9903D5;
+}
+
+.settings {
+    position: absolute;
+    bottom: 1.75vh;
+    left: 90vw;
+}
+
+.settings i {
+    color: #3C72CE;
+    font-size: 4vh;
+}
+
+.moviesPathDiv,
+.seriesPathDiv,
+.languageDiv {
+    margin-left: 63vh;
+    width: 30vh;
+    font-size: 1.5em;
+    font-family: Arial;
+    padding: 2vh;
+}
+
+.moviesPathDiv input,
+.seriesPathDiv input,
+.languageDiv input {
+    font-size: 2vh;
+    top: 24vh;
+    position: absolute;
+    left: calc(50vw - 4vw);
+    margin-bottom: 8vw;
+    padding: 0;
+    bottom: 0;
+}
+
+.moviesPathDiv label,
+.seriesPathDiv label,
+.languageDiv label {
+    vertical-align: 20%;
+    font-size: 2.5vh;
+}
+
+.moviesPathDiv input {
+    margin-top: -1.25vh;
+}
+
+.seriesPathDiv input {
+    margin-top: 5.5vh;
+}
+
+.languageDiv input {
+    margin-top: 12.5vh;
+}
+
+.saveSettings {
+    height: 10vh;
+    width: 12vw;
+    font-size: 2.5vh;
+    background: rgb(81 55 186);
+    border: none;
+    border-radius: 1.5vh;
+    margin-left: 41vw;
+    margin-top: 6vh;
+}
+
+.saveSettingsForm {
+    margin-top: 21vh;
+}
+
+.saveSettings:hover {
+    background: rgb(67 44 159);
+}
+
+#playPauseButton,
+#audioSize {
+    color: grey;
+}
+
+#playerControls {
+    position: absolute;
+    bottom: 85px;
+    left: 480px;
+}
+
+.movieStats {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(3, 1fr);
+    grid-column-gap: 0px;
+    grid-row-gap: 0px;
+    position: absolute;
+    top: 62vh;
+    background-color: #7a16d2;
+    border-radius: 2vh;
+    width: 165vh;
+    left: 18vh;
+    height: 33vh;
+    padding: 1vh;
+}
+
+.statsTitle,
+.statsNote,
+.statsDesc {
+    display: inline-block;
+}
+
+#playerWrapper {
+    left: 60vh;
+    position: absolute;
+    top: 27vh;
+}
