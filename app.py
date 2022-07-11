@@ -179,7 +179,7 @@ def saveSettings():
         config.set("ChocolateSettings", "moviespath", MoviesPath)
     if language != "":
         config.set("ChocolateSettings", "language", language)
-    with open(f'{currentCWD}\\config.ini', 'w') as conf:
+    with open(f'{currentCWD}/config.ini', 'w') as conf:
         config.write(conf)
     return redirect(url_for('settings'))
 
