@@ -174,7 +174,6 @@ header {
     font-size: 3vh;
 }
 
-.serieCardImage,
 .movieCardImage {
     width: 19vw;
     margin-left: 1.5vw;
@@ -183,11 +182,7 @@ header {
 }
 
 .movieCard {
-    left: 20vw;
-}
-
-.serieCard {
-    right: 20vw;
+    left: calc(50vw - (22vw/2));
 }
 
 .logo_svg {
@@ -228,7 +223,6 @@ header {
 }
 
 .moviesPathDiv,
-.seriesPathDiv,
 .languageDiv {
     margin-left: 63vh;
     width: 30vh;
@@ -238,7 +232,6 @@ header {
 }
 
 .moviesPathDiv input,
-.seriesPathDiv input,
 .languageDiv input {
     font-size: 2vh;
     top: 24vh;
@@ -250,7 +243,6 @@ header {
 }
 
 .moviesPathDiv label,
-.seriesPathDiv label,
 .languageDiv label {
     vertical-align: 20%;
     font-size: 2.5vh;
@@ -258,10 +250,6 @@ header {
 
 .moviesPathDiv input {
     margin-top: -1.25vh;
-}
-
-.seriesPathDiv input {
-    margin-top: 5.5vh;
 }
 
 .languageDiv input {

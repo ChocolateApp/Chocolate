@@ -1,0 +1,7 @@
+beautifulsoup4==4.11.1
+Flask==2.0.3
+Flask_Cors==3.0.10
+get_video_properties==0.1.1
+numpy==1.22.1
+requests==2.26.0
+tmdbv3api==1.7.7
