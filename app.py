@@ -24,6 +24,28 @@ local_ip = socket.gethostbyname(hostname)
 config.set("ChocolateSettings", "localIP", local_ip)
 filmEncode = None
 CHUNK_LENGTH = 5
+genreList = {
+    28: "Action",
+    12: "Aventure",
+    16: "Animation",
+    35: "Comédie",
+    80: "Crime",
+    99: "Documentaire",
+    18: "Drama",
+    10751: "Famille",
+    14: "Fantastique",
+    36: "Histoire",
+    27: "Horreur",
+    10402: "Musique",
+    9648: "Mystère",
+    10749: "Romance",
+    878: "Science-fiction",
+    10770: "TV Movie",
+    53: "Thriller",
+    10752: "War",
+    37: "Western",
+}
+genresUsed = []
 
 
 def getMovie(slug):
@@ -69,6 +91,7 @@ def getMovies():
             try:
                 search = movie.search(movieTitle)
             except TMDbException:
+                print(TMDbException)
                 continue
                 
             if not search:
@@ -79,6 +102,24 @@ def getMovies():
             movieCoverPath = res.poster_path
             description = res.overview
             note = res.vote_average
+            date = res.release_date
+            try:
+                date = datetime.datetime.strptime(date, "%Y-%m-%d").strftime("%d/%m/%Y")
+            except ValueError:
+                continue
+            genre = res.genre_ids
+
+            for genreId in genre:
+                if genreList[genreId] not in genresUsed:
+                    genresUsed.append(genreList[genreId])
+            
+            # replace the id with the name of the genre
+            movieGenre = []
+            for genreId in genre:
+                movieGenre.append(genreList[genreId])
+
+
+
             coverFullPath = f"https://image.tmdb.org/t/p/original{movieCoverPath}"
 
             filmData = {
@@ -86,8 +127,12 @@ def getMovies():
             "cover": coverFullPath,
             "slug": originalMovieTitle,
             "description": description,
-            "note": note
+            "note": note,
+            "date": date,
+            "genre": movieGenre,
             }
+
+
 
             searchedFilms.append(filmData)
             filmDataToAppend = {
@@ -147,13 +192,13 @@ def create_m3u8(video_name):
 def get_chunk(video_name, idx=0):
     seconds = (idx - 1) * CHUNK_LENGTH
     moviesPath = config.get("ChocolateSettings", "MoviesPath")
-    video_path = f"{moviesPath}/{video_name}.mkv"
+    video_path = f"{moviesPath}\{video_name}.mkv"
 
     time_start = str(datetime.timedelta(seconds=seconds))
     time_end = str(datetime.timedelta(seconds=seconds + CHUNK_LENGTH))
 
     command = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", time_start, "-to", time_end, "-i", video_path,
-               "-output_ts_offset", time_start, "-c:v", "h264", "-c:a", "aac", "-preset", "veryfast", "-f", "mpegts",
+               "-output_ts_offset", time_start, "-c:v", "h264", "-c:a", "aac", "-preset", "ultrafast", "-ac" ,"2", "-f", "mpegts",
                "pipe:1"]
 
     print(" ".join(command))

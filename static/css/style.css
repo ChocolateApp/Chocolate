@@ -381,10 +381,26 @@ header {
 
 .notePopup {
     position: absolute;
-    left: 83vw;
+    left: 32vw;
     font-size: 4vh;
     bottom: 29vh;
     width: 12vw;
+}
+
+.yearPopup {
+    position: absolute;
+    left: 32vw;
+    font-size: 4vh;
+    bottom: 24vh;
+    width: 17vw;
+}
+
+.genrePopup {
+    position: absolute;
+    left: 32vw;
+    font-size: 4vh;
+    bottom: 19vh;
+    width: 38vw;
 }
 
 .playPopup {
@@ -404,9 +420,11 @@ header {
     margin-right: 2vw;
 }
 
-.video-js {
+.video-js[tabindex="-1"] {
     width: 94vw !important;
     height: 81.55vh !important;
+    top: 14.5vh;
+    left: 3vw;
 }
 
 .notSorted {

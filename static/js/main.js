@@ -26,7 +26,8 @@ for (var i = 0; i < covers.length; i++) {
         var moviePoster = image.getAttribute("src");
         var movieDescription = image.getAttribute("description");
         var movieNote = image.getAttribute("note");
-
+        var movieYear = image.getAttribute("year");
+        var movieGenre = image.getAttribute("genre"); // its a list in string format
 
         var imagePopup = document.getElementsByClassName("coverPopup")[0]
         imagePopup.setAttribute("src", moviePoster);
@@ -41,6 +42,22 @@ for (var i = 0; i < covers.length; i++) {
 
         var notePopup = document.getElementsByClassName("notePopup")[0]
         notePopup.innerHTML = `Note : ${movieNote}/10`;
+
+        var yearPopup = document.getElementsByClassName("yearPopup")[0]
+        yearPopup.innerHTML = `Year : ${movieYear}`;
+
+        var genrePopup = document.getElementsByClassName("genrePopup")[0]
+        var genreList = movieGenre.substring(1, movieGenre.length - 1)
+        genreList = genreList.replace(/'/g, "")
+        genreList = genreList.split(",")
+        var genreString = ""
+        for (var i = 0; i < genreList.length; i++) {
+            genreString += genreList[i]
+            if (i != genreList.length - 1) {
+                genreString += ", "
+            }
+        }
+        genrePopup.innerHTML = `Genre : ${genreString}`;
 
         var playButton = document.getElementsByClassName("playPopup")[0]
         playButton.setAttribute("href", movieUrl);
