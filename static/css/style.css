@@ -283,8 +283,10 @@ header {
 }
 
 #playerWrapper {
-    position: absolute;
-    z-index: 99999;
+    width: 0;
+    height: 0;
+    margin: 0;
+    padding: 0;
 }
 
 .movieDesc {
@@ -422,4 +424,42 @@ header {
 
 .notSorted ul {
     font-size: 2vh;
+}
+
+.moviePopup {
+    width: 38vw;
+    height: 18vh;
+    position: absolute;
+    top: 41vh;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(115px);
+    border-radius: 2vw;
+    left: 31vw;
+    z-index: 99999999999999999999;
+    text-align: center;
+}
+
+.moviePopup h1 {
+    margin-top: 2vh;
+    color: white;
+}
+
+.moviePopup a {
+    cursor: pointer;
+    font-size: 4vh;
+    position: absolute;
+    padding: 0vw 1vw 0vw 1vw;
+    border-radius: 2vw;
+    margin-top: 4vh;
+    color: white;
+}
+
+#buttonYes {
+    background: green;
+    left: 11vw;
+}
+
+#buttonNo {
+    background: red;
+    left: 22vw;
 }

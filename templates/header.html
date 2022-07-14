@@ -9,9 +9,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Chocolate</title>
     <link rel="shortcut icon" href="{{ url_for('static',filename='img/logo.ico') }}" type="image/x-icon">
+    <link rel="shortcut icon" href="{{ url_for('static',filename='img/logo.ico') }}" type="image/x-icon">
 </head>
 <header>
-    <div class="logo_svg" onclick=window.location.href='{{ url_for( "home") }}'>
+    <div id="goHome" class="logo_svg">
         <img class="logo" id="logo" src="{{ url_for('static',filename='img/logo.png') }}" />
         <h1 class="title">Chocolate</h1>
     </div>
