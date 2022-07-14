@@ -19,8 +19,8 @@ And enjoy
 ![image](https://user-images.githubusercontent.com/69050895/178296606-afa5926f-6162-4291-8ae7-471403b5f5db.png)
 
 
-You can join the official discord server of the project if you need help or ask for features/improvements : [Chocolate Help Server](https://discord.gg/aWkjDhNFUh)
-This tool was made by Impre-visible, some features needed the help of several volunteers, that I thank, you can contact them on this server : [Dev'Area](https://discord.gg/hTmbFePH)
+* You can join the official discord server of the project if you need help or ask for features/improvements : [Chocolate Help Server](https://discord.gg/aWkjDhNFUh)
+* This tool was made by Impre-visible, some features needed the help of several volunteers, that I thank, you can contact them on this server : [Dev'Area](https://discord.gg/hTmbFePH)
 
 A special thanks to Mathias08 who made it possible to release v1 of Chocolate!
 
