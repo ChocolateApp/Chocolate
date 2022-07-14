@@ -379,28 +379,12 @@ header {
     justify-content: center;
 }
 
-.notePopup {
+.containerPopup {
     position: absolute;
-    left: 32vw;
+    left: 32.5vw;
     font-size: 4vh;
-    bottom: 29vh;
-    width: 12vw;
-}
-
-.yearPopup {
-    position: absolute;
-    left: 32vw;
-    font-size: 4vh;
-    bottom: 24vh;
-    width: 17vw;
-}
-
-.genrePopup {
-    position: absolute;
-    left: 32vw;
-    font-size: 4vh;
-    bottom: 19vh;
-    width: 38vw;
+    bottom: 19.5vh;
+    width: 63.5vw;
 }
 
 .playPopup {

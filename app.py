@@ -85,7 +85,7 @@ def getMovies():
             continue
         if searchedFilm.endswith("/") == False and searchedFilm.endswith(("mp4", "mp4v", "mov", "avi", "flv", "wmv", "asf", "mpeg","mpg", "mkv", "ts")):
             movieTitle = searchedFilm
-            originalMovieTitle = f"{movieTitle.split('.')[0]}.{movieTitle.split('.')[1].lower()}"
+            originalMovieTitle = f"{movieTitle.split('.')[0]}.{movieTitle.split('.')[1]}"
             size = len(movieTitle)
             movieTitle = movieTitle[:size - 4]
             try:
@@ -108,6 +108,34 @@ def getMovies():
             except ValueError:
                 continue
             genre = res.genre_ids
+            video_path = f"{path}\{originalMovieTitle}"
+            # convert seconds to hours, minutes and seconds
+            length = length_video(video_path)
+            length = str(datetime.timedelta(seconds=length))
+            length = length.split(":")
+
+            if len(length) == 3:
+                hours = length[0]
+                minutes = length[1]
+                seconds = str(round(float(length[2])))
+                if int(seconds) < 10:
+                    seconds = f"0{seconds}"
+                length = f"{hours}:{minutes}:{seconds}"
+            elif len(length) == 2:
+                minutes = length[0]
+                seconds = str(round(float(length[1])))
+                if int(seconds) > 10:
+                    seconds = f"0{seconds}"
+                length = f"{minutes}:{seconds}"
+            elif len(length) == 1:
+                seconds = str(round(float(length[0])))
+                if int(seconds) > 10:
+                    seconds = "0"+seconds
+                length = f"00:{seconds}"
+            else:
+                length = "0"
+            
+            duration = length
 
             for genreId in genre:
                 if genreList[genreId] not in genresUsed:
@@ -130,6 +158,7 @@ def getMovies():
             "note": note,
             "date": date,
             "genre": movieGenre,
+            "duration": str(duration),
             }
 
 
@@ -252,4 +281,4 @@ def movie(slug):
 
 if __name__ == '__main__':
     getMovies()
-    app.run(debug=True, use_reloader=False, host="0.0.0.0", port="8500")
+    app.run(host="0.0.0.0", port="8500")

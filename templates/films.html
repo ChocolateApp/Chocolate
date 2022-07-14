@@ -6,12 +6,15 @@
 
 <div id="popup" class="popup" style="display: none;">
     <i class="fa-solid fa-circle-xmark crossPopup" id="crossPopup"></i>
-    <img src="ImprevisibleIsTheBest" class="coverPopup" title="" alt="" />
+    <img src="https://google.com" class="coverPopup" title="" alt="" />
     <p class="titlePopup"></p>
     <p class="descriptionPopup">description de img</p>
-    <p class="notePopup">note de l'img/10</p>
-    <p class="yearPopup">year de l'img</p>
-    <p class="genrePopup">genre de l'img</p>
+    <div class="containerPopup">
+        <p class="notePopup">note de l'img/10</p>
+        <p class="yearPopup">year de l'img</p>
+        <p class="genrePopup">genre de l'img</p>
+        <p class="durationPopup">duration de l'img</p>
+    </div>
     <a class="playPopup" href=""><i class="fa fa-solid fa-play"></i>Regarder</a>
 </div>
 
@@ -19,8 +22,8 @@
     {% for searchedFilm in searchedFilms %}
     <div class="cover">
         <div class="content">
-            <img src="{{ searchedFilm['cover'] }}" class="cover_movie" title="{{ searchedFilm['title'] }}" alt="{{ searchedFilm['title'] }}" movieUrl="{{ url_for('movie', slug=searchedFilm['slug']) }}" genre="{{ searchedFilm['genre'] }}" year="{{ searchedFilm['date'] }}"
-                description="{{ searchedFilm['description'] }}" note="{{ searchedFilm['note'] }}" />
+            <img src="{{ searchedFilm['cover'] }}" class="cover_movie" title="{{ searchedFilm['title'] }}" alt="{{ searchedFilm['title'] }}" movieUrl="{{ url_for('movie', slug=searchedFilm['slug']) }}" duration="{{ searchedFilm['duration'] }}" genre="{{ searchedFilm['genre'] }}"
+                year="{{ searchedFilm['date'] }}" description="{{ searchedFilm['description'] }}" note="{{ searchedFilm['note'] }}" />
             <p>{{ searchedFilm['title'] }}</p>
         </div>
     </div>
