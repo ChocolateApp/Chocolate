@@ -80,54 +80,28 @@ header {
     left: 1vw;
 }
 
+.movies {
+    margin-top: 20vh;
+    width: 100vw;
+    display: flex;
+    flex-wrap: wrap;
+}
+
 .cover {
-    width: 21vw;
+    width: 23.3vw;
     display: block;
     flex-grow: 6;
     flex-shrink: 1;
     flex-basis: auto;
     align-self: auto;
-    order: 0;
-    margin: 2vw;
+    margin: 5vw;
     text-align: center;
     font-size: 3vh;
     background: rgba(255, 255, 255, 0.4);
     backdrop-filter: blur(50px);
     border-radius: 2vw;
     height: 62vh;
-    -webkit-order: 0;
-    -ms-flex-order: 0;
-    order: 0;
-    -webkit-flex: 0 1 auto;
-    -ms-flex: 0 1 auto;
-    flex: 0 1 auto;
-    -webkit-align-self: auto;
-    -ms-flex-item-align: auto;
-    align-self: auto;
-}
-
-.movies {
-    margin: 12vh;
-    margin-top: 20vh;
-    gap: 2vw;
-    display: -ms-flexbox;
-    display: -webkit-flex;
-    display: flex;
-    -webkit-flex-direction: row;
-    -ms-flex-direction: row;
-    flex-direction: row;
-    -webkit-flex-wrap: wrap;
-    -ms-flex-wrap: wrap;
-    flex-wrap: wrap;
-    -webkit-justify-content: space-between;
-    -ms-flex-pack: justify;
-    justify-content: space-between;
-    -webkit-align-content: flex-start;
-    -ms-flex-line-pack: start;
-    align-content: flex-start;
-    -webkit-align-items: flex-start;
-    -ms-flex-align: start;
-    align-items: flex-start;
+    order: 1;
 }
 
 .cover_movie {
@@ -139,11 +113,11 @@ header {
     left: 1vw;
 }
 
-.cover a p {
-    margin-left: 1vw;
-    width: 20vw;
+.cover p {
+    width: 23.4vw;
     margin-top: 2vh;
     color: #0056ff;
+    text-align: center;
 }
 
 .not_seen {
@@ -153,7 +127,6 @@ header {
 }
 
 .cover_movie_not_seen {
-    -ms-flex: 0 1 auto;
     flex: 0 1 auto;
 }
 
@@ -263,12 +236,13 @@ header {
     background: rgb(81 55 186);
     border: none;
     border-radius: 1.5vh;
-    margin-left: 41vw;
     margin-top: 6vh;
+    margin-bottom: 2vw;
 }
 
 .saveSettingsForm {
     margin-top: 21vh;
+    text-align: center;
 }
 
 .saveSettings:hover {
@@ -309,7 +283,141 @@ header {
 }
 
 #playerWrapper {
-    left: 60vh;
     position: absolute;
-    top: 27vh;
+    z-index: 99999;
+}
+
+.movieDesc {
+    display: none;
+}
+
+.popup {
+    width: 96vw;
+    height: 96vh;
+    position: fixed;
+    top: 2vh;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(115px);
+    border-radius: 2vw;
+    margin-left: 2vw;
+    z-index: 99999999999999999999;
+    animation: appearPopup 0.5s ease-in-out;
+}
+
+@keyframes appearPopup {
+    0% {
+        opacity: 0;
+        width: 0;
+        height: 0;
+        background-color: #ffffff00;
+    }
+    100% {
+        opacity: 1;
+        width: 96vw;
+        height: 96vh;
+        background-color: rgba(255, 255, 255, 0.4);
+    }
+}
+
+@keyframes appearImagePopup {
+    0% {
+        width: 0;
+        height: 0;
+        left: 2vw;
+    }
+    100% {
+        width: 29vw;
+        height: 92vh;
+        object-fit: cover;
+        top: 2vh;
+        position: absolute;
+        left: 1.5vw;
+        border-radius: 2vh;
+    }
+}
+
+.coverPopup {
+    width: 29vw;
+    height: 92vh;
+    object-fit: cover;
+    top: 2vh;
+    position: absolute;
+    left: 1.5vw;
+    border-radius: 2vh;
+    animation: appearImagePopup 0.5s ease-in-out;
+}
+
+.crossPopup {
+    position: absolute;
+    right: 2vw;
+    top: 2.5vh;
+    font-size: 4vh;
+    cursor: pointer;
+    z-index: 1;
+    color: #3C72CE;
+}
+
+.titlePopup {
+    position: absolute;
+    font-size: 5vh;
+    left: 30.5vw;
+    top: 5vh;
+    text-align: center;
+    width: 65.5vw;
+}
+
+.descriptionPopup {
+    position: absolute;
+    font-size: 3vh;
+    left: 32vw;
+    width: 62vw;
+    top: 12vh;
+    height: 58vh;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.notePopup {
+    position: absolute;
+    left: 83vw;
+    font-size: 4vh;
+    bottom: 29vh;
+    width: 12vw;
+}
+
+.playPopup {
+    position: absolute;
+    left: 56vw;
+    font-size: 4vh;
+    bottom: 5vh;
+    background-color: #30bf6e;
+    border-radius: 2vh;
+    padding: 2vh 2vw;
+    text-decoration: none;
+    text-shadow: 0px 1px 0px #2f6627;
+    color: #ffffff;
+}
+
+.playPopup i {
+    margin-right: 2vw;
+}
+
+.video-js {
+    width: 94vw !important;
+    height: 81.55vh !important;
+}
+
+.notSorted {
+    text-align: center;
+}
+
+.notSorted h1 {
+    color: black;
+    font-size: 2vh;
+}
+
+.notSorted ul {
+    font-size: 2vh;
 }

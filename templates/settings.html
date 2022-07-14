@@ -10,5 +10,13 @@
     </div>
     <button name="saveSettings" type="submit" class="saveSettings">Save settings</button>
 </form>
-<div>
-</div>{% endblock %}
+{% if conditionIfOne %}
+<div class="notSorted">
+    <h1>Problems with :</h1>
+    <ul>
+        {% for notSortedFilm in notSorted %}
+        <li>We don't understand : {{ notSortedFilm }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %} {% endblock %}

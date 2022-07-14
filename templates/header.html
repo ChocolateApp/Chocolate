@@ -2,12 +2,8 @@
 
 <head>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/style.css') }}" />
-    <script src="{{ url_for('static',filename='js/main.js') }}" defer></script>
-
-    <script src="https://kit.fontawesome.com/eaf190d37c.js" crossorigin="anonymous"></script>
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/material-design-iconic-font/2.2.0/css/material-design-iconic-font.min.css">
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" integrity="sha512-KfkfwYDsLkIlwQp6LFnl8zNdLGxu9YAA1QvwINks4PhcElQSvqcyVLLD9aMhXd13uQjoXtEKNosOWaZqXgel0g==" crossorigin="anonymous" referrerpolicy="no-referrer"
+    />
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -34,5 +30,6 @@
 <body>
     {% block content %} {% endblock %}
 </body>
+<script src="{{ url_for('static',filename='js/main.js') }}"></script>
 
 </html>

@@ -18,6 +18,7 @@ movie = Movie()
 searchedFilms = []
 currentCWD = os.getcwd()
 allMovies = []
+allMoviesNotSorted = []
 hostname = socket.gethostname()
 local_ip = socket.gethostbyname(hostname)
 config.set("ChocolateSettings", "localIP", local_ip)
@@ -91,9 +92,13 @@ def getMovies():
             searchedFilms.append(filmData)
             filmDataToAppend = {
                 "title": movieTitle,
-                "id": res.id
+                "id": res.id,
+                "description": description,
+                "note": note,
             }
             allMovies.append(filmDataToAppend)
+        elif searchedFilm.endswith("/") == False :
+            allMoviesNotSorted.append(searchedFilm)
 
 
 
@@ -114,7 +119,6 @@ def home():
 def create_m3u8(video_name):
     moviesPath = config.get("ChocolateSettings", "MoviesPath")
     video_path = f"{moviesPath}/{video_name}.mkv"
-    print(video_path,'ici')
     duration = length_video(video_path)
 
     file = """
@@ -144,15 +148,15 @@ def get_chunk(video_name, idx=0):
     seconds = (idx - 1) * CHUNK_LENGTH
     moviesPath = config.get("ChocolateSettings", "MoviesPath")
     video_path = f"{moviesPath}/{video_name}.mkv"
-    print(video_path,'la')
 
     time_start = str(datetime.timedelta(seconds=seconds))
     time_end = str(datetime.timedelta(seconds=seconds + CHUNK_LENGTH))
 
     command = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", time_start, "-to", time_end, "-i", video_path,
-               "-output_ts_offset", time_start, "-c:v", "h264", "-c:a", "aac", "-preset", "ultrafast", "-f", "mpegts",
+               "-output_ts_offset", time_start, "-c:v", "h264", "-c:a", "aac", "-preset", "veryfast", "-f", "mpegts",
                "pipe:1"]
 
+    print(" ".join(command))
     pipe = subprocess.run(command, stdout=subprocess.PIPE)
 
     response = make_response(pipe.stdout)
@@ -164,12 +168,18 @@ def get_chunk(video_name, idx=0):
 @app.route("/films")
 def films():
     searchedFilmsUp0 = len(searchedFilms) == 0
+    # order by alphabetical order using the id title
+    searchedFilms.sort(key=lambda x: x["title"])
     return render_template('films.html', searchedFilms=searchedFilms, conditionIfOne=searchedFilmsUp0)
 
 
 @app.route("/settings")
 def settings():
-    return render_template("settings.html")
+    global allMoviesNotSorted
+    condition = len(allMoviesNotSorted) > 0
+    print(allMoviesNotSorted)
+    print(condition)
+    return render_template("settings.html", notSorted=allMoviesNotSorted, conditionIfOne=condition)
 
 @app.route("/saveSettings/", methods=['POST'])
 def saveSettings():
@@ -193,7 +203,6 @@ def movie(slug):
         movieLink = f"http://{local_ip}:8000/{slug}"
         rewriteSlug = slug.split(".")[0]
         link = f"/video/{rewriteSlug}.m3u8".replace(" ", "%20")
-        print(link)
     return render_template("film.html", movieSlug=movieSlug, slug=slug, movieUrl=link)
 
 if __name__ == '__main__':

@@ -2,32 +2,47 @@ function goToHome() {
     document.location.pathname = "/home"
 }
 
-var player = document.getElementById("videoPlayer");
+
+var closePopup = document.getElementById("crossPopup")
+closePopup.addEventListener("click", function() {
+    popup = document.getElementById("popup")
+    popup.style.display = "none"
+
+    document.body.style.overflow = "auto"
+})
+
+covers = document.getElementsByClassName("cover")
+for (var i = 0; i < covers.length; i++) {
+    covers[i].addEventListener("click", function() {
+
+        popup = document.getElementById("popup")
+        popup.style.display = "block"
+
+        document.body.style.overflow = "hidden"
+
+        var image = this.children[0].children[0]
+        var movieUrl = image.getAttribute("movieUrl");
+        var movieTitle = image.getAttribute("title");
+        var moviePoster = image.getAttribute("src");
+        var movieDescription = image.getAttribute("description");
+        var movieNote = image.getAttribute("note");
 
 
-function playPauseVid() {
-    button = document.getElementById("playPauseButton");
-    console.log(button.className)
-    if (button.className == "zmdi zmdi-pause zmdi-hc-lg") {
-        player.pause();
-        button.className = "zmdi zmdi-play zmdi-hc-lg"
-    } else if (button.className == "zmdi zmdi-play zmdi-hc-lg") {
-        player.play()
-        button.className = "zmdi zmdi-pause zmdi-hc-lg"
-    }
-}
+        var imagePopup = document.getElementsByClassName("coverPopup")[0]
+        imagePopup.setAttribute("src", moviePoster);
+        imagePopup.setAttribute("alt", movieTitle);
+        imagePopup.setAttribute("title", movieTitle);
 
-function changeVol() {
-    player.volume = document.getElementById("changeVol").value / 100;
-    audioIcon = document.getElementById("audioSize")
-    console.log(player.volume)
-    let icon;
-    if (player.volume >= 0.5) {
-        icon = "zmdi zmdi-volume-up zmdi-hc-lg"
-    } else if (player.volume > 0) {
-        icon = "zmdi zmdi-volume-down zmdi-hc-lg"
-    } else if (player.volume == 0) {
-        icon = "zmdi zmdi-volume-mute zmdi-hc-lg"
-    }
-    audioIcon.className = icon
+        var titlePopup = document.getElementsByClassName("titlePopup")[0]
+        titlePopup.innerHTML = movieTitle;
+
+        var descriptionPopup = document.getElementsByClassName("descriptionPopup")[0]
+        descriptionPopup.innerHTML = movieDescription;
+
+        var notePopup = document.getElementsByClassName("notePopup")[0]
+        notePopup.innerHTML = `Note : ${movieNote}/10`;
+
+        var playButton = document.getElementsByClassName("playPopup")[0]
+        playButton.setAttribute("href", movieUrl);
+    })
 }
