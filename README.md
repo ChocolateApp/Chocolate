@@ -26,6 +26,7 @@ And enjoy
 - [X] Add year, duration, genre, to the popup
 - [ ] Add actors to the popup
 - [ ] Permit to restart where you left off the movie
+- [ ] Make a simple installer and launcher
 - [ ] A web mobile version of the app and a mobile app (android, ios)
 
 # Informations
