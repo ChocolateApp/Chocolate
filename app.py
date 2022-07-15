@@ -113,8 +113,16 @@ def getMovies():
             theCast = []
             for cast in casts:
                 while len(theCast) < 5:
-                    actor = [cast.name, cast.character, f"https://www.themoviedb.org/t/p/w600_and_h900_bestv2{cast.profile_path}"]
-                    theCast.append(actor)
+                    characterName = cast.character
+                    if "'" in characterName:
+                        stringToRemove = characterName.split("'")[1]
+                        characterName = characterName.replace(f" '{stringToRemove}'", "")
+
+                    actor = [cast.name, characterName , f"https://www.themoviedb.org/t/p/w600_and_h900_bestv2{cast.profile_path}"]
+                    if actor not in theCast:
+                        theCast.append(actor)
+                    else:
+                        break
             try:
                 date = datetime.datetime.strptime(date, "%Y-%m-%d").strftime("%d/%m/%Y")
             except ValueError:
@@ -136,12 +144,12 @@ def getMovies():
             elif len(length) == 2:
                 minutes = length[0]
                 seconds = str(round(float(length[1])))
-                if int(seconds) > 10:
+                if int(seconds) < 10:
                     seconds = f"0{seconds}"
                 length = f"{minutes}:{seconds}"
             elif len(length) == 1:
                 seconds = str(round(float(length[0])))
-                if int(seconds) > 10:
+                if int(seconds) < 10:
                     seconds = "0"+seconds
                 length = f"00:{seconds}"
             else:
@@ -346,7 +354,6 @@ def home():
 @app.route("/films")
 def films():
     searchedFilmsUp0 = len(searchedFilms) == 0
-    # order by alphabetical order using the id title
     searchedFilms.sort(key=lambda x: x["title"])
     errorMessage = "Verify that the path is correct"
     return render_template('films.html', searchedFilms=searchedFilms, conditionIfOne=searchedFilmsUp0, errorMessage=errorMessage)

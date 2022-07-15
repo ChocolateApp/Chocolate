@@ -370,11 +370,11 @@ header {
 
 .descriptionPopup {
     position: absolute;
-    font-size: 3vh;
+    font-size: 2vh;
     left: 32vw;
     width: 62vw;
     top: 12vh;
-    height: 58vh;
+    height: 30vh;
     text-align: center;
     display: flex;
     align-items: center;
@@ -384,8 +384,8 @@ header {
 .containerPopup {
     position: absolute;
     left: 32.5vw;
-    font-size: 4vh;
-    bottom: 19.5vh;
+    font-size: 2vh;
+    top: 43vh;
     width: 63.5vw;
 }
 
@@ -468,4 +468,27 @@ header {
     cursor: pointer;
     background-color: #ffffff00;
     border: none;
+}
+
+.castPopup {
+    margin-left: 32vw;
+    width: 62vw;
+    height: 25vh;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: 1fr;
+    grid-column-gap: 0px;
+    grid-row-gap: 0px;
+    margin-top: 56vh;
+}
+
+.castImage {
+    width: 10vw;
+    height: 10vw;
+    object-fit: cover;
+    border-radius: 100vw;
+}
+
+.castMember {
+    text-align: center;
 }

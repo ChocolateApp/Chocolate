@@ -26,6 +26,27 @@ for (var i = 0; i < covers.length; i++) {
         var movieDuration = image.getAttribute("duration");
         var movieCast = image.getAttribute("cast"); // a list of lists of strings
 
+        movieCast = movieCast.replaceAll("'", '"')
+
+
+        movieCast = JSON.parse(movieCast)
+
+        // order by the default order of the cast
+
+        movieCast.sort(function(a, b) {
+            var nameA = a[0].toUpperCase(); // ignore upper and lowercase
+            var nameB = b[0].toUpperCase(); // ignore upper and lowercase
+            if (nameA < nameB) {
+                return -1;
+            }
+            if (nameA > nameB) {
+                return 1;
+            }
+            // names must be equal
+            return 0;
+        })
+
+
         var imagePopup = document.getElementsByClassName("coverPopup")[0]
         imagePopup.setAttribute("src", moviePoster);
         imagePopup.setAttribute("alt", movieTitle);
@@ -59,11 +80,36 @@ for (var i = 0; i < covers.length; i++) {
         var durationPopup = document.getElementsByClassName("durationPopup")[0]
         durationPopup.innerHTML = `Durée : ${movieDuration}`;
 
-        var castPopup = document.getElementsByClassName("castPopup")[0]
-            // movieCast is a string containing a list of lists of strings, convert it to a javascript list of list of strings
 
-        var castImagePopup = document.getElementsByClassName("castImagePopup")[0]
-        castImagePopup.setAttribute("src", );
+
+
+        castPopup = document.getElementById("castPopup")
+            // delete all the old cast divs
+        castDivs = castPopup.getElementsByClassName("castMember")
+        while (castDivs.length > 0) {
+            castPopup.removeChild(castDivs[0])
+        }
+
+        // add the new cast divs
+        for (var i = 0; i < movieCast.length; i++) {
+            castMember = document.createElement("div")
+            castMember.className = "castMember"
+            castImage = document.createElement("img")
+            castImage.className = "castImage"
+            castImage.setAttribute("src", movieCast[i][2])
+            castImage.setAttribute("alt", movieCast[i][0])
+            castImage.setAttribute("title", movieCast[i][0])
+            castMember.appendChild(castImage)
+            castName = document.createElement("p")
+            castName.className = "castName"
+            castName.innerHTML = movieCast[i][0]
+            castMember.appendChild(castName)
+            castCharacter = document.createElement("p")
+            castCharacter.className = "castCharacter"
+            castCharacter.innerHTML = movieCast[i][1]
+            castMember.appendChild(castCharacter)
+            castPopup.appendChild(castMember)
+        }
 
         var playButton = document.getElementsByClassName("playPopup")[0]
         playButton.setAttribute("href", movieUrl);
