@@ -2,9 +2,10 @@ from flask import Flask, url_for, request, render_template, redirect, make_respo
 from flask_cors import CORS
 from tmdbv3api import TMDb, Movie, TV
 from tmdbv3api.exceptions import TMDbException
+from videoprops import get_video_properties, get_audio_properties
 from bs4 import BeautifulSoup
 from pathlib import Path
-import requests, os, subprocess, configparser, socket, datetime, subprocess
+import requests, os, subprocess, configparser, socket, datetime, subprocess, socket, platform, GPUtil
 
 app = Flask(__name__)
 CORS(app)
@@ -181,6 +182,27 @@ def length_video(path: str) -> float:
                               "default=noprint_wrappers=1:nokey=1", path], stdout=subprocess.PIPE, text=True)
     return float(seconds.stdout)
 
+def getGpuInfo():
+    if platform.system() == "Windows":
+        return gpuname()
+    elif platform.system() == "Darwin":
+        return subprocess.check_output(['/usr/sbin/sysctl', "-n", "machdep.cpu.brand_string"]).strip()
+    elif platform.system() == "Linux":
+        return "impossible d'accéder au GPU"
+    return ""
+
+def gpuname():
+    """Returns the model name of the first available GPU"""
+    try:
+        gpus = GPUtil.getGPUs()
+    except:
+        print("Unable to detect GPU model. Is your GPU configured? Are you running with nvidia-docker?")
+        return "UNKNOWN"
+    if len(gpus) == 0:
+        raise ValueError("No GPUs detected in the system")
+    return gpus[0].name 
+
+
 @app.route('/')
 @app.route('/index')
 @app.route('/home')
@@ -226,8 +248,52 @@ def get_chunk(video_name, idx=0):
     time_start = str(datetime.timedelta(seconds=seconds))
     time_end = str(datetime.timedelta(seconds=seconds + CHUNK_LENGTH))
 
-    command = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", time_start, "-to", time_end, "-i", video_path,
-               "-output_ts_offset", time_start, "-c:v", "h264", "-c:a", "aac", "-preset", "ultrafast", "-ac" ,"2", "-f", "mpegts",
+    # check if the server as a nvidia gpu
+    serverGPU = getGpuInfo()
+    if serverGPU != "UNKNOWN":
+        serverGPU = serverGPU.split(" ")[0]
+        if serverGPU == "NVIDIA":
+            videoCodec = "h264_nvenc"
+            PIX = "-pix_fmt"
+            PIXcodec = "yuv420p"
+            preset = "7"
+        else:
+            videoCodec = "h264"
+            preset = "ultrafast"
+
+    movieVideoStats = get_video_properties(video_path)
+    movieAudioStats = get_audio_properties(video_path)
+    if movieAudioStats['codec_name'] == "aac" and movieVideoStats['codec_name'] == "h264":
+        command = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", time_start, "-to", time_end, "-i", video_path,
+                "-output_ts_offset", time_start, "-c:v", "copy", "-c:a", "copy", "-preset", "ultrafast", "-ac" ,"2", "-f", "mpegts",
+                "pipe:1"]
+
+    elif movieAudioStats['codec_name'] == "aac" and movieVideoStats['codec_name'] != "h264":
+        print(f"VideoCodec: {movieVideoStats['codec_name']}")
+
+        if PIX:
+            command = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", time_start, "-to", time_end, "-i", video_path,
+                "-output_ts_offset", time_start, "-c:v", videoCodec, "-c:a", "copy", PIX, PIXcodec,"-preset", "ultrafast", "-ac" ,"2", "-f", "mpegts",
+                "pipe:1"]
+        else:
+            command = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", time_start, "-to", time_end, "-i", video_path,
+               "-output_ts_offset", time_start, "-c:v", videoCodec, "-c:a", "copy", "-preset", preset, "-ac" ,"2", "-f", "mpegts",
+               "pipe:1"]
+
+    elif movieAudioStats['codec_name'] != "aac" and movieVideoStats['codec_name'] == "h264":
+        print(f"AudioCodec: {movieAudioStats['codec_name']}")
+        command = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", time_start, "-to", time_end, "-i", video_path,
+               "-output_ts_offset", time_start, "-c:v", "copy", "-c:a", "aac", "-preset", "ultrafast", "-f", "mpegts",
+               "pipe:1"]
+    else:
+        print(f"VideoCodec: {movieVideoStats['codec_name']}\nAudioCodec: {movieAudioStats['codec_name']}")
+        if PIX:
+            command = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", time_start, "-to", time_end, "-i", video_path,
+               "-output_ts_offset", time_start, "-c:v", videoCodec, "-c:a", "aac", PIX, PIXcodec, "-preset", preset, "-ac" ,"2", "-f", "mpegts",
+               "pipe:1"]
+        else:
+            command = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", time_start, "-to", time_end, "-i", video_path,
+               "-output_ts_offset", time_start, "-c:v", videoCodec, "-c:a", "aac", "-preset", preset, "-ac" ,"2", "-f", "mpegts",
                "pipe:1"]
 
     print(" ".join(command))

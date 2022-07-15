@@ -1,5 +1,4 @@
 import os
-from numpy import False_
 from videoprops import get_video_properties, get_audio_properties
 import configparser
 
@@ -12,11 +11,6 @@ MoviesToConvert = []
 newExtension = "mkv"
 for movie in movies:
     try:
-        movieVideoStats = get_video_properties(f"{path}\\{movie}")
-        movieAudioStats = get_audio_properties(f"{path}\\{movie}")
-        if os.path.isfile(f"{path}\\{movie}"):
-            if movieAudioStats['codec_name'] != "aac":
-                MoviesToConvert.append(movie)
     except Exception as e:
         pass
 print(f"{len(MoviesToConvert)} films à convertir, environ {len(MoviesToConvert)*0.33} heures de conversions")
