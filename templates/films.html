@@ -1,6 +1,6 @@
 {% extends 'header.html' %} {% block content %} {% if conditionIfOne %}
 
-<h1 style="text-align: center;width: 100vw">Verify your path</h1>
+<h1 style="text-align: center;width: 100vw;position: absolute;top: 23vh;color: black;">{{ errorMessage }}</h1>
 
 {% else %}
 
@@ -15,6 +15,10 @@
         <p class="genrePopup">genre de l'img</p>
         <p class="durationPopup">duration de l'img</p>
     </div>
+    <div class="containerCast">
+        <img class="castImagePopup" src="">
+        <p class="castPopup">nom du cast</p>
+    </div>
     <a class="playPopup" href=""><i class="fa fa-solid fa-play"></i>Regarder</a>
 </div>
 
@@ -22,8 +26,8 @@
     {% for searchedFilm in searchedFilms %}
     <div class="cover">
         <div class="content">
-            <img src="{{ searchedFilm['cover'] }}" class="cover_movie" title="{{ searchedFilm['title'] }}" alt="{{ searchedFilm['title'] }}" movieUrl="{{ url_for('movie', slug=searchedFilm['slug']) }}" duration="{{ searchedFilm['duration'] }}" genre="{{ searchedFilm['genre'] }}"
-                year="{{ searchedFilm['date'] }}" description="{{ searchedFilm['description'] }}" note="{{ searchedFilm['note'] }}" />
+            <img src="{{ searchedFilm['cover'] }}" class="cover_movie" title="{{ searchedFilm['title'] }}" alt="{{ searchedFilm['title'] }}" movieUrl="{{ url_for('movie', slug=searchedFilm['slug']) }}" duration="{{ searchedFilm['duration'] }}" cast="{{ searchedFilm['cast'] }}"
+                genre="{{ searchedFilm['genre'] }}" year="{{ searchedFilm['date'] }}" description="{{ searchedFilm['description'] }}" note="{{ searchedFilm['note'] }}" />
             <p>{{ searchedFilm['title'] }}</p>
         </div>
     </div>

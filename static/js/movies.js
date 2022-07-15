@@ -24,6 +24,7 @@ for (var i = 0; i < covers.length; i++) {
         var movieYear = image.getAttribute("year");
         var movieGenre = image.getAttribute("genre");
         var movieDuration = image.getAttribute("duration");
+        var movieCast = image.getAttribute("cast"); // a list of lists of strings
 
         var imagePopup = document.getElementsByClassName("coverPopup")[0]
         imagePopup.setAttribute("src", moviePoster);
@@ -57,6 +58,12 @@ for (var i = 0; i < covers.length; i++) {
 
         var durationPopup = document.getElementsByClassName("durationPopup")[0]
         durationPopup.innerHTML = `Durée : ${movieDuration}`;
+
+        var castPopup = document.getElementsByClassName("castPopup")[0]
+            // movieCast is a string containing a list of lists of strings, convert it to a javascript list of list of strings
+
+        var castImagePopup = document.getElementsByClassName("castImagePopup")[0]
+        castImagePopup.setAttribute("src", );
 
         var playButton = document.getElementsByClassName("playPopup")[0]
         playButton.setAttribute("href", movieUrl);

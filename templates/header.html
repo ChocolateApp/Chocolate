@@ -17,9 +17,11 @@
         <h1 class="title">Chocolate</h1>
     </div>
     <div class="form_group field">
-        <form>
-            <input type="input" class="form_field" />
-            <i class="fas fa-search search_icon"></i>
+        <form id="searchForm">
+            <input type="input" id="search" class="form_field" />
+            <button type="submit" class="buttonSearch" onclick="search()">
+                <i class="fas fa-search search_icon"></i>
+            </button>
         </form>
     </div>
     <a class="settings" href="{{ url_for('settings') }}">

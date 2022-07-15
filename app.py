@@ -69,7 +69,6 @@ def getMovies():
     print("MovieServer is starting")
     subprocess.Popen([pythonName, f'{currentCWD}\movieServer.py'])
 
-
     moviesPathUrl = f"http://localhost:8000"
     pagesMovie = requests.get(moviesPathUrl)
     soupMovies = BeautifulSoup(pagesMovie.content, "html.parser")
@@ -104,6 +103,18 @@ def getMovies():
             description = res.overview
             note = res.vote_average
             date = res.release_date
+            movieId = res.id
+            # get movie details
+            # get the index of the movie in the list
+            index = filmFileList.index(searchedFilm)
+            print(f"{index+1}/{len(filmFileList)}")
+            details = movie.details(movieId)
+            casts = details.casts.cast
+            theCast = []
+            for cast in casts:
+                while len(theCast) < 5:
+                    actor = [cast.name, cast.character, f"https://www.themoviedb.org/t/p/w600_and_h900_bestv2{cast.profile_path}"]
+                    theCast.append(actor)
             try:
                 date = datetime.datetime.strptime(date, "%Y-%m-%d").strftime("%d/%m/%Y")
             except ValueError:
@@ -150,7 +161,6 @@ def getMovies():
 
 
             coverFullPath = f"https://image.tmdb.org/t/p/original{movieCoverPath}"
-
             filmData = {
             "title": movieTitle,
             "cover": coverFullPath,
@@ -160,9 +170,9 @@ def getMovies():
             "date": date,
             "genre": movieGenre,
             "duration": str(duration),
+            "id": movieId,
+            "cast": theCast,
             }
-
-
 
             searchedFilms.append(filmData)
             filmDataToAppend = {
@@ -203,13 +213,6 @@ def gpuname():
     return gpus[0].name 
 
 
-@app.route('/')
-@app.route('/index')
-@app.route('/home')
-def home():
-    moviesPath = config.get("ChocolateSettings", "MoviesPath")
-    filmIsntEmpty = moviesPath != "Empty"
-    return render_template('index.html', moviesExist=filmIsntEmpty)
 
 @app.route("/video/<video_name>.m3u8", methods=["GET"])
 def create_m3u8(video_name):
@@ -256,7 +259,13 @@ def get_chunk(video_name, idx=0):
             videoCodec = "h264_nvenc"
             PIX = "-pix_fmt"
             PIXcodec = "yuv420p"
-            preset = "7"
+            preset = "3"
+            bitrate = "-b:v"
+            bitrateValue = "5M"
+            crf = "-crf"
+            crfValue = "22"
+            vsync = "-vsync"
+            vsyncValue = "0"
         else:
             videoCodec = "h264"
             preset = "ultrafast"
@@ -273,7 +282,7 @@ def get_chunk(video_name, idx=0):
 
         if PIX:
             command = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", time_start, "-to", time_end, "-i", video_path,
-                "-output_ts_offset", time_start, "-c:v", videoCodec, "-c:a", "copy", PIX, PIXcodec,"-preset", "ultrafast", "-ac" ,"2", "-f", "mpegts",
+                "-output_ts_offset", time_start, "-c:v", videoCodec, "-c:a", "copy", PIX, PIXcodec,"-preset", preset, bitrate, bitrateValue, crf, crfValue, vsync, vsyncValue, "-ac" ,"2", "-f", "mpegts",
                 "pipe:1"]
         else:
             command = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", time_start, "-to", time_end, "-i", video_path,
@@ -289,7 +298,7 @@ def get_chunk(video_name, idx=0):
         print(f"VideoCodec: {movieVideoStats['codec_name']}\nAudioCodec: {movieAudioStats['codec_name']}")
         if PIX:
             command = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", time_start, "-to", time_end, "-i", video_path,
-               "-output_ts_offset", time_start, "-c:v", videoCodec, "-c:a", "aac", PIX, PIXcodec, "-preset", preset, "-ac" ,"2", "-f", "mpegts",
+               "-output_ts_offset", time_start, "-c:v", videoCodec, "-c:a", "aac", PIX, PIXcodec, "-preset", preset, bitrate, bitrateValue, crf, crfValue, vsync, vsyncValue, "-ac" ,"2", "-f", "mpegts",
                "pipe:1"]
         else:
             command = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", time_start, "-to", time_end, "-i", video_path,
@@ -304,13 +313,6 @@ def get_chunk(video_name, idx=0):
     response.headers.set("Content-Disposition", "attachment", filename=f"{video_name}-{idx}.ts")
 
     return response
-
-@app.route("/films")
-def films():
-    searchedFilmsUp0 = len(searchedFilms) == 0
-    # order by alphabetical order using the id title
-    searchedFilms.sort(key=lambda x: x["title"])
-    return render_template('films.html', searchedFilms=searchedFilms, conditionIfOne=searchedFilmsUp0)
 
 
 @app.route("/settings")
@@ -333,6 +335,46 @@ def saveSettings():
         config.write(conf)
     return redirect(url_for('settings'))
 
+@app.route('/')
+@app.route('/index')
+@app.route('/home')
+def home():
+    moviesPath = config.get("ChocolateSettings", "MoviesPath")
+    filmIsntEmpty = moviesPath != "Empty"
+    return render_template('index.html', moviesExist=filmIsntEmpty)
+
+@app.route("/films")
+def films():
+    searchedFilmsUp0 = len(searchedFilms) == 0
+    # order by alphabetical order using the id title
+    searchedFilms.sort(key=lambda x: x["title"])
+    errorMessage = "Verify that the path is correct"
+    return render_template('films.html', searchedFilms=searchedFilms, conditionIfOne=searchedFilmsUp0, errorMessage=errorMessage)
+
+
+@app.route("/search/<search>")
+def search(search):
+    global searchedFilms
+    bestMatchs = []
+    points = {}
+    for movie in searchedFilms:
+        # if there's only one word in the search, it's a direct match
+        if len(search.split(" ")) == 1:
+            search = f"{search} test"
+        search = search.replace(" test", "")
+        for word in search.split(" "):
+            if (word.lower() in movie["title"].lower()) and (word.lower() != " " or word.lower() != "" or word.lower() != None):
+                points[movie["title"]] = points.get(movie["title"], 0) + 1
+                if movie not in bestMatchs:
+                    bestMatchs.append(movie)
+
+    if len(bestMatchs) >= 2:
+        bestMatchs.sort(key=lambda x: points[x["title"]], reverse=True)
+    searchedFilmsUp0 = len(bestMatchs) == 0
+    errorMessage = "Verify your search terms"
+    return render_template('films.html', searchedFilms=bestMatchs, conditionIfOne=searchedFilmsUp0, errorMessage=errorMessage)
+
+
 
 @app.route("/movie/<slug>")
 def movie(slug):
@@ -347,4 +389,5 @@ def movie(slug):
 
 if __name__ == '__main__':
     getMovies()
+    print("Starting server...")
     app.run(host="0.0.0.0", port="8500")

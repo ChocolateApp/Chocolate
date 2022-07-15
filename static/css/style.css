@@ -81,7 +81,7 @@ header {
 }
 
 .movies {
-    margin-top: 20vh;
+    margin-top: 16vh;
     width: 100vw;
     display: flex;
     flex-wrap: wrap;
@@ -462,4 +462,10 @@ header {
 #buttonNo {
     background: red;
     left: 22vw;
+}
+
+.buttonSearch {
+    cursor: pointer;
+    background-color: #ffffff00;
+    border: none;
 }
