@@ -22,7 +22,7 @@ And enjoy
 
 - [ ] Custom card layout
 - [ ] Filter by genre, alphabetical, etc.
-- [ ] Add a search bar
+- [X] Add a search bar
 - [X] Add year, duration, genre, to the popup
 - [ ] Add actors to the popup
 - [X] Permit to restart where you left off the movie
