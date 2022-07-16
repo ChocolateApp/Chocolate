@@ -6,6 +6,28 @@ closePopup.addEventListener("click", function() {
     document.body.style.overflow = "auto"
 })
 
+function resolverSyntaxError(cast, e) {
+    e = e.toString().split(" ")[e.toString().split(" ").length - 1]
+        // convert to string
+    cast = JSON.stringify(cast)
+    cast = cast.replaceAll('\\"', '"')
+    cast1 = cast.substring(0, e)
+    cast2 = cast.substring(e, cast.length)
+    cast2 = cast2.substring(1, cast2.length)
+    cast = cast1 + "\'" + cast2
+    cast = cast.substring(1, cast.length - 1)
+    console.log(cast)
+    try {
+        cast = JSON.parse(cast)
+    } catch (er) {
+        if (er instanceof SyntaxError) {
+            console.log("SyntaxError = " + er)
+            cast = resolverSyntaxError(er)
+        }
+    }
+    return cast
+}
+
 covers = document.getElementsByClassName("cover")
 for (var i = 0; i < covers.length; i++) {
     covers[i].addEventListener("click", function() {
@@ -28,24 +50,13 @@ for (var i = 0; i < covers.length; i++) {
 
         movieCast = movieCast.replaceAll("'", '"')
 
-
-        movieCast = JSON.parse(movieCast)
-
-        // order by the default order of the cast
-
-        movieCast.sort(function(a, b) {
-            var nameA = a[0].toUpperCase(); // ignore upper and lowercase
-            var nameB = b[0].toUpperCase(); // ignore upper and lowercase
-            if (nameA < nameB) {
-                return -1;
+        try {
+            movieCast = JSON.parse(movieCast)
+        } catch (e) {
+            if (e instanceof SyntaxError) {
+                movieCast = resolverSyntaxError(movieCast, e)
             }
-            if (nameA > nameB) {
-                return 1;
-            }
-            // names must be equal
-            return 0;
-        })
-
+        }
 
         var imagePopup = document.getElementsByClassName("coverPopup")[0]
         imagePopup.setAttribute("src", moviePoster);
