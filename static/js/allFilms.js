@@ -42,10 +42,10 @@ closePopup.addEventListener("click", function() {
     var similar = document.getElementsByClassName("containerSimilar")[0]
     similar.style.gridTemplateColumns = "repeat(0, 1fr)"
 
-    trailerVideo = document.getElementsByClassName("containerTrailer")[0]
-    while (trailerVideo.firstChild) {
-        trailerVideo.removeChild(trailerVideo.firstChild)
-    }
+    var trailerVideo = document.getElementById("trailerVideo")
+    trailerVideo.setAttribute("src", "")
+    trailerVideo.remove()
+
 })
 
 function setPopup() {
@@ -57,7 +57,7 @@ function setPopup() {
 
             document.body.style.overflow = "hidden"
 
-            image = content.children[0].children[0]
+            image = content.children[0]
             movieTitle = image.title;
 
             fetch("/getMovieData/" + movieTitle).then(function(response) {
@@ -203,91 +203,80 @@ function setPopup() {
     })
 }
 
-function getActorMovies() {
-    route = document.getElementById("routeToUse")
-    routeToUse = route.getAttribute("class")
-    route.parentNode.removeChild(route)
+
+function getFirstMovies() {
+    movies = document.getElementsByClassName("movies")[0]
+    routeToUse = movies.getAttribute("id")
+    movies.id = "movies"
     fetch(routeToUse).then(function(response) {
         return response.json()
     }).then(function(data) {
+        for (var i = 0; i < data.length; i++) {
+            if (i != 0) {
+                movies = document.getElementsByClassName("movies")[0]
+                var movie = data[i]
+                var cover = document.createElement("div")
+                cover.className = "cover"
+                cover.style.marginBottom = "2vh"
+                var content = document.createElement("div")
+                content.className = "content"
+                var image = document.createElement("img")
+                image.className = "cover_movie"
 
-        actorName = data.actorName
-        actorImageLink = data.actorImage
-        actorDescriptionText = data.actorDescription
-        actorBirthday = data.actorBirthday
-        actorBirthplace = data.actorBirthplace
-        actorMovies = data.actorMovies
+                image.src = movie.cover
+                if (image.src == "https://image.tmdb.org/t/p/originalNone") {
+                    image.src = brokenPath
+                }
+                image.title = movie.realTitle
+                image.alt = movie.realTitle
 
-        actorNameTitle = document.getElementsByClassName("actorName")[0]
-        actorNameTitle.innerHTML = actorName
+                content.appendChild(image)
+                cover.appendChild(content)
+                movies.appendChild(cover)
+            } else {
+                bigBanner = document.getElementsByClassName("bigBanner")[0]
+                imageBanner = document.getElementsByClassName("bannerCover")[0]
+                genreBanner = document.getElementsByClassName("bannerGenre")[0]
+                titleBanner = document.getElementsByClassName("bannerTitle")[0]
+                descriptionBanner = document.getElementsByClassName("bannerDescription")[0]
+                watchNow = document.getElementsByClassName("watchNowA")[0]
 
-        actorImage = document.getElementsByClassName("actorPicture")[0]
-        actorImage.setAttribute("src", actorImageLink)
-        actorImage.setAttribute("alt", actorName)
-        actorImage.setAttribute("title", actorName)
+                movie = data[i]
 
-        actorDescription = document.getElementsByClassName("actorBiography")[0]
-        actorDescription.innerHTML = actorDescriptionText
-        actorDescription.innerHTML = actorDescription.innerHTML.substring(0, 1100) + "..."
-        actorDescription.innerHTML += " <a id='lireLaSuite' href='#'>Lire la suite</a>"
-        actorMovieDiv = document.getElementsByClassName("actorMoviesList")[0]
-        lireLaSuite = document.getElementById("lireLaSuite")
-        lireLaSuite.addEventListener("click", function() {
-            actorDescription.innerHTML = actorDescriptionText
-            actorInformation = document.getElementById("actorInformations")
-            actorInformation.style.overflow = "scroll"
-        })
+                var movieUrl = movie.slug
+                movieUrl = "/movie/" + movieUrl
 
+                imageBanner.setAttribute("src", movie.banner)
+                if (imageBanner.src == "https://image.tmdb.org/t/p/originalNone") {
+                    imageBanner.src = brokenPath
+                }
+                imageBanner.setAttribute("alt", movie.realTitle)
+                imageBanner.setAttribute("title", movie.realTitle)
 
+                titleBanner.innerHTML = movie.realTitle
 
-        for (i = 0; i < actorMovies.length; i++) {
-            realTitle = actorMovies[i].realTitle
-            cover = actorMovies[i].cover
-            actorMovie = document.createElement("div")
-            actorMovie.setAttribute("class", "actorMovie cover")
-            actorMovie.setAttribute("id", "cover")
+                descriptionBanner.innerHTML = movie.description
+                descriptionBanner.innerHTML = descriptionBanner.innerHTML.substring(0, 200) + "..."
+                descriptionBanner.innerHTML += " <a id='lireLaSuite' href='#'>Lire la suite</a>"
 
-            actorMovieContent = document.createElement("div")
-            actorMovieContent.setAttribute("class", "actorMovieContent content")
+                lireLaSuite = document.getElementById("lireLaSuite")
+                lireLaSuite.addEventListener("click", function() {
+                    descriptionBanner.innerHTML = movie.description
+                })
 
-            actorMoviePicture = document.createElement("img")
-            actorMoviePicture.setAttribute("class", "actorMoviePicture cover_movie")
-            actorMoviePicture.setAttribute("src", cover)
-            actorMoviePicture.setAttribute("alt", realTitle)
-            actorMoviePicture.setAttribute("title", realTitle)
+                genreBanner.innerHTML = movie.genre
 
-            actorMovieTitle = document.createElement("p")
-            actorMovieTitle.setAttribute("class", "actorMovieTitle")
-            actorMovieTitle.innerHTML = realTitle
-
-            actorMovie.appendChild(actorMoviePicture)
-            actorMovie.appendChild(actorMovieTitle)
-            actorMovieContent.appendChild(actorMovie)
-            actorMovieDiv.appendChild(actorMovieContent)
-
+                watchNow.setAttribute("href", movieUrl)
+            }
         }
 
-        if (actorMovies.length === 1) {
-            actorMovieDiv.style.gridTemplateColumns = "repeat(1, 1fr)"
-            actorMovieDiv.style.gridTemplateColumns = "50px 50px 50px";
-            actorMovieDiv.style.display = "inline-grid"
-        } else if (actorMovies.length === 2) {
-            actorMovieDiv.style.gridTemplateColumns = "repeat(2, 1fr)"
-            actorMovieDiv.style.display = "inline-grid"
-        } else if (actorMovies.length >= 3) {
-            actorMovieDiv.style.gridTemplateColumns = "repeat(3, 1fr)"
-            actorMovieDiv.style.display = "inline-grid"
-        } else {
-            actorMovieDiv.style.display = "none"
-        }
         setPopup()
     })
 }
-
 
 window.onload = function() {
     brokenPathDiv = document.getElementsByClassName("brokenPath")[0]
     brokenPath = brokenPathDiv.getAttribute("id")
     brokenPathDiv.parentNode.removeChild(brokenPathDiv)
-    getActorMovies()
+    getFirstMovies()
 }

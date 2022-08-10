@@ -11,8 +11,9 @@ homeButton.addEventListener("click", function() {
 
 function search() {
     var search = document.getElementById("search").value
-    console.log("Fonction search()")
-    window.location.href = "/search/" + search
+    if (search != "") {
+        window.location.href = "/search/" + search
+    }
 }
 
 searchForm = document.getElementById("searchForm")

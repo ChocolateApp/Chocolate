@@ -46,8 +46,6 @@ closePopup.addEventListener("click", function() {
     trailerVideo.setAttribute("src", "")
     trailerVideo.remove()
 
-
-
 })
 
 function setPopup() {
@@ -87,9 +85,6 @@ function setPopup() {
                 } else {
                     containerSimilar.style.display = "inline-grid"
                 }
-
-                var similar = document.getElementsByClassName("containerSimilar")[0]
-                similar.style.gridTemplateColumns = "repeat(0, 1fr)"
 
                 for (var i = 0; i < movieSimilar.length; i++) {
                     if (i < 4) {
@@ -192,6 +187,10 @@ function setPopup() {
                 } else {
                     trailer.style.display = "block"
                     trailerVideo = document.createElement("iframe")
+                    regex = /^(http|https):\/\//g
+                    if (regex.test(movieTrailer)) {
+                        movieTrailer.replace(regex, "")
+                    }
                     trailerVideo.setAttribute("src", movieTrailer)
                     trailerVideo.setAttribute("class", "trailerVideo")
                     trailerVideo.setAttribute("id", "trailerVideo")

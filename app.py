@@ -1,3 +1,4 @@
+from math import dist
 from flask import Flask, url_for, request, render_template, redirect, make_response
 from flask_cors import CORS
 from tmdbv3api import TMDb, Movie, TV, Person
@@ -53,12 +54,6 @@ genreList = {
 genresUsed = []
 movieExtension = ""
 websitesTrailers = {"YouTube": "https://www.youtube.com/embed/", "Dailymotion": "https://www.dailymotion.com/video/", "Vimeo": "https://vimeo.com/"}
-
-
-class Object:
-    def toJSON(self):
-        return json.dumps(self, default=lambda o: o.__dict__, 
-            sort_keys=True, indent=4)
 
 def getMovie(slug):
     for filmData in searchedFilms:
@@ -456,32 +451,32 @@ def films():
     routeToUse = "/getFirstEightMovies"
     return render_template('homeFilms.html', conditionIfOne=searchedFilmsUp0, errorMessage=errorMessage, routeToUse=routeToUse)
 
-@app.route("/library")
+@app.route("/movieLibrary")
 def library():
     global allMoviesSorted
     searchedFilmsUp0 = len(searchedFilms) == 0
     errorMessage = "Verify that the path is correct"
     routeToUse = "/getAllMovies"
-    return render_template('films.html', conditionIfOne=searchedFilmsUp0, errorMessage=errorMessage, routeToUse=routeToUse)
-
-#write a levenshtein distance function
-def levenshteinDistance(s1, s2):
+    return render_template('allFilms.html', conditionIfOne=searchedFilmsUp0, errorMessage=errorMessage, routeToUse=routeToUse)
+    
+def jaroDistance(s1, s2):
     if len(s1) < len(s2):
-        return levenshteinDistance(s2, s1)
+        return jaroDistance(s2, s1)
     if len(s2) == 0:
         return len(s1)
-    previous_row = range(len(s2) + 1)
-    for i, c1 in enumerate(s1):
-        current_row = [i + 1]
-        for j, c2 in enumerate(s2):
-            insertions = previous_row[j + 1] + 1 # j+1 instead of j since previous_row and current_row are one character longer
-            deletions = current_row[j] + 1       # than s2
-            substitutions = previous_row[j] + (c1 != c2)
-            current_row.append(min(insertions, deletions, substitutions))
-        previous_row = current_row
-    return previous_row[-1]
-    
-    
+    matches = 0
+    transpositions = 0
+    for i in range(len(s1)):
+        if i > (len(s2) - 1):
+            break
+        if s1[i] == s2[i]:
+            matches += 1
+        elif i > 0 and s1[i] == s2[i-1] and s1[i-1] == s2[i]:
+            transpositions += 1
+    if matches == 0:
+        return 0
+    return ((matches / len(s1)) + (matches / len(s2)) + ((matches - transpositions / 2) / matches)) / 3
+
 
 @app.route("/searchInAllMovies/<search>")
 def searchInAllMovies(search):
@@ -494,11 +489,11 @@ def searchInAllMovies(search):
             search = f"{search} test"
         search = search.replace(" test", "")
         for word in search.split(" "):
-            distance = levenshteinDistance(word, movie["title"])
+            distance = jaroDistance(word, movie["title"])
             points[movie["title"]] = 0
             points[movie["title"]] = points[movie["title"]] + distance
-
     bestMatchs = sorted(points.items(), key=lambda x: x[1])
+    bestMatchs.reverse()
     for movie in bestMatchs:
         thisMovie = movie[0]
         for films in simpleData:
@@ -513,9 +508,7 @@ def search(search):
     searchedFilmsUp0 = False
     errorMessage = "Verify your search terms"
     routeToUse = "/searchInAllMovies/" + search
-    return render_template('films.html', conditionIfOne=searchedFilmsUp0, errorMessage=errorMessage, routeToUse=routeToUse)
-
-
+    return render_template('allFilms.html', conditionIfOne=searchedFilmsUp0, errorMessage=errorMessage, routeToUse=routeToUse)
 
 @app.route("/movie/<slug>")
 def movie(slug):

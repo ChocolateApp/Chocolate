@@ -40,7 +40,7 @@ input {
 header {
     width: 3vw;
     height: 100vh;
-    position: absolute;
+    position: fixed;
     z-index: 999;
     background: rgba(0, 0, 0, 0.62);
     backdrop-filter: blur(50px);
@@ -57,16 +57,18 @@ form#searchForm .form_field {
 }
 
 form#searchForm:hover .form_field {
+    transition: width 300ms;
     width: 15vw;
+    font-size: 2vh;
 }
 
 .form_field {
     border: none;
     padding-left: 0.5vw;
-    font-size: 3vh;
+    font-size: 0;
     position: absolute;
     width: 2vw;
-    height: 2vw;
+    height: 4vh;
     right: 3.7vw;
     top: 1.2vh;
     background: rgba(255, 255, 255, 0.15);
@@ -81,7 +83,7 @@ form#searchForm:hover .form_field {
 .search_icon {
     color: #ffffff;
     position: absolute;
-    right: 4vw;
+    right: 4.04vw;
     top: 1.8vh;
     z-index: 3;
     font-size: 1.25vw;
@@ -132,7 +134,7 @@ form#searchForm:hover .form_field {
 }
 
 .card {
-    background: rgba(255, 255, 255, 0.4);
+    background: #272727;
     backdrop-filter: blur(50px);
     border-radius: 2vw;
     top: 25vh;
@@ -179,6 +181,7 @@ form#searchForm:hover .form_field {
     z-index: 999;
     background: rgba(0, 0, 0, 0.7);
     filter: blur(2vh);
+    pointer-events: none;
 }
 
 .homeIcon {
@@ -203,21 +206,6 @@ form#searchForm:hover .form_field {
     font-size: 3vh;
     left: 0.85vw;
     top: 48vh;
-}
-
-.title {
-    position: absolute;
-    left: 7vw;
-    top: 1.75vh;
-    font-family: 'Inter';
-    font-style: normal;
-    font-weight: 500;
-    font-size: 2vw;
-    line-height: 4vh;
-    display: flex;
-    align-items: center;
-    text-align: center;
-    color: #9903D5;
 }
 
 .settings {
@@ -250,6 +238,7 @@ form#searchForm:hover .form_field {
     margin-bottom: 8vw;
     padding: 0;
     bottom: 0;
+    width: 20vw !important;
 }
 
 .moviesPathDiv label,
@@ -269,21 +258,30 @@ form#searchForm:hover .form_field {
 .saveSettings {
     height: 10vh;
     width: 12vw;
-    font-size: 2.5vh;
-    background: rgb(81 55 186);
-    border: none;
-    border-radius: 1.5vh;
     margin-top: 6vh;
     margin-bottom: 2vw;
+    display: inline-block;
+    font-family: Arial;
+    text-decoration: none;
+    z-index: 5;
+    border-radius: 1.5vw;
+    border: 0.2vw solid #ffffff;
+    cursor: pointer;
+    color: #ffffff;
+    font-size: 1.4vh;
+    padding: 2vh 4vw;
+    transition: 300ms;
+    background: none;
+}
+
+.saveSettings:hover {
+    background: white;
+    color: #1d1d1d;
 }
 
 .saveSettingsForm {
     margin-top: 21vh;
     text-align: center;
-}
-
-.saveSettings:hover {
-    background: rgb(67 44 159);
 }
 
 #playPauseButton,
@@ -295,28 +293,6 @@ form#searchForm:hover .form_field {
     position: absolute;
     bottom: 85px;
     left: 480px;
-}
-
-.movieStats {
-    display: grid;
-    grid-template-columns: 1fr;
-    grid-template-rows: repeat(3, 1fr);
-    grid-column-gap: 0px;
-    grid-row-gap: 0px;
-    position: absolute;
-    top: 62vh;
-    background-color: #7a16d2;
-    border-radius: 2vh;
-    width: 165vh;
-    left: 18vh;
-    height: 33vh;
-    padding: 1vh;
-}
-
-.statsTitle,
-.statsNote,
-.statsDesc {
-    display: inline-block;
 }
 
 #playerWrapper {
@@ -335,7 +311,7 @@ form#searchForm:hover .form_field {
     height: 96vh;
     position: fixed;
     top: 2vh;
-    background: rgba(255, 255, 255, 0.4);
+    background: rgb(39 39 39 / 0.62);
     backdrop-filter: blur(115px);
     border-radius: 2vw;
     margin-left: 2vw;
@@ -354,7 +330,7 @@ form#searchForm:hover .form_field {
         opacity: 1;
         width: 96vw;
         height: 96vh;
-        background-color: rgba(255, 255, 255, 0.4);
+        background-color: #272727;
     }
 }
 
@@ -393,7 +369,7 @@ form#searchForm:hover .form_field {
     font-size: 4vh;
     cursor: pointer;
     z-index: 1;
-    color: #3C72CE;
+    color: white;
 }
 
 .titlePopup {
@@ -421,18 +397,27 @@ form#searchForm:hover .form_field {
 .playPopup {
     position: absolute;
     left: 56vw;
-    font-size: 4vh;
-    bottom: 5vh;
-    background-color: #30bf6e;
-    border-radius: 2vh;
+    bottom: 2vh;
+    border-radius: 1.5vw;
+    border: 0.2vw solid #ffffff;
+    cursor: pointer;
+    color: #ffffff;
+    font-size: 1.4vh;
     padding: 2vh 2vw;
     text-decoration: none;
-    text-shadow: 0px 1px 0px #2f6627;
-    color: #ffffff;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    transition: 300ms;
+}
+
+.playPopup:hover {
+    background: white;
+    color: #1d1d1d;
 }
 
 .playPopup ion-icon {
-    margin-right: 2vw;
+    margin-right: 0vw;
 }
 
 .video-js[tabindex="-1"] {
@@ -460,7 +445,7 @@ form#searchForm:hover .form_field {
     height: 18vh;
     position: absolute;
     top: 41vh;
-    background: rgba(255, 255, 255, 0.4);
+    background: #272727;
     backdrop-filter: blur(115px);
     border-radius: 2vw;
     left: 31vw;
@@ -484,12 +469,12 @@ form#searchForm:hover .form_field {
 }
 
 #buttonYes {
-    background: green;
+    background: rgb(0, 80, 0);
     left: 11vw;
 }
 
 #buttonNo {
-    background: red;
+    background: rgb(80, 0, 0);
     left: 22vw;
 }
 
@@ -514,7 +499,7 @@ form#searchForm:hover .form_field {
 }
 
 .popupContent::-webkit-scrollbar-thumb {
-    background-color: #a961ea;
+    background-color: #383838;
     border-radius: 48vh;
 }
 
@@ -591,7 +576,7 @@ form#searchForm:hover .form_field {
     width: var(--videoWidth);
     height: calc((var(--videoWidth) / 16)* 9);
     margin-left: 12vw;
-    margin-top: 2vh;
+    margin-top: 4vh;
     border: none;
 }
 
@@ -604,27 +589,28 @@ form#searchForm:hover .form_field {
     justify-items: center;
     align-content: space-evenly;
     align-items: center;
-    width: 100vw;
-    margin-top: -6vh;
+    width: 65vw;
+    margin-top: 4vh;
+    margin-left: 15vw;
 }
 
 .moviesTitle {
     text-align: center;
-    margin-left: 45vw;
-    margin-right: 45vw;
-    background: rgba(255, 255, 255, 0.4);
+    margin-left: 38vw;
+    background: #272727;
     backdrop-filter: blur(50px);
     border-radius: 9999999999vw;
     font-size: 3vh;
     padding: 1vh;
     margin-top: 4vh;
+    width: 18vw;
 }
 
 .actorInformations {
     width: 65vw;
     margin-left: 15vw;
     margin-top: 20vh;
-    background: rgba(255, 255, 255, 0.4);
+    background: #272727;
     backdrop-filter: blur(50px);
     border-radius: 2vw;
     height: 36vh;
@@ -692,14 +678,14 @@ form#searchForm:hover .form_field {
     font-size: 1.4vh;
     padding: 3vh 4vw;
     text-decoration: none;
-    z-index: 5;
-    position: absolute;
-    top: 40vh;
-    left: 10vw;
     font-weight: 700;
     display: flex;
     align-items: center;
     transition: 300ms;
+    z-index: 5;
+    position: absolute;
+    top: 40vh;
+    left: 10vw;
 }
 
 .watchNowA:hover {
@@ -758,5 +744,5 @@ form#searchForm:hover .form_field {
 }
 
 .actorInfo {
-    margin-top: -10vh;
+    margin-top: -15vh;
 }

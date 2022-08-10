@@ -1,0 +1,22 @@
+{% extends 'header.html' %} {% block content %} {% if conditionIfOne %}
+
+<h1 style="text-align: center;width: 100vw;position: absolute;top: 23vh;color: black;">{{ errorMessage }}</h1>
+
+{% else %} {% include 'popup.html' %}
+<div class="bigBanner">
+    <img src="" class="bannerCover">
+    <p class="bannerGenre">
+    </p>
+    <h1 class="bannerTitle"></h1>
+    <p class="bannerDescription">
+    </p>
+    <a class="watchNowA">
+        <ion-icon class="watchNow" name="play" role="img" class="md hydrated" aria-label="play outline"></ion-icon>
+        Watch Now
+    </a>
+</div>
+
+<div class="movies" id="{{ routeToUse }}"></div>
+<div class="brokenPath" id="{{ url_for('static',filename='img/broken.png') }}"></div>
+<script src="{{ url_for('static',filename='js/allFilms.js') }}"></script>
+{% endif %}{% endblock %}
