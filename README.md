@@ -20,7 +20,6 @@ And enjoy
 
 # Todo
 
-- [ ] Custom card layout
 - [ ] Filter by genre, alphabetical, etc.
 - [X] Add a search bar
 - [X] Add year, duration, genre, to the popup
