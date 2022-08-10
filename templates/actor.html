@@ -1,0 +1,19 @@
+{% extends 'header.html' %} {% block content %} {% include 'popup.html' %}
+
+<div class="actorInfo">
+    <div class="actorInformations" id="actorInformations">
+        <h1 class="actorName"></h1>
+        <img class="actorPicture" src="" alt="">
+        <p class="actorBiography"></p>
+    </div>
+    <div class="actorMovies">
+        <h2 class="moviesTitle">Movies</h2>
+        <div class="actorMoviesList">
+        </div>
+    </div>
+</div>
+<div id="routeToUse" class="{{ routeToUse }}"></div>
+<div class="brokenPath" id="{{ url_for('static',filename='img/broken.png') }}"></div>
+<script src="{{ url_for('static',filename='js/actor.js') }}"></script>
+
+{% endblock %}

@@ -1,25 +1,29 @@
 from flask import Flask, url_for, request, render_template, redirect, make_response
 from flask_cors import CORS
-from tmdbv3api import TMDb, Movie, TV
+from tmdbv3api import TMDb, Movie, TV, Person
 from tmdbv3api.exceptions import TMDbException
 from videoprops import get_video_properties, get_audio_properties
 from bs4 import BeautifulSoup
 from pathlib import Path
-import requests, os, subprocess, configparser, socket, datetime, subprocess, socket, platform, GPUtil
+import requests, os, subprocess, configparser, socket, datetime, subprocess, socket, platform, GPUtil, json
+from Levenshtein import distance as lev
+
 
 app = Flask(__name__)
 CORS(app)
-tmdb = TMDb()
 config = configparser.ConfigParser()
 config.read('config.ini')
+tmdb = TMDb()
 tmdb.api_key = 'cb862a91645ec50312cf636826e5ca1f'
 tmdb.language = config["ChocolateSettings"]["language"]
 tmdb.debug = True
 movie = Movie()
 searchedFilms = []
+simpleData = []
 currentCWD = os.getcwd()
 allMovies = []
 allMoviesNotSorted = []
+allMoviesDict = {}
 hostname = socket.gethostname()
 local_ip = socket.gethostbyname(hostname)
 config.set("ChocolateSettings", "localIP", local_ip)
@@ -47,7 +51,14 @@ genreList = {
     37: "Western",
 }
 genresUsed = []
+movieExtension = ""
+websitesTrailers = {"YouTube": "https://www.youtube.com/embed/", "Dailymotion": "https://www.dailymotion.com/video/", "Vimeo": "https://vimeo.com/"}
 
+
+class Object:
+    def toJSON(self):
+        return json.dumps(self, default=lambda o: o.__dict__, 
+            sort_keys=True, indent=4)
 
 def getMovie(slug):
     for filmData in searchedFilms:
@@ -85,7 +96,7 @@ def getMovies():
             continue
         if searchedFilm.endswith("/") == False and searchedFilm.endswith(("mp4", "mp4v", "mov", "avi", "flv", "wmv", "asf", "mpeg","mpg", "mkv", "ts")):
             movieTitle = searchedFilm
-            originalMovieTitle = f"{movieTitle.split('.')[0]}.{movieTitle.split('.')[1]}"
+            originalMovieTitle = movieTitle
             size = len(movieTitle)
             movieTitle = movieTitle[:size - 4]
             try:
@@ -96,37 +107,51 @@ def getMovies():
                 
             if not search:
                 continue
-                
-            res = search[0]
-            movieTitle = res.title
-            movieCoverPath = res.poster_path
+            index = filmFileList.index(searchedFilm)
+            print(f"{index+1}/{len(filmFileList)}")
+            
+            bestMatch = search[0]
+            for i in range(len(search)):
+                if lev(movieTitle, search[i].title) < lev(movieTitle, bestMatch.title):
+                    bestMatch = search[i]
+                elif lev(movieTitle, search[i].title) == lev(movieTitle, bestMatch.title):
+                    bestMatch = bestMatch
+                if lev(movieTitle, bestMatch.title) == 0:
+                    break
+            res = bestMatch
+            name = res.title
+            movieCoverPath = f"https://image.tmdb.org/t/p/original{res.poster_path}"
+            banniere = f"https://image.tmdb.org/t/p/original{res.backdrop_path}"
             description = res.overview
             note = res.vote_average
             date = res.release_date
             movieId = res.id
-            # get movie details
-            # get the index of the movie in the list
-            index = filmFileList.index(searchedFilm)
-            print(f"{index+1}/{len(filmFileList)}")
             details = movie.details(movieId)
+
             casts = details.casts.cast
             theCast = []
             for cast in casts:
                 while len(theCast) < 5:
                     characterName = cast.character
-                    if "'" in characterName:
-                        stringToRemove = characterName.split("'")[1]
-                        characterName = characterName.replace(f" '{stringToRemove}'", "")
-
                     actor = [cast.name, characterName , f"https://www.themoviedb.org/t/p/w600_and_h900_bestv2{cast.profile_path}"]
                     if actor not in theCast:
                         theCast.append(actor)
                     else:
                         break
+            theBigCast = []
+            for cast in casts:
+                characterName = cast.character
+                actor = [cast.name, characterName , f"https://www.themoviedb.org/t/p/w600_and_h900_bestv2{cast.profile_path}"]
+                if actor not in theBigCast:
+                    theBigCast.append(actor)
+                else:
+                    break
+
             try:
                 date = datetime.datetime.strptime(date, "%Y-%m-%d").strftime("%d/%m/%Y")
             except ValueError:
-                continue
+                date = "Unknown"
+
             genre = res.genre_ids
             video_path = f"{path}\{originalMovieTitle}"
             # convert seconds to hours, minutes and seconds
@@ -166,30 +191,63 @@ def getMovies():
             for genreId in genre:
                 movieGenre.append(genreList[genreId])
 
+            bandeAnnonce = details.videos.results
+            if len(bandeAnnonce) > 0:
+                for video in bandeAnnonce:
+                    bandeAnnonceType = video.type
+                    bandeAnnonceHost = video.site
+                    bandeAnnonceKey = video.key
+                    if bandeAnnonceType == "Trailer":
+                        try:
+                            bandeAnnonceUrl = websitesTrailers[bandeAnnonceHost] + bandeAnnonceKey
+                            break
+                        except KeyError as e:
+                            bandeAnnonceUrl = "Unknown"
+                            print(e)
 
 
-            coverFullPath = f"https://image.tmdb.org/t/p/original{movieCoverPath}"
             filmData = {
-            "title": movieTitle,
-            "cover": coverFullPath,
-            "slug": originalMovieTitle,
-            "description": description,
-            "note": note,
-            "date": date,
-            "genre": movieGenre,
-            "duration": str(duration),
-            "id": movieId,
-            "cast": theCast,
+                "title": movieTitle,
+                "realTitle": name,
+                "cover": movieCoverPath,
+                "banner": banniere,
+                "slug": originalMovieTitle,
+                "description": description,
+                "note": note,
+                "date": date,
+                "genre": movieGenre,
+                "duration": str(duration),
+                "id": movieId,
+                "cast": theCast,
+                "theBigCast": theBigCast,
+                "bandeAnnonce": bandeAnnonceUrl,
             }
 
             searchedFilms.append(filmData)
+            simpleFilmData = {
+                "title": movieTitle,
+                "realTitle": name,
+                "cover": movieCoverPath,
+                "banner": banniere,
+                "genre": movieGenre,
+                "description": description,
+                "slug": originalMovieTitle,
+            }
+            simpleData.append(simpleFilmData)
             filmDataToAppend = {
                 "title": movieTitle,
+                "realTitle": name,
+                "cover": movieCoverPath,
+                "banner": banniere,
+                "slug": originalMovieTitle,
                 "id": res.id,
                 "description": description,
                 "note": note,
             }
             allMovies.append(filmDataToAppend)
+            allMoviesDict[name] = filmData
+
+
         elif searchedFilm.endswith("/") == False :
             allMoviesNotSorted.append(searchedFilm)
 
@@ -252,9 +310,11 @@ def create_m3u8(video_name):
 
 @app.route("/chunk/<video_name>-<int:idx>.ts", methods=["GET"])
 def get_chunk(video_name, idx=0):
+    global movieExtension
     seconds = (idx - 1) * CHUNK_LENGTH
     moviesPath = config.get("ChocolateSettings", "MoviesPath")
-    video_path = f"{moviesPath}\{video_name}.mkv"
+    video_path = f"{moviesPath}\{video_name}.{movieExtension}"
+    print(video_path)
 
     time_start = str(datetime.timedelta(seconds=seconds))
     time_end = str(datetime.timedelta(seconds=seconds + CHUNK_LENGTH))
@@ -286,7 +346,8 @@ def get_chunk(video_name, idx=0):
                 "pipe:1"]
 
     elif movieAudioStats['codec_name'] == "aac" and movieVideoStats['codec_name'] != "h264":
-        print(f"VideoCodec: {movieVideoStats['codec_name']}")
+        print(f"AudioCodec: {movieAudioStats['codec_name']}")
+        print(f"VideoCoder: {movieVideoStats['codec_name']}")
 
         if PIX:
             command = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", time_start, "-to", time_end, "-i", video_path,
@@ -299,11 +360,13 @@ def get_chunk(video_name, idx=0):
 
     elif movieAudioStats['codec_name'] != "aac" and movieVideoStats['codec_name'] == "h264":
         print(f"AudioCodec: {movieAudioStats['codec_name']}")
+        print(f"VideoCoder: {movieVideoStats['codec_name']}")
         command = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", time_start, "-to", time_end, "-i", video_path,
                "-output_ts_offset", time_start, "-c:v", "copy", "-c:a", "aac", "-preset", "ultrafast", "-f", "mpegts",
                "pipe:1"]
     else:
-        print(f"VideoCodec: {movieVideoStats['codec_name']}\nAudioCodec: {movieAudioStats['codec_name']}")
+        print(f"AudioCodec: {movieAudioStats['codec_name']}")
+        print(f"VideoCoder: {movieVideoStats['codec_name']}")
         if PIX:
             command = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", time_start, "-to", time_end, "-i", video_path,
                "-output_ts_offset", time_start, "-c:v", videoCodec, "-c:a", "aac", PIX, PIXcodec, "-preset", preset, bitrate, bitrateValue, crf, crfValue, vsync, vsyncValue, "-ac" ,"2", "-f", "mpegts",
@@ -315,7 +378,6 @@ def get_chunk(video_name, idx=0):
 
     print(" ".join(command))
     pipe = subprocess.run(command, stdout=subprocess.PIPE)
-
     response = make_response(pipe.stdout)
     response.headers.set("Content-Type", "video/MP2T")
     response.headers.set("Content-Disposition", "attachment", filename=f"{video_name}-{idx}.ts")
@@ -327,8 +389,6 @@ def get_chunk(video_name, idx=0):
 def settings():
     global allMoviesNotSorted
     condition = len(allMoviesNotSorted) > 0
-    print(allMoviesNotSorted)
-    print(condition)
     return render_template("settings.html", notSorted=allMoviesNotSorted, conditionIfOne=condition)
 
 @app.route("/saveSettings/", methods=['POST'])
@@ -343,6 +403,43 @@ def saveSettings():
         config.write(conf)
     return redirect(url_for('settings'))
 
+#create a route to send all the movies to the page in a json
+@app.route("/getAllMovies")
+def getAllMovies():
+    global simpleData
+    simpleData.sort(key=lambda x: x["title"].lower())
+    return json.dumps(simpleData, ensure_ascii=False)
+
+def getSimilarMovies(movieId):
+    global simpleData
+    similarMoviesPossessed = []
+    movie = Movie()
+    similarMovies = movie.recommendations(movieId)
+    for movieInfo in similarMovies:
+        movieName = movieInfo.title
+        for movie in simpleData:
+            if movieName == movie["title"]:
+                similarMoviesPossessed.append(movie)
+                break
+    return similarMoviesPossessed
+
+@app.route("/getMovieData/<title>", methods=['GET', 'POST'])
+def getMovieData(title):
+    global allMoviesDict
+    if title in allMoviesDict.keys():
+        data = allMoviesDict[title]
+        MovieId = data["id"]
+        data["similarMovies"] = getSimilarMovies(MovieId)
+        return json.dumps(data, ensure_ascii=False)
+    else:
+        return "Not Found"
+
+@app.route("/getFirstEightMovies")
+def getFirstEightMovies():
+    global simpleData
+    simpleData.sort(key=lambda x: x["title"].lower())
+    return json.dumps(simpleData[:8], ensure_ascii=False)
+
 @app.route('/')
 @app.route('/index')
 @app.route('/home')
@@ -353,46 +450,118 @@ def home():
 
 @app.route("/films")
 def films():
+    global allMoviesSorted
     searchedFilmsUp0 = len(searchedFilms) == 0
-    searchedFilms.sort(key=lambda x: x["title"])
     errorMessage = "Verify that the path is correct"
-    return render_template('films.html', searchedFilms=searchedFilms, conditionIfOne=searchedFilmsUp0, errorMessage=errorMessage)
+    routeToUse = "/getFirstEightMovies"
+    return render_template('homeFilms.html', conditionIfOne=searchedFilmsUp0, errorMessage=errorMessage, routeToUse=routeToUse)
 
+@app.route("/library")
+def library():
+    global allMoviesSorted
+    searchedFilmsUp0 = len(searchedFilms) == 0
+    errorMessage = "Verify that the path is correct"
+    routeToUse = "/getAllMovies"
+    return render_template('films.html', conditionIfOne=searchedFilmsUp0, errorMessage=errorMessage, routeToUse=routeToUse)
 
-@app.route("/search/<search>")
-def search(search):
-    global searchedFilms
-    bestMatchs = []
+#write a levenshtein distance function
+def levenshteinDistance(s1, s2):
+    if len(s1) < len(s2):
+        return levenshteinDistance(s2, s1)
+    if len(s2) == 0:
+        return len(s1)
+    previous_row = range(len(s2) + 1)
+    for i, c1 in enumerate(s1):
+        current_row = [i + 1]
+        for j, c2 in enumerate(s2):
+            insertions = previous_row[j + 1] + 1 # j+1 instead of j since previous_row and current_row are one character longer
+            deletions = current_row[j] + 1       # than s2
+            substitutions = previous_row[j] + (c1 != c2)
+            current_row.append(min(insertions, deletions, substitutions))
+        previous_row = current_row
+    return previous_row[-1]
+    
+    
+
+@app.route("/searchInAllMovies/<search>")
+def searchInAllMovies(search):
+    global simpleData
+    bestMatchs = {}
+    movies = []
     points = {}
-    for movie in searchedFilms:
-        # if there's only one word in the search, it's a direct match
+    for movie in simpleData:
         if len(search.split(" ")) == 1:
             search = f"{search} test"
         search = search.replace(" test", "")
         for word in search.split(" "):
-            if (word.lower() in movie["title"].lower()) and (word.lower() != " " or word.lower() != "" or word.lower() != None):
-                points[movie["title"]] = points.get(movie["title"], 0) + 1
-                if movie not in bestMatchs:
-                    bestMatchs.append(movie)
+            distance = levenshteinDistance(word, movie["title"])
+            points[movie["title"]] = 0
+            points[movie["title"]] = points[movie["title"]] + distance
 
-    if len(bestMatchs) >= 2:
-        bestMatchs.sort(key=lambda x: points[x["title"]], reverse=True)
-    searchedFilmsUp0 = len(bestMatchs) == 0
+    bestMatchs = sorted(points.items(), key=lambda x: x[1])
+    for movie in bestMatchs:
+        thisMovie = movie[0]
+        for films in simpleData:
+            if films["title"] == thisMovie:
+                movies.append(films)
+                break
+    
+    return json.dumps(movies, ensure_ascii=False)
+
+@app.route("/search/<search>")
+def search(search):
+    searchedFilmsUp0 = False
     errorMessage = "Verify your search terms"
-    return render_template('films.html', searchedFilms=bestMatchs, conditionIfOne=searchedFilmsUp0, errorMessage=errorMessage)
+    routeToUse = "/searchInAllMovies/" + search
+    return render_template('films.html', conditionIfOne=searchedFilmsUp0, errorMessage=errorMessage, routeToUse=routeToUse)
 
 
 
 @app.route("/movie/<slug>")
 def movie(slug):
-    global filmEncode
+    global filmEncode, movieExtension
     if slug.endswith("ttf") == False:
-        moviesPath = config.get("ChocolateSettings", "MoviesPath")
         movieSlug = getMovie(slug)
-        movieLink = f"http://{local_ip}:8000/{slug}"
         rewriteSlug = slug.split(".")[0]
         link = f"/video/{rewriteSlug}.m3u8".replace(" ", "%20")
+        movieExtension = slug.split(".")[1]
     return render_template("film.html", movieSlug=movieSlug, slug=slug, movieUrl=link)
+
+@app.route("/actor/<actorName>")
+def actor(actorName):
+    routeToUse = "/getActorData/" + actorName
+    return render_template("actor.html", routeToUse=routeToUse)
+
+@app.route("/getActorData/<actorName>", methods=['GET', 'POST'])
+def getActorData(actorName):
+    global searchedFilms, simpleData
+    movies = []
+    person = Person()
+    actorDatas = person.search(actorName)
+    for movie in searchedFilms:
+        actors = movie["theBigCast"]
+        for actor in actors:
+            if actor[0] == actorName:
+                for movieData in simpleData:
+                    if movie["title"] == movieData["title"]:
+                        movies.append(movie)
+                        break
+    actorId = actorDatas[0].id
+    p = person.details(actorId)
+    name = p["name"]
+    image = "https://www.themoviedb.org/t/p/w300_and_h450_bestv2"+ p["profile_path"]
+    birthday = p["birthday"]
+    birthplace = p["place_of_birth"]
+    actorDescription = p["biography"]
+    actorData = {
+        "actorName": name,
+        "actorImage": image,
+        "actorDescription": actorDescription,
+        "actorBirthday": birthday,
+        "actorBirthplace": birthplace,
+        "actorMovies": movies
+    }
+    return json.dumps(actorData, default=lambda o: o.__dict__, ensure_ascii=False)
 
 if __name__ == '__main__':
     getMovies()

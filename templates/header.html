@@ -2,32 +2,47 @@
 
 <head>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/style.css') }}" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" integrity="sha512-KfkfwYDsLkIlwQp6LFnl8zNdLGxu9YAA1QvwINks4PhcElQSvqcyVLLD9aMhXd13uQjoXtEKNosOWaZqXgel0g==" crossorigin="anonymous" referrerpolicy="no-referrer"
-    />
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule="" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chocolate</title>
     <link rel="shortcut icon" href="{{ url_for('static',filename='img/logo.ico') }}" type="image/x-icon">
-    <link rel="shortcut icon" href="{{ url_for('static',filename='img/logo.ico') }}" type="image/x-icon">
 </head>
+
+<div class="rightEffect"></div>
+
+<form id="searchForm">
+    <input type="input" id="search" class="form_field" />
+    <button type="submit" class="buttonSearch" onclick="search()">
+        <ion-icon name="search-outline" class="fas search_icon"></ion-icon>
+    </button>
+</form>
+<a class="settings" href="{{ url_for('settings') }}">
+    <ion-icon name="cog-outline" class="cog"></ion-icon>
+</a>
 <header>
     <div id="goHome" class="logo_svg">
-        <img class="logo" id="logo" src="{{ url_for('static',filename='img/logo.png') }}" />
-        <h1 class="title">Chocolate</h1>
+        <img class="logo" id="logo" src="/static/img/logo.png">
+
     </div>
-    <div class="form_group field">
-        <form id="searchForm">
-            <input type="input" id="search" class="form_field" />
-            <button type="submit" class="buttonSearch" onclick="search()">
-                <i class="fas fa-search search_icon"></i>
-            </button>
-        </form>
-    </div>
-    <a class="settings" href="{{ url_for('settings') }}">
-        <i class="fa fa-cog fa-2x" aria-hidden="true"></i>
+    <a href="/">
+        <ion-icon class="homeIcon" name="home-outline" role="img" class="md hydrated" aria-label="home outline"></ion-icon>
     </a>
+    <a href="/films">
+        <ion-icon class="movieIcon" name="videocam-outline" role="img" class="md hydrated" aria-label="home outline"></ion-icon>
+    </a>
+    <a href="/series">
+        <ion-icon class="tvIcon" name="tv-outline" role="img" class="md hydrated" aria-label="home outline"></ion-icon>
+    </a>
+
 </header>
+<div id="goHome" class="logo_svg">
+    <img class="logo" id="logo" src="{{ url_for('static',filename='img/logo.png') }}" />
+</div>
 
 
 <body>

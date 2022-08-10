@@ -1,12 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@500&family=Open+Sans:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
 * {
     margin: 0;
     padding: 0;
 }
 
 body {
-    background: linear-gradient(104.29deg, #08E1FF 0%, #9903D5 100%);
-    background-attachment: fixed;
+    background: #1d1d1d
 }
 
 h1,
@@ -18,9 +17,9 @@ h6,
 a,
 p,
 input {
-    font-family: 'Inter', Arial, Helvetica, sans-serif;
+    font-family: 'Poppins', Arial, Helvetica, sans-serif;
     text-decoration: none;
-    color: #3C72CE;
+    color: #ffffff;
 }
 
 :active,
@@ -39,14 +38,12 @@ input {
 }
 
 header {
-    width: 95vw;
-    height: 7.5vh;
-    left: 2.5vw;
-    top: 2.5vh;
+    width: 3vw;
+    height: 100vh;
     position: absolute;
-    background: rgba(255, 255, 255, 0.4);
+    z-index: 999;
+    background: rgba(0, 0, 0, 0.62);
     backdrop-filter: blur(50px);
-    border-radius: 3vw;
 }
 
 .form_group {
@@ -55,17 +52,26 @@ header {
     top: 3vh;
 }
 
+form#searchForm .form_field {
+    transition: width 300ms;
+}
+
+form#searchForm:hover .form_field {
+    width: 15vw;
+}
+
 .form_field {
-    position: absolute;
-    left: -14vmax;
-    bottom: -2.75vmin;
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 2vw;
-    width: 17vw;
-    height: 4vh;
     border: none;
     padding-left: 0.5vw;
     font-size: 3vh;
+    position: absolute;
+    width: 2vw;
+    height: 2vw;
+    right: 3.7vw;
+    top: 1.2vh;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 2vw;
+    z-index: 2;
 }
 
 .form_field:focus {
@@ -73,51 +79,46 @@ header {
 }
 
 .search_icon {
-    color: #3C72CE;
+    color: #ffffff;
     position: absolute;
-    top: -0.25vh;
-    font-size: 2vh;
-    left: 1vw;
+    right: 4vw;
+    top: 1.8vh;
+    z-index: 3;
+    font-size: 1.25vw;
 }
 
 .movies {
-    margin-top: 16vh;
-    width: 100vw;
-    display: flex;
+    margin-top: 53vh;
+    width: calc(100vw - 2.98vw);
     flex-wrap: wrap;
+    margin-left: 3vw;
+    z-index: 2;
+    position: absolute;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-template-rows: 1fr;
+    grid-column-gap: 2vw;
+    grid-row-gap: 0px;
 }
 
 .cover {
-    width: 23.3vw;
     display: block;
-    flex-grow: 6;
-    flex-shrink: 1;
-    flex-basis: auto;
-    align-self: auto;
-    margin: 5vw;
     text-align: center;
-    font-size: 3vh;
-    background: rgba(255, 255, 255, 0.4);
-    backdrop-filter: blur(50px);
-    border-radius: 2vw;
-    height: 62vh;
     order: 1;
+    cursor: pointer;
+}
+
+.cover:hover {
+    cursor: pointer;
 }
 
 .cover_movie {
-    width: 20vw;
-    height: 50vh;
     object-fit: cover;
-    border-radius: 2vw;
-    margin-top: 2vh;
-    left: 1vw;
-}
-
-.cover p {
-    width: 23.4vw;
-    margin-top: 2vh;
-    color: #0056ff;
-    text-align: center;
+    border-radius: 1vh;
+    width: 12vw;
+    height: 38vh;
+    transform: scale(1);
+    transition: 300ms;
 }
 
 .not_seen {
@@ -164,9 +165,44 @@ header {
 
 .logo {
     position: absolute;
-    width: 7vh;
-    left: 4vmin;
-    top: 0.75vmin;
+    width: 2vw;
+    height: 4vh;
+    left: 0.5vw;
+    top: 3vh;
+}
+
+.rightEffect {
+    width: 2vw;
+    height: 100vh;
+    position: absolute;
+    right: 0;
+    z-index: 999;
+    background: rgba(0, 0, 0, 0.7);
+    filter: blur(2vh);
+}
+
+.homeIcon {
+    position: absolute;
+    color: white;
+    font-size: 3vh;
+    left: 0.85vw;
+    top: 16vh;
+}
+
+.movieIcon {
+    position: absolute;
+    color: white;
+    font-size: 3vh;
+    left: 0.85vw;
+    top: 32vh;
+}
+
+.tvIcon {
+    position: absolute;
+    color: white;
+    font-size: 3vh;
+    left: 0.85vw;
+    top: 48vh;
 }
 
 .title {
@@ -186,12 +222,13 @@ header {
 
 .settings {
     position: absolute;
-    bottom: 1.75vh;
-    left: 90vw;
+    right: 1vw;
+    top: 1vh;
+    z-index: 3;
 }
 
-.settings i {
-    color: #3C72CE;
+.settings ion-icon {
+    color: #ffffff;
     font-size: 4vh;
 }
 
@@ -344,7 +381,7 @@ header {
     object-fit: cover;
     top: 2vh;
     position: absolute;
-    left: 1.5vw;
+    left: 1vw;
     border-radius: 2vh;
     animation: appearImagePopup 0.5s ease-in-out;
 }
@@ -360,20 +397,14 @@ header {
 }
 
 .titlePopup {
-    position: absolute;
     font-size: 5vh;
-    left: 30.5vw;
-    top: 5vh;
     text-align: center;
-    width: 65.5vw;
 }
 
 .descriptionPopup {
-    position: absolute;
     font-size: 2vh;
-    left: 32vw;
+    margin-left: 1.75vw;
     width: 62vw;
-    top: 12vh;
     height: 30vh;
     text-align: center;
     display: flex;
@@ -382,11 +413,9 @@ header {
 }
 
 .containerPopup {
-    position: absolute;
-    left: 32.5vw;
+    margin-left: 1.75vw;
     font-size: 2vh;
-    top: 43vh;
-    width: 63.5vw;
+    margin-top: 2vh;
 }
 
 .playPopup {
@@ -402,15 +431,15 @@ header {
     color: #ffffff;
 }
 
-.playPopup i {
+.playPopup ion-icon {
     margin-right: 2vw;
 }
 
 .video-js[tabindex="-1"] {
     width: 94vw !important;
     height: 81.55vh !important;
-    top: 14.5vh;
-    left: 3vw;
+    top: 9.15vh;
+    left: 4.5vw;
 }
 
 .notSorted {
@@ -470,16 +499,39 @@ header {
     border: none;
 }
 
+.popupContent {
+    width: 65.5vw;
+    height: 78vh;
+    margin-left: 30.5vw;
+    margin-top: 5vh;
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
+
+.popupContent::-webkit-scrollbar {
+    width: 1.25vh;
+    display: block;
+}
+
+.popupContent::-webkit-scrollbar-thumb {
+    background-color: #a961ea;
+    border-radius: 48vh;
+}
+
+.popupContent::-webkit-scrollbar-track {
+    background: #ffffff00;
+}
+
 .castPopup {
-    margin-left: 32vw;
-    width: 62vw;
-    height: 25vh;
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     grid-template-rows: 1fr;
     grid-column-gap: 0px;
     grid-row-gap: 0px;
-    margin-top: 56vh;
+    font-size: 2vh;
+    width: 64vw;
+    margin-top: 2vh;
+    margin-left: 1.5vw;
 }
 
 .castImage {
@@ -491,4 +543,220 @@ header {
 
 .castMember {
     text-align: center;
+}
+
+.castImage,
+.castName,
+.castCharacter {
+    cursor: pointer;
+}
+
+.containerSimilar {
+    grid-template-rows: 1fr;
+    grid-column-gap: 0px;
+    grid-row-gap: 0px;
+    font-size: 2vh;
+    width: 63.5vw;
+    margin-top: 2vh;
+    margin-left: 1vw;
+    margin-right: 5vw;
+    height: 42vh;
+    justify-content: space-evenly;
+    justify-items: center;
+    align-content: space-evenly;
+    align-items: center;
+}
+
+.containerSimilar .movie {
+    width: 12vw;
+    height: 38vh;
+    margin-left: 1.5vw;
+    margin-right: 1.5vw;
+    margin-top: 2vh;
+}
+
+.containerSimilar .movie .movieImage {
+    width: 12vw;
+    height: 36vh;
+    object-fit: cover;
+    border-radius: 2vw;
+}
+
+.containerSimilar .movie .movieTitle {
+    text-align: center;
+}
+
+.trailerVideo {
+    --videoWidth: 40vw;
+    width: var(--videoWidth);
+    height: calc((var(--videoWidth) / 16)* 9);
+    margin-left: 12vw;
+    margin-top: 2vh;
+    border: none;
+}
+
+.actorMoviesList {
+    grid-template-rows: 1fr;
+    grid-column-gap: 0px;
+    grid-row-gap: 0px;
+    font-size: 2vh;
+    justify-content: space-evenly;
+    justify-items: center;
+    align-content: space-evenly;
+    align-items: center;
+    width: 100vw;
+    margin-top: -6vh;
+}
+
+.moviesTitle {
+    text-align: center;
+    margin-left: 45vw;
+    margin-right: 45vw;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(50px);
+    border-radius: 9999999999vw;
+    font-size: 3vh;
+    padding: 1vh;
+    margin-top: 4vh;
+}
+
+.actorInformations {
+    width: 65vw;
+    margin-left: 15vw;
+    margin-top: 20vh;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(50px);
+    border-radius: 2vw;
+    height: 36vh;
+}
+
+.actorName {
+    margin-left: 15vw;
+    position: absolute;
+    margin-top: 2vh;
+}
+
+.actorPicture {
+    border-radius: 2vw;
+    width: 24vh;
+    object-fit: cover;
+    height: 34vh;
+    margin-top: 1vh;
+    margin-left: 1vw;
+}
+
+.actorBiography {
+    position: absolute;
+    margin-left: 15vw;
+    margin-top: -28vh;
+    width: 48vw;
+}
+
+.seeMore {
+    display: inline-block;
+    font-family: Arial;
+    text-decoration: none;
+    z-index: 5;
+    position: absolute;
+    bottom: 2vh;
+    left: calc(50vw - (8vw / 2));
+    border-radius: 1.5vw;
+    border: 0.2vw solid #ffffff;
+    cursor: pointer;
+    color: #ffffff;
+    font-size: 1.4vh;
+    padding: 2vh 4vw;
+    transition: 300ms;
+}
+
+.seeMore:hover {
+    background: white;
+    color: #1d1d1d;
+}
+
+.cover:hover .cover_movie {
+    transform: scale(1.05);
+    transition: 300ms;
+}
+
+.watchNow {
+    font-size: 3.4vh;
+    padding: 0 1vw 0 0;
+}
+
+.watchNowA {
+    border-radius: 1.5vw;
+    border: 0.2vw solid #ffffff;
+    cursor: pointer;
+    color: #ffffff;
+    font-size: 1.4vh;
+    padding: 3vh 4vw;
+    text-decoration: none;
+    z-index: 5;
+    position: absolute;
+    top: 40vh;
+    left: 10vw;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    transition: 300ms;
+}
+
+.watchNowA:hover {
+    background: white;
+    color: #1d1d1d;
+}
+
+.watchNowA:hover .watchNow {
+    color: #1d1d1d;
+    transition: 300ms;
+}
+
+.bannerGenre {
+    width: auto;
+    position: absolute;
+    top: 16vh;
+    left: 10vw;
+    font-size: 1.3vh;
+    font-weight: 700;
+    font-style: normal;
+    text-shadow: 1px 1Px 10px #000;
+}
+
+.bannerTitle {
+    position: absolute;
+    z-index: 9;
+    top: 18.5vh;
+    left: 10vw;
+    font-size: 4vh;
+    text-shadow: 1px 1Px 10px #000;
+}
+
+.bannerDescription {
+    width: 29vw;
+    position: absolute;
+    top: 25vh;
+    left: 10vw;
+    font-size: 1.4vh;
+    line-height: 1.4vh;
+    font-weight: 400;
+    font-style: normal;
+    height: 8vh;
+    text-shadow: 1px 1Px 10px #000;
+}
+
+.bannerCover {
+    width: 100vw;
+    height: 64vh;
+    object-fit: cover;
+}
+
+.bigBanner {
+    position: absolute;
+    top: 0;
+    z-index: 1;
+}
+
+.actorInfo {
+    margin-top: -10vh;
 }
