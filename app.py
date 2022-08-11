@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 from pathlib import Path
 import requests, os, subprocess, configparser, socket, datetime, subprocess, socket, platform, GPUtil, json
 from Levenshtein import distance as lev
+from fuzzywuzzy import fuzz
 
 
 app = Flask(__name__)
@@ -94,6 +95,7 @@ def getMovies():
             originalMovieTitle = movieTitle
             size = len(movieTitle)
             movieTitle = movieTitle[:size - 4]
+
             try:
                 search = movie.search(movieTitle)
             except TMDbException:
@@ -107,12 +109,13 @@ def getMovies():
             
             bestMatch = search[0]
             for i in range(len(search)):
-                if lev(movieTitle, search[i].title) < lev(movieTitle, bestMatch.title):
+                if lev(movieTitle, search[i].title) < lev(movieTitle, bestMatch.title) and bestMatch.title not in filmFileList:
                     bestMatch = search[i]
-                elif lev(movieTitle, search[i].title) == lev(movieTitle, bestMatch.title):
+                elif lev(movieTitle, search[i].title) == lev(movieTitle, bestMatch.title) and bestMatch.title not in filmFileList:
                     bestMatch = bestMatch
-                if lev(movieTitle, bestMatch.title) == 0:
+                if lev(movieTitle, bestMatch.title) == 0 and bestMatch.title not in filmFileList:
                     break
+            
             res = bestMatch
             name = res.title
             movieCoverPath = f"https://image.tmdb.org/t/p/original{res.poster_path}"
@@ -278,7 +281,7 @@ def gpuname():
 @app.route("/video/<video_name>.m3u8", methods=["GET"])
 def create_m3u8(video_name):
     moviesPath = config.get("ChocolateSettings", "MoviesPath")
-    video_path = f"{moviesPath}/{video_name}.mkv"
+    video_path = f"{moviesPath}\{video_name}.mkv"
     duration = length_video(video_path)
 
     file = """
@@ -308,8 +311,7 @@ def get_chunk(video_name, idx=0):
     global movieExtension
     seconds = (idx - 1) * CHUNK_LENGTH
     moviesPath = config.get("ChocolateSettings", "MoviesPath")
-    video_path = f"{moviesPath}\{video_name}.{movieExtension}"
-    print(video_path)
+    video_path = f"{moviesPath}\{video_name}{movieExtension}"
 
     time_start = str(datetime.timedelta(seconds=seconds))
     time_end = str(datetime.timedelta(seconds=seconds + CHUNK_LENGTH))
@@ -459,65 +461,27 @@ def library():
     routeToUse = "/getAllMovies"
     return render_template('allFilms.html', conditionIfOne=searchedFilmsUp0, errorMessage=errorMessage, routeToUse=routeToUse)
 
-#write a levenshtein distance function
-def levenshteinDistance(s1, s2):
-    if len(s1) < len(s2):
-        return levenshteinDistance(s2, s1)
-    if len(s2) == 0:
-        return len(s1)
-    previous_row = range(len(s2) + 1)
-    for i, c1 in enumerate(s1):
-        current_row = [i + 1]
-        for j, c2 in enumerate(s2):
-            insertions = previous_row[j + 1] + 1 # j+1 instead of j since previous_row and current_row are one character longer
-            deletions = current_row[j] + 1       # than s2
-            substitutions = previous_row[j] + (c1 != c2)
-            current_row.append(min(insertions, deletions, substitutions))
-        previous_row = current_row
-    return previous_row[-1]
-    
-def jaroDistance(s1, s2):
-    if len(s1) < len(s2):
-        return jaroDistance(s2, s1)
-    if len(s2) == 0:
-        return len(s1)
-    matches = 0
-    transpositions = 0
-    for i in range(len(s1)):
-        if i > (len(s2) - 1):
-            break
-        if s1[i] == s2[i]:
-            matches += 1
-        elif i > 0 and s1[i] == s2[i-1] and s1[i-1] == s2[i]:
-            transpositions += 1
-    if matches == 0:
-        return 0
-    return ((matches / len(s1)) + (matches / len(s2)) + ((matches - transpositions / 2) / matches)) / 3
-
 
 @app.route("/searchInAllMovies/<search>")
-def searchInAllMovies(search):
+def searchInAllMovies(search):    
     global simpleData
     bestMatchs = {}
     movies = []
     points = {}
+
     for movie in simpleData:
-        if len(search.split(" ")) == 1:
-            search = f"{search} test"
-        search = search.replace(" test", "")
-        for word in search.split(" "):
-            distance = jaroDistance(word, movie["title"])
-            points[movie["title"]] = 0
-            points[movie["title"]] = points[movie["title"]] + distance
-    bestMatchs = sorted(points.items(), key=lambda x: x[1])
-    bestMatchs.reverse()
+        search = search.replace("%20", " ")
+        distance = fuzz.ratio(search, movie["title"])
+        points[movie["title"]] = distance
+
+    bestMatchs = sorted(points.items(), key=lambda x: x[1], reverse=True)
     for movie in bestMatchs:
         thisMovie = movie[0]
         for films in simpleData:
             if films["title"] == thisMovie:
                 movies.append(films)
                 break
-    
+                
     return json.dumps(movies, ensure_ascii=False)
 
 @app.route("/search/<search>")
@@ -532,9 +496,8 @@ def movie(slug):
     global filmEncode, movieExtension
     if slug.endswith("ttf") == False:
         movieSlug = getMovie(slug)
-        rewriteSlug = slug.split(".")[0]
-        link = f"/video/{rewriteSlug}.m3u8".replace(" ", "%20")
-        movieExtension = slug.split(".")[1]
+        rewriteSlug, movieExtension = os.path.splitext(slug)
+        link = f"/video/{rewriteSlug}.m3u8".replace(" ", "%20") 
     return render_template("film.html", movieSlug=movieSlug, slug=slug, movieUrl=link)
 
 @app.route("/actor/<actorName>")

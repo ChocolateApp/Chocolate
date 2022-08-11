@@ -228,15 +228,17 @@ function getActorMovies() {
 
         actorDescription = document.getElementsByClassName("actorBiography")[0]
         actorDescription.innerHTML = actorDescriptionText
-        actorDescription.innerHTML = actorDescription.innerHTML.substring(0, 1100) + "..."
-        actorDescription.innerHTML += " <a id='lireLaSuite' href='#'>Lire la suite</a>"
-        actorMovieDiv = document.getElementsByClassName("actorMoviesList")[0]
-        lireLaSuite = document.getElementById("lireLaSuite")
-        lireLaSuite.addEventListener("click", function() {
-            actorDescription.innerHTML = actorDescriptionText
-            actorInformation = document.getElementById("actorInformations")
-            actorInformation.style.overflow = "scroll"
-        })
+        if (actorDescription.length > 1100) {
+            actorDescription.innerHTML = actorDescription.innerHTML.substring(0, 1100) + "..."
+            actorDescription.innerHTML += " <a id='lireLaSuite' href='#'>Lire la suite</a>"
+            actorMovieDiv = document.getElementsByClassName("actorMoviesList")[0]
+            lireLaSuite = document.getElementById("lireLaSuite")
+            lireLaSuite.addEventListener("click", function() {
+                actorDescription.innerHTML = actorDescriptionText
+                actorInformation = document.getElementById("actorInformations")
+                actorInformation.style.overflow = "scroll"
+            })
+        }
 
 
 

@@ -71,7 +71,7 @@ form#searchForm:hover .form_field {
     height: 4vh;
     right: 3.7vw;
     top: 1.2vh;
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(157, 157, 157, 0.25);
     border-radius: 2vw;
     z-index: 2;
 }
