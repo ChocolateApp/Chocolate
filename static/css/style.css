@@ -74,6 +74,7 @@ form#searchForm:hover .form_field {
     background: rgba(157, 157, 157, 0.25);
     border-radius: 2vw;
     z-index: 2;
+    filter: drop-shadow(0.1vh 0.1vh 0.5vh #000);
 }
 
 .form_field:focus {
@@ -213,6 +214,7 @@ form#searchForm:hover .form_field {
     right: 1vw;
     top: 1vh;
     z-index: 3;
+    filter: drop-shadow(1px 1px 10px #000);
 }
 
 .settings ion-icon {
@@ -668,6 +670,7 @@ form#searchForm:hover .form_field {
 .watchNow {
     font-size: 3.4vh;
     padding: 0 1vw 0 0;
+    filter: drop-shadow(0.1vh 0.1vh 0.5vh #000);
 }
 
 .watchNowA {
@@ -686,16 +689,20 @@ form#searchForm:hover .form_field {
     position: absolute;
     top: 40vh;
     left: 10vw;
+    text-shadow: 0.1vh 0.1vh 0.5vh #000;
+    box-shadow: 0.1vh 0.1vh 0.5vh #000;
 }
 
 .watchNowA:hover {
     background: white;
     color: #1d1d1d;
+    text-shadow: 0px 0px 0px rgba(0, 0, 0, 0);
 }
 
 .watchNowA:hover .watchNow {
     color: #1d1d1d;
     transition: 300ms;
+    filter: drop-shadow(1px 1px 10px rgba(255, 255, 255, 0));
 }
 
 .bannerGenre {
@@ -706,7 +713,7 @@ form#searchForm:hover .form_field {
     font-size: 1.3vh;
     font-weight: 700;
     font-style: normal;
-    text-shadow: 1px 1Px 10px #000;
+    text-shadow: 0.1vh 0.1vh 0.5vh #000;
 }
 
 .bannerTitle {
@@ -715,7 +722,7 @@ form#searchForm:hover .form_field {
     top: 18.5vh;
     left: 10vw;
     font-size: 4vh;
-    text-shadow: 1px 1Px 10px #000;
+    text-shadow: 0.1vh 0.1vh 0.5vh #000;
 }
 
 .bannerDescription {
@@ -728,7 +735,7 @@ form#searchForm:hover .form_field {
     font-weight: 400;
     font-style: normal;
     height: 8vh;
-    text-shadow: 1px 1Px 10px #000;
+    text-shadow: 0.1vh 0.1vh 0.5vh #000;
 }
 
 .bannerCover {
