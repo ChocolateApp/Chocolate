@@ -1,16 +1,35 @@
 {% extends 'header.html' %} {% block content %}
-<form class="saveSettingsForm" action="/saveSettings/" method="post">
+<form class="saveSettingsForm" action="" onsubmit="saveSettings(event)" method="post" id="saveSettingsForm">
     <div class="moviesPathDiv">
         <label for="moviesPath">Movies directory path : </label>
         <input type="text" name="moviesPath" id="moviesPath" class="moviesPath form_field">
     </div>
     <div class="languageDiv">
         <label for="language">Languages : </label>
-        <input type="text" placeholder="Example : en-US, fr-FR, de-DE, pt, es" name="language" id="language" class="language form_field">
+        <input type="search" name="language" id="language" list="languages" class="language form_field">
+        <datalist id="languages">
+            <option value="en-US">American English</option>
+            <option value="de-DE">Deutsch</option>
+            <option value="en-EN">English</option>
+            <option value="es">Español</option>
+            <option value="fr-FR">Français</option>
+            <option value="hi-IN">हिन्दी</option>
+            <option value="it-IT">Italiano</option>
+            <option value="ja-JP">日本語</option>
+            <option value="ko-KR">한국어</option>
+            <option value="pl-PL">Polski</option>
+            <option value="pt">Português</option>
+            <option value="ro-RO">Română</option>
+            <option value="ru-RU">Русский</option>
+            <option value="sk-SK">Slovenčina</option>
+            <option value="sv-SE">Svenska</option>
+            <option value="tr-TR">Türkçe</option>
+            <option value="zh">普通话</option>
+        </datalist>
     </div>
-    <button name="saveSettings" type="submit" class="saveSettings">Save settings</button>
-    <a class="seeMore">See more</a>
+    <input id="register" type="submit" value="Save settings" class="saveSettings">
 </form>
+
 {% if conditionIfOne %}
 <div class="notSorted">
     <h1>Problems with :</h1>
@@ -20,4 +39,6 @@
         {% endfor %}
     </ul>
 </div>
-{% endif %} {% endblock %}
+{% endif %}
+<script src="{{ url_for('static',filename='js/settings.js') }}"></script>
+{% endblock %}

@@ -16,7 +16,9 @@ h5,
 h6,
 a,
 p,
-input {
+input,
+label,
+li {
     font-family: 'Poppins', Arial, Helvetica, sans-serif;
     text-decoration: none;
     color: #ffffff;
@@ -238,9 +240,9 @@ form#searchForm:hover .form_field {
     position: absolute;
     left: calc(50vw - 4vw);
     margin-bottom: 8vw;
-    padding: 0;
     bottom: 0;
     width: 20vw !important;
+    padding: 0.2vw;
 }
 
 .moviesPathDiv label,
@@ -254,7 +256,7 @@ form#searchForm:hover .form_field {
 }
 
 .languageDiv input {
-    margin-top: 5vh;
+    margin-top: 7vh;
 }
 
 .saveSettings {
@@ -434,7 +436,7 @@ form#searchForm:hover .form_field {
 }
 
 .notSorted h1 {
-    color: black;
+    color: white;
     font-size: 2vh;
 }
 
