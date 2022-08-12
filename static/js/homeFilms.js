@@ -209,66 +209,68 @@ function getFirstMovies() {
     movies = document.getElementsByClassName("movies")[0]
     routeToUse = movies.getAttribute("id")
     movies.id = "movies"
+
+    fetch("/getRandomMovie").then(function(response) {
+        return response.json()
+    }).then(function(data) {
+        bigBanner = document.getElementsByClassName("bigBanner")[0]
+        imageBanner = document.getElementsByClassName("bannerCover")[0]
+        genreBanner = document.getElementsByClassName("bannerGenre")[0]
+        titleBanner = document.getElementsByClassName("bannerTitle")[0]
+        descriptionBanner = document.getElementsByClassName("bannerDescription")[0]
+        watchNow = document.getElementsByClassName("watchNowA")[0]
+
+        movie = data
+
+        var movieUrl = movie.slug
+        movieUrl = "/movie/" + movieUrl
+
+        imageBanner.setAttribute("src", movie.banner)
+        if (imageBanner.src == "https://image.tmdb.org/t/p/originalNone") {
+            imageBanner.src = brokenPath
+        }
+        imageBanner.setAttribute("alt", movie.realTitle)
+        imageBanner.setAttribute("title", movie.realTitle)
+
+        titleBanner.innerHTML = movie.realTitle
+
+        descriptionBanner.innerHTML = movie.description
+        descriptionBanner.innerHTML = descriptionBanner.innerHTML.substring(0, 200) + "..."
+        descriptionBanner.innerHTML += " <a id='lireLaSuite' href='#'>Lire la suite</a>"
+
+        lireLaSuite = document.getElementById("lireLaSuite")
+        lireLaSuite.addEventListener("click", function() {
+            descriptionBanner.innerHTML = movie.description
+        })
+
+        genreBanner.innerHTML = movie.genre
+
+        watchNow.setAttribute("href", movieUrl)
+    })
+
     fetch(routeToUse).then(function(response) {
         return response.json()
     }).then(function(data) {
         for (var i = 0; i < data.length; i++) {
-            console.log(i)
-            if (i != 0) {
-                movies = document.getElementsByClassName("movies")[0]
-                var movie = data[i]
-                var cover = document.createElement("div")
-                cover.className = "cover"
-                var content = document.createElement("div")
-                content.className = "content"
-                var image = document.createElement("img")
-                image.className = "cover_movie"
+            movies = document.getElementsByClassName("movies")[0]
+            var movie = data[i]
+            var cover = document.createElement("div")
+            cover.className = "cover"
+            var content = document.createElement("div")
+            content.className = "content"
+            var image = document.createElement("img")
+            image.className = "cover_movie"
 
-                image.src = movie.cover
-                if (image.src == "https://image.tmdb.org/t/p/originalNone") {
-                    image.src = brokenPath
-                }
-                image.title = movie.realTitle
-                image.alt = movie.realTitle
-
-                content.appendChild(image)
-                cover.appendChild(content)
-                movies.appendChild(cover)
-            } else {
-                bigBanner = document.getElementsByClassName("bigBanner")[0]
-                imageBanner = document.getElementsByClassName("bannerCover")[0]
-                genreBanner = document.getElementsByClassName("bannerGenre")[0]
-                titleBanner = document.getElementsByClassName("bannerTitle")[0]
-                descriptionBanner = document.getElementsByClassName("bannerDescription")[0]
-                watchNow = document.getElementsByClassName("watchNowA")[0]
-
-                movie = data[i]
-
-                var movieUrl = movie.slug
-                movieUrl = "/movie/" + movieUrl
-
-                imageBanner.setAttribute("src", movie.banner)
-                if (imageBanner.src == "https://image.tmdb.org/t/p/originalNone") {
-                    imageBanner.src = brokenPath
-                }
-                imageBanner.setAttribute("alt", movie.realTitle)
-                imageBanner.setAttribute("title", movie.realTitle)
-
-                titleBanner.innerHTML = movie.realTitle
-
-                descriptionBanner.innerHTML = movie.description
-                descriptionBanner.innerHTML = descriptionBanner.innerHTML.substring(0, 200) + "..."
-                descriptionBanner.innerHTML += " <a id='lireLaSuite' href='#'>Lire la suite</a>"
-
-                lireLaSuite = document.getElementById("lireLaSuite")
-                lireLaSuite.addEventListener("click", function() {
-                    descriptionBanner.innerHTML = movie.description
-                })
-
-                genreBanner.innerHTML = movie.genre
-
-                watchNow.setAttribute("href", movieUrl)
+            image.src = movie.cover
+            if (image.src == "https://image.tmdb.org/t/p/originalNone") {
+                image.src = brokenPath
             }
+            image.title = movie.realTitle
+            image.alt = movie.realTitle
+
+            content.appendChild(image)
+            cover.appendChild(content)
+            movies.appendChild(cover)
         }
 
         setPopup()

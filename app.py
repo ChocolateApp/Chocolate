@@ -1,4 +1,5 @@
-from math import dist
+from operator import ge, index
+from urllib import response
 from flask import Flask, url_for, request, render_template, redirect, make_response
 from flask_cors import CORS
 from tmdbv3api import TMDb, Movie, TV, Person
@@ -6,17 +7,23 @@ from tmdbv3api.exceptions import TMDbException
 from videoprops import get_video_properties, get_audio_properties
 from bs4 import BeautifulSoup
 from pathlib import Path
-import requests, os, subprocess, configparser, socket, datetime, subprocess, socket, platform, GPUtil, json
+import requests, os, subprocess, configparser, socket, datetime, subprocess, socket, platform, GPUtil, json, random
 from Levenshtein import distance as lev
 from fuzzywuzzy import fuzz
 
 
 app = Flask(__name__)
 CORS(app)
-config = configparser.ConfigParser()
-config.read('config.ini')
+
 tmdb = TMDb()
 tmdb.api_key = 'cb862a91645ec50312cf636826e5ca1f'
+
+config = configparser.ConfigParser()
+config.read('config.ini')
+
+if config["ChocolateSettings"]["language"] == "":
+    config["ChocolateSettings"]["language"] = "en-US"
+
 tmdb.language = config["ChocolateSettings"]["language"]
 tmdb.debug = True
 movie = Movie()
@@ -248,6 +255,7 @@ def getMovies():
 
         elif searchedFilm.endswith("/") == False :
             allMoviesNotSorted.append(searchedFilm)
+        
 
 
 
@@ -283,7 +291,8 @@ def create_m3u8(video_name):
     moviesPath = config.get("ChocolateSettings", "MoviesPath")
     video_path = f"{moviesPath}\{video_name}.mkv"
     duration = length_video(video_path)
-
+    captions = generateCaption(video_path)
+    print(f"Captions : {captions}")
     file = """
     #EXTM3U
     #EXT-X-VERSION:4
@@ -339,8 +348,8 @@ def get_chunk(video_name, idx=0):
     movieAudioStats = get_audio_properties(video_path)
     if movieAudioStats['codec_name'] == "aac" and movieVideoStats['codec_name'] == "h264":
         command = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", time_start, "-to", time_end, "-i", video_path,
-                "-output_ts_offset", time_start, "-c:v", "copy", "-c:a", "copy", "-preset", "ultrafast", "-ac" ,"2", "-f", "mpegts",
-                "pipe:1"]
+                    "-output_ts_offset", time_start, "-c:v", "copy", "-c:a", "copy", "-preset", "ultrafast", "-f", "mpegts",
+                    "pipe:1"]
 
     elif movieAudioStats['codec_name'] == "aac" and movieVideoStats['codec_name'] != "h264":
         print(f"AudioCodec: {movieAudioStats['codec_name']}")
@@ -348,38 +357,52 @@ def get_chunk(video_name, idx=0):
 
         if PIX:
             command = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", time_start, "-to", time_end, "-i", video_path,
-                "-output_ts_offset", time_start, "-c:v", videoCodec, "-c:a", "copy", PIX, PIXcodec,"-preset", preset, bitrate, bitrateValue, crf, crfValue, vsync, vsyncValue, "-ac" ,"2", "-f", "mpegts",
-                "pipe:1"]
+                "-output_ts_offset", time_start, "-c:v", videoCodec, "-c:a", "copy", PIX, PIXcodec,"-preset", preset, bitrate, bitrateValue, crf, crfValue, vsync, vsyncValue, "-f", "mpegts", "pipe:1"]
         else:
             command = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", time_start, "-to", time_end, "-i", video_path,
-               "-output_ts_offset", time_start, "-c:v", videoCodec, "-c:a", "copy", "-preset", preset, "-ac" ,"2", "-f", "mpegts",
-               "pipe:1"]
+               "-output_ts_offset", time_start, "-c:v", videoCodec, "-c:a", "copy", "-preset", preset, "-f", "mpegts", "pipe:1"]
 
     elif movieAudioStats['codec_name'] != "aac" and movieVideoStats['codec_name'] == "h264":
         print(f"AudioCodec: {movieAudioStats['codec_name']}")
         print(f"VideoCoder: {movieVideoStats['codec_name']}")
         command = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", time_start, "-to", time_end, "-i", video_path,
-               "-output_ts_offset", time_start, "-c:v", "copy", "-c:a", "aac", "-preset", "ultrafast", "-f", "mpegts",
-               "pipe:1"]
+               "-output_ts_offset", time_start, "-c:v", "copy", "-c:a", "aac", "-preset", "ultrafast", "-f", "mpegts", "pipe:1"]
     else:
         print(f"AudioCodec: {movieAudioStats['codec_name']}")
         print(f"VideoCoder: {movieVideoStats['codec_name']}")
         if PIX:
             command = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", time_start, "-to", time_end, "-i", video_path,
-               "-output_ts_offset", time_start, "-c:v", videoCodec, "-c:a", "aac", PIX, PIXcodec, "-preset", preset, bitrate, bitrateValue, crf, crfValue, vsync, vsyncValue, "-ac" ,"2", "-f", "mpegts",
-               "pipe:1"]
+               "-output_ts_offset", time_start, "-c:v", videoCodec, "-c:a", "aac", PIX, PIXcodec, "-preset", preset, bitrate, bitrateValue, crf, crfValue, vsync, vsyncValue, "-f", "mpegts", "pipe:1"]
         else:
             command = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", time_start, "-to", time_end, "-i", video_path,
-               "-output_ts_offset", time_start, "-c:v", videoCodec, "-c:a", "aac", "-preset", preset, "-ac" ,"2", "-f", "mpegts",
-               "pipe:1"]
+               "-output_ts_offset", time_start, "-c:v", videoCodec, "-c:a", "aac", "-preset", preset, "-f", "mpegts", "pipe:1"]
 
-    print(" ".join(command))
-    pipe = subprocess.run(command, stdout=subprocess.PIPE)
-    response = make_response(pipe.stdout)
+    print((" ").join(command))
+
+    pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
+    
+    response = make_response(pipe.stdout.read())
     response.headers.set("Content-Type", "video/MP2T")
     response.headers.set("Content-Disposition", "attachment", filename=f"{video_name}-{idx}.ts")
 
     return response
+
+@app.route("/chunkCaption/<language>/<index>/<video_name>.vtt", methods=["GET"])
+def chunkCaption(video_name, language, index):
+    global movieExtension
+    moviesPath = config.get("ChocolateSettings", "MoviesPath")
+    video_path = f"{moviesPath}\{video_name}{movieExtension}"
+    extractCaptionsCommand = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-i", video_path, "-map", f"0:{index}", "-f", "webvtt", "pipe:1"]
+
+    print(" ".join(extractCaptionsCommand))
+
+    extractCaptions = subprocess.run(extractCaptionsCommand, stdout=subprocess.PIPE)
+
+    extractCaptionsResponse = make_response(extractCaptions.stdout)
+    extractCaptionsResponse.headers.set("Content-Type", "text/VTT")
+    extractCaptionsResponse.headers.set("Content-Disposition", "attachment", filename=f"{video_name}-{index}.vtt")
+
+    return extractCaptionsResponse
 
 
 @app.route("/settings")
@@ -407,6 +430,13 @@ def getAllMovies():
     simpleData.sort(key=lambda x: x["title"].lower())
     return json.dumps(simpleData, ensure_ascii=False)
 
+@app.route("/getRandomMovie")
+def getRandomMovie():
+    global simpleData
+    simpleData.sort(key=lambda x: x["title"].lower())
+    randomMovie = random.choice(simpleData)
+    return json.dumps(randomMovie, ensure_ascii=False)
+
 def getSimilarMovies(movieId):
     global simpleData
     similarMoviesPossessed = []
@@ -431,11 +461,11 @@ def getMovieData(title):
     else:
         return "Not Found"
 
-@app.route("/getFirstEightMovies")
+@app.route("/getFirstSevenMovies")
 def getFirstEightMovies():
     global simpleData
     simpleData.sort(key=lambda x: x["title"].lower())
-    return json.dumps(simpleData[:8], ensure_ascii=False)
+    return json.dumps(simpleData[:7], ensure_ascii=False)
 
 @app.route('/')
 @app.route('/index')
@@ -450,8 +480,11 @@ def films():
     global allMoviesSorted
     searchedFilmsUp0 = len(searchedFilms) == 0
     errorMessage = "Verify that the path is correct"
-    routeToUse = "/getFirstEightMovies"
+    routeToUse = "/getFirstSevenMovies"
+
     return render_template('homeFilms.html', conditionIfOne=searchedFilmsUp0, errorMessage=errorMessage, routeToUse=routeToUse)
+
+
 
 @app.route("/movieLibrary")
 def library():
@@ -491,6 +524,7 @@ def search(search):
     routeToUse = "/searchInAllMovies/" + search
     return render_template('allFilms.html', conditionIfOne=searchedFilmsUp0, errorMessage=errorMessage, routeToUse=routeToUse)
 
+
 @app.route("/movie/<slug>")
 def movie(slug):
     global filmEncode, movieExtension
@@ -498,7 +532,42 @@ def movie(slug):
         movieSlug = getMovie(slug)
         rewriteSlug, movieExtension = os.path.splitext(slug)
         link = f"/video/{rewriteSlug}.m3u8".replace(" ", "%20") 
-    return render_template("film.html", movieSlug=movieSlug, slug=slug, movieUrl=link)
+    allCaptions = generateCaption(slug)
+    return render_template("film.html", movieSlug=movieSlug, slug=slug, movieUrl=link, allCaptions=allCaptions)
+
+def generateCaption(slug):
+    command = ["ffprobe", "-loglevel", "error", "-select_streams", "s", "-show_entries", "stream=index:stream_tags=language", "-of", "csv=p=0", slug]
+    pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
+    try:
+        slug = slug.split("\\")[-1]
+        slug = slug.split("/")[-1]
+    except:
+        slug = slug.split("/")[-1]
+    rewriteSlug, movieExtension = os.path.splitext(slug)
+    response = pipe.stdout.read().decode("utf-8")
+    response = response.split("\n")
+    allCaptions = []
+    languages = {
+        'eng': 'English',
+        'fre': 'Français',
+        'spa': 'Español',
+        'por': 'Português',
+        'ita': 'Italiano',
+        'ger': 'Deutsch',
+        'rus': 'Русский',
+        'pol': 'Polski',
+        'por': 'Português',
+        'chi': '中文',
+        'srp': 'Srpski',
+        }
+
+    response.pop()
+    for line in response:
+        line = line.rstrip()
+        language = line.split(",")[1]
+        index = line.split(",")[0]
+        allCaptions.append({"index": index, "languageCode" : language, "language": languages[language], "url":f"/chunkCaption/{language}/{index}/{rewriteSlug}.vtt"})
+    return allCaptions
 
 @app.route("/actor/<actorName>")
 def actor(actorName):

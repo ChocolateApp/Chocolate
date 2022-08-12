@@ -9,6 +9,13 @@
 
     <video id="movie" class="video-js" controls preload="auto" data-setup="{}">
         <source src="{{ movieUrl }}">
+        {% for caption in allCaptions %}
+            {% if allCaptions.index(caption) == 0 %}
+            <track kind="captions" src="{{ caption['url'] }}" srclang="{{ caption['languageCode'] }}" label="{{ caption['language'] }}" default>
+            {% else %}
+            <track kind="captions" src="{{ caption['url'] }}" srclang="{{ caption['languageCode'] }}" label="{{ caption['language'] }}">
+            {% endif %}
+        {% endfor %}
     </video>
     <script src="https://vjs.zencdn.net/7.10.2/video.min.js"></script>
     <script src="{{ url_for('static',filename='js/movie.js') }}"></script>

@@ -264,6 +264,7 @@ function getActorMovies() {
 
             actorMovie.appendChild(actorMoviePicture)
             actorMovie.appendChild(actorMovieTitle)
+            actorMovieDiv = document.getElementsByClassName("actorMoviesList")[0]
             actorMovieContent.appendChild(actorMovie)
             actorMovieDiv.appendChild(actorMovieContent)
 
