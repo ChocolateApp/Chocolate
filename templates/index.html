@@ -1,5 +1,12 @@
 {% extends 'header.html' %} {% block content %} {% if moviesExist %}
-<a class="card movieCard" href="{{ url_for('films') }}">
-    <img class="movieCardImage" src="{{ url_for('static',filename='img/movies.png') }}">
-    <p>Movies</p>
-</a> {% endif %} {% endblock %}
+<div class="cardsIndex">
+    <a class="card movieCard" href="{{ url_for('films') }}">
+        <img class="movieCardImage" src="{{ url_for('static',filename='img/movies.png') }}">
+        <p>Movies</p>
+    </a>
+    <a class="card serieCard" href="{{ url_for('films') }}">
+        <img class="serieCardImage" src="{{ url_for('static',filename='img/series.png') }}">
+        <p>Séries</p>
+    </a>
+</div>
+{% endif %} {% endblock %}

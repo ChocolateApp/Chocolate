@@ -41,4 +41,31 @@ window.onload = function() {
         }
     }
 
+    var path = window.location.pathname
+    var slug = path.split("/")
+    slug = slug[2]
+
+    fetch(`/generateAudio/${slug}`).catch(function(response) {
+        return response.json()
+    }).then(function(data) {
+        listOfAudio = data
+        console.log(listOfAudio)
+        for (var i = 0; i < listOfAudio.length; i++) {
+            listOfAudio
+            kind = "audio"
+            srclang = listOfAudio[i].languageCode
+            label = listOfAudio[i].language
+            var track = {
+                kind: kind,
+                src: audio,
+                srclang: srclang,
+                label: label
+            }
+            video.audioTracks().addTrack(track);
+
+            console.log(`I added ${track} to the audio tracks`)
+
+
+        }
+    })
 }

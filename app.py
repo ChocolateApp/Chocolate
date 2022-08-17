@@ -1,8 +1,6 @@
-from operator import ge, index
-from urllib import response
 from flask import Flask, url_for, request, render_template, redirect, make_response
 from flask_cors import CORS
-from tmdbv3api import TMDb, Movie, TV, Person
+from tmdbv3api import TMDb, Movie, TV, Episode, Person
 from tmdbv3api.exceptions import TMDbException
 from videoprops import get_video_properties, get_audio_properties
 from bs4 import BeautifulSoup
@@ -27,38 +25,56 @@ if config["ChocolateSettings"]["language"] == "":
 tmdb.language = config["ChocolateSettings"]["language"]
 tmdb.debug = True
 movie = Movie()
+show = TV()
+
 searchedFilms = []
-simpleData = []
-currentCWD = os.getcwd()
-allMovies = []
+simpleDataFilms = []
 allMoviesNotSorted = []
 allMoviesDict = {}
+
+searchedSeries = []
+simpleDataSeries = {}
+allSeriesNotSorted = []
+allSeriesDict = {}
+allSeriesDictTemp = {}
+
+currentCWD = os.getcwd()
 hostname = socket.gethostname()
 local_ip = socket.gethostbyname(hostname)
 config.set("ChocolateSettings", "localIP", local_ip)
 filmEncode = None
 CHUNK_LENGTH = 5
 genreList = {
-    28: "Action",
     12: "Aventure",
+    14: "Fantastique",
     16: "Animation",
+    18: "Drama",
+    27: "Horreur",
+    28: "Action",
     35: "Comédie",
+    36: "Histoire",
+    37: "Western",
+    53: "Thriller",
     80: "Crime",
     99: "Documentaire",
-    18: "Drama",
-    10751: "Famille",
-    14: "Fantastique",
-    36: "Histoire",
-    27: "Horreur",
-    10402: "Musique",
-    9648: "Mystère",
-    10749: "Romance",
     878: "Science-fiction",
-    10770: "TV Movie",
-    53: "Thriller",
+    9648: "Mystère",
+    10402: "Musique",
+    10749: "Romance",
+    10751: "Famille",
     10752: "War",
-    37: "Western",
+    10759: "Action & Adventure",
+    10762: "Kids",
+    10763: "News",
+    10764: "Reality",
+    10765: "Sci-Fi & Fantasy",
+    10766: "Soap",
+    10767: "Talk",
+    10768: "War & Politics",
+    10769: "Western",
+    10770: "TV Movie",
 }
+
 genresUsed = []
 movieExtension = ""
 websitesTrailers = {"YouTube": "https://www.youtube.com/embed/", "Dailymotion": "https://www.dailymotion.com/video/", "Vimeo": "https://vimeo.com/"}
@@ -238,26 +254,198 @@ def getMovies():
                 "description": description,
                 "slug": originalMovieTitle,
             }
-            simpleData.append(simpleFilmData)
-            filmDataToAppend = {
-                "title": movieTitle,
-                "realTitle": name,
-                "cover": movieCoverPath,
-                "banner": banniere,
-                "slug": originalMovieTitle,
-                "id": res.id,
-                "description": description,
-                "note": note,
-            }
-            allMovies.append(filmDataToAppend)
+            simpleDataFilms.append(simpleFilmData)
             allMoviesDict[name] = filmData
 
 
         elif searchedFilm.endswith("/") == False :
             allMoviesNotSorted.append(searchedFilm)
+
+
+def getSeries():
+    print("SerieServer is starting")
+    try:
+        if config["ChocolateSettings"]["SeriesPath"] == "Empty":
+            allSeriesPath = str(Path.home() / "Downloads")
+        else:
+            allSeriesPath = os.path.normpath(config["ChocolateSettings"]["SeriesPath"])
+    except KeyError:
+        allSeriesPath = str(Path.home() / "Downloads")
+    if allSeriesPath == ".":
+        allSeriesPath = str(Path.home() / "Downloads")
+    try:
+        allSeries = [ name for name in os.listdir(allSeriesPath) if os.path.isdir(os.path.join(allSeriesPath, name)) ]
+    except OSError:
+        print("No series found")
+        return
+
+    allSeasonsAppelations = ["S"]
+    allEpisodesAppelations = ["E"]
+
+    for series in allSeries:
+        seasons = os.listdir(f"{allSeriesPath}\\{series}")
+        serieSeasons = {}
+        for season in seasons:
+            path = f"{allSeriesPath}/{series}"
+            if season.startswith(tuple(allSeasonsAppelations)) and season.endswith(("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")):
+                pass
+            else:
+                allSeasons = os.listdir(f"{path}")
+                for allSeason in allSeasons:
+                    if allSeriesPath != str(Path.home() / "Downloads") or allSeriesPath != ".":
+                        actualName = f"{series}/{allSeason}"
+                        os.rename(f"{path}/{allSeason}", f"{path}/S{allSeasons.index(allSeason)+1}")
+
+            episodesPath = f"{path}\{season}"
+            #get the season number
+            try:
+                seasonNumber = season.split(" ")[1]
+            except Exception as e:
+                seasonNumber = season[1:]
+            if os.path.isdir(episodesPath):
+                episodes = os.listdir(episodesPath)
+            seasonEpisodes = {}
+            for episode in episodes:
+                if os.path.isfile(f"{episodesPath}/{episode}"):
+                    if episode.startswith(tuple(allEpisodesAppelations)) and episode.endswith(("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")):
+                        pass
+                    else:
+                        actualName = f"{episodesPath}/{episode}"
+                        episodeName, extension =  os.path.splitext(episode)
+                        oldIndex = episodes.index(episode)
+                        try:
+                            os.rename(f"{episodesPath}/{episode}", f"{episodesPath}/E{episodes.index(episode)+1}{extension}")
+                        except FileExistsError:
+                            pass
+                        episode = f"E{oldIndex+1}{extension}"
+                    #add episodes to a season list
+                    seasonEpisodes[oldIndex+1] = f"{path}/{season}/{episode}"
+            serieSeasons[seasonNumber] = seasonEpisodes
+
+        serieData = {}
+        serieData["seasons"] = serieSeasons
+        allSeriesDictTemp[series] = serieData
         
 
+    allSeries = allSeriesDictTemp
+    allSeriesName = []
 
+    for series in allSeries:
+        allSeriesName.append(series)
+        for season in allSeries[series]["seasons"]:
+            for episode in allSeries[series]["seasons"][season]:
+                actualPath = allSeries[series]["seasons"][season][episode]
+                HTTPPath = actualPath.replace(allSeriesPath, "http://localhost:8800")
+                HTTPPath = HTTPPath.replace("\\", "/")
+
+    for serie in allSeriesName:
+        if not isinstance(serie, str):
+            continue
+        show = TV()
+        serieTitle = serie
+        originalSerieTitle = serieTitle
+
+        try:
+            search = show.search(serieTitle)
+        except TMDbException:
+            print(TMDbException)
+            allSeriesNotSorted.append(serieTitle)
+            break
+                    
+        if not search:
+            allSeriesNotSorted.append(serieTitle)
+            break
+        
+        index = allSeriesName.index(serieTitle)
+        print(f"{index+1}/{len(allSeriesName)}")
+                
+        bestMatch = search[0]
+        for i in range(len(search)):
+            if lev(serieTitle, search[i].name) < lev(serieTitle, bestMatch.name) and bestMatch.name not in allSeriesName:
+                bestMatch = search[i]
+            elif lev(serieTitle, search[i].name) == lev(serieTitle, bestMatch.name) and bestMatch.name not in allSeriesName:
+                bestMatch = bestMatch                
+            if lev(serieTitle, bestMatch.name) == 0 and bestMatch.name not in allSeriesName:
+                break
+                
+        
+        res = bestMatch
+        name = res.name
+        serieCoverPath = f"https://image.tmdb.org/t/p/original{res.poster_path}"
+        banniere = f"https://image.tmdb.org/t/p/original{res.backdrop_path}"
+        description = res.overview
+        note = res.vote_average
+        date = res.first_air_date
+        serieId = res.id
+        details = show.details(serieId)
+        cast = details.credits.cast
+        bigCast = cast
+        cast = cast[:5]
+        runTime = details.episode_run_time
+        duration = ""
+        for i in range(len(runTime)):
+            if i != len(runTime)-1:
+                duration += f"{str(runTime[i])}:"
+            else:
+                duration += f"{str(runTime[i])}"
+        seasonsInfo = details.seasons
+        serieGenre = details.genres
+        bandeAnnonce = details.videos.results
+        bandeAnnonceUrl = ""
+        if len(bandeAnnonce) > 0:
+            for video in bandeAnnonce:
+                bandeAnnonceType = video.type
+                bandeAnnonceHost = video.site
+                bandeAnnonceKey = video.key                   
+                if bandeAnnonceType == "Trailer":
+                    try:
+                        bandeAnnonceUrl = websitesTrailers[bandeAnnonceHost] + bandeAnnonceKey
+                        break
+                    except KeyError as e:
+                        bandeAnnonceUrl = "Unknown"
+                        print(e)
+        genreList = []
+        for genre in serieGenre:
+            genreList.append(genre.name)
+        seasons = []
+        serieData = {}
+        for season in seasonsInfo:
+            releaseDate = season.air_date
+            episodesNumber = season.episode_count
+            seasonNumber = season.season_number
+            seasonId = season.id
+            seasonName = season.name
+            seasonDescription = season.overview
+            seasonCoverPath = f"https://image.tmdb.org/t/p/original{season.poster_path}"
+
+            allSeasonsUglyDict = allSeries[serie]["seasons"].keys()
+            allSeasons = [int(season) for season in allSeasonsUglyDict]
+            seasonData = {}
+            if seasonNumber in allSeasons:
+                for episode in allSeries[serie]["seasons"][str(seasonNumber)]:
+                    slugs = allSeries[serie]["seasons"][str(seasonNumber)]
+                    slug = slugs[episode]
+                    slugReal = slug.replace(allSeriesPath, "")
+                    slug = slug.replace(allSeriesPath, "http://localhost:8800")
+                    episodeNumber = episode
+                    episodePath = allSeries[serie]["seasons"][str(seasonNumber)][episodeNumber]
+                    episodeName = episodePath.split("/")[-1]
+                    episodeName, extension = os.path.splitext(episodeName)
+                    episodeIndex = int(episodeName[1:])
+                    showEpisode = Episode()
+                    try:
+                        episodeInfo = showEpisode.details(serieId, seasonNumber, episodeIndex)
+                        thisEpisodeData = {"episodeName": episodeInfo.name, "episodeNumber": str(episodeInfo.episode_number), "episodeDescription": episodeInfo.overview, "episodeCoverPath": f"https://image.tmdb.org/t/p/original{episodeInfo.still_path}", "releaseDate": episodeInfo.air_date, "episodeSlug": slug, "slug": slugReal}
+                        #print all the type of the values of the episode
+                        seasonData[episodeIndex] = thisEpisodeData
+                    except TMDbException:
+                        continue
+                    #print(f"{serie} S{seasonNumber}E{episodeNumber} / S{len(allSeasons)}E{episodesNumber}")
+                season = {"release": releaseDate, "episodesNumber": episodesNumber, "seasonNumber": seasonNumber, "seasonId": seasonId, "seasonName": seasonName, "seasonDescription": seasonDescription, "seasonCoverPath": seasonCoverPath, "episodes": seasonData}
+                seasons.append(season)
+        serieData = {"name": name, "originalName": originalSerieTitle, "duration": duration, "genre": genreList,"serieId": serieId, "serieCoverPath": serieCoverPath, "banniere": banniere, "description": description, "note": note, "date": date, "cast": cast, "bigCast":bigCast, "bandeAnnonce" : bandeAnnonceUrl, "seasons": seasons}
+        searchedSeries.append(serieData)
+        allSeriesDict[name] = serieData
 
 def length_video(path: str) -> float:
     seconds = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of",
@@ -404,6 +592,22 @@ def chunkCaption(video_name, language, index):
 
     return extractCaptionsResponse
 
+@app.route("/chunkAudio/<language>/<index>/<video_name>.mp3", methods=["GET"])
+def chunkAudio(video_name, language, index):
+    global movieExtension
+    moviesPath = config.get("ChocolateSettings", "MoviesPath")
+    video_path = f"{moviesPath}\{video_name}{movieExtension}"
+    extractAudioCommand = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-i", video_path, "-map", f"a:{index}", "-f", "mp3", "pipe:1"]
+
+    print(" ".join(extractAudioCommand))
+
+    extractAudio = subprocess.run(extractAudioCommand, stdout=subprocess.PIPE)
+
+    extractAudioResponse = make_response(extractAudio.stdout)
+    extractAudioResponse.headers.set("Content-Type", "audio/mpeg")
+    extractAudioResponse.headers.set("Content-Disposition", "attachment", filename=f"{video_name}-{index}.mp3")
+
+    return extractAudioResponse
 
 @app.route("/settings")
 def settings():
@@ -414,9 +618,12 @@ def settings():
 @app.route("/saveSettings/", methods=['POST'])
 def saveSettings():
     MoviesPath = request.form['moviesPath']
+    SeriesPath = request.form['seriesPath']
     language = request.form['language']
     if MoviesPath != "":
         config.set("ChocolateSettings", "moviespath", MoviesPath)
+    if SeriesPath != "":
+        config.set("ChocolateSettings", "seriespath", SeriesPath)
     if language != "":
         config.set("ChocolateSettings", "language", language)
     with open(f'{currentCWD}/config.ini', 'w') as conf:
@@ -426,29 +633,57 @@ def saveSettings():
 #create a route to send all the movies to the page in a json
 @app.route("/getAllMovies")
 def getAllMovies():
-    global simpleData
-    simpleData.sort(key=lambda x: x["title"].lower())
-    return json.dumps(simpleData, ensure_ascii=False)
+    global simpleDataFilms
+    simpleDataFilms.sort(key=lambda x: x["title"].lower())
+    return json.dumps(simpleDataFilms, ensure_ascii=False)
+
+@app.route("/getAllSeries")
+def getAllSeries():
+    global allSeriesDict
+    allSeriesDictHere = dict(sorted(allSeriesDict.items()))
+
+    return json.dumps(allSeriesDictHere, ensure_ascii=False, default=str, indent=4)
 
 @app.route("/getRandomMovie")
 def getRandomMovie():
-    global simpleData
-    simpleData.sort(key=lambda x: x["title"].lower())
-    randomMovie = random.choice(simpleData)
+    global simpleDataFilms
+    randomMovie = random.choice(simpleDataFilms)
     return json.dumps(randomMovie, ensure_ascii=False)
 
+@app.route("/getRandomSerie")
+def getRandomSeries():
+    global allSeriesDict
+    randomSerie = random.choice(list(allSeriesDict.items()))
+    return json.dumps(randomSerie, ensure_ascii=False, default=str)
+
 def getSimilarMovies(movieId):
-    global simpleData
+    global simpleDataFilms
     similarMoviesPossessed = []
     movie = Movie()
     similarMovies = movie.recommendations(movieId)
     for movieInfo in similarMovies:
         movieName = movieInfo.title
-        for movie in simpleData:
+        for movie in simpleDataFilms:
             if movieName == movie["title"]:
                 similarMoviesPossessed.append(movie)
                 break
     return similarMoviesPossessed
+
+def getSimilarSeries(seriesId):
+    global allSeriesDict
+    similarSeriesPossessed = []
+    show = TV()
+    similarSeries = show.recommendations(seriesId)
+    for serieInfo in similarSeries:
+        serieName = serieInfo.name
+        for serie in allSeriesDict:
+            try:
+                if serieName == allSeriesDict[serie]["name"]:
+                    similarSeriesPossessed.append(serie)
+                    break
+            except KeyError:
+                pass
+    return similarSeriesPossessed
 
 @app.route("/getMovieData/<title>", methods=['GET', 'POST'])
 def getMovieData(title):
@@ -461,11 +696,29 @@ def getMovieData(title):
     else:
         return "Not Found"
 
+@app.route("/getSerieData/<title>", methods=['GET', 'POST'])
+def getSeriesData(title):
+    global allSeriesDict
+    if title in allSeriesDict.keys():
+        data = allSeriesDict[title]
+        SeriesId = data["serieId"]
+        data["similarSeries"] = getSimilarSeries(SeriesId)
+        return json.dumps(data, ensure_ascii=False, default=dict, indent=4)
+    else:
+        return "Not Found"
+
 @app.route("/getFirstSevenMovies")
 def getFirstEightMovies():
-    global simpleData
-    simpleData.sort(key=lambda x: x["title"].lower())
-    return json.dumps(simpleData[:7], ensure_ascii=False)
+    global simpleDataFilms
+    simpleDataFilms.sort(key=lambda x: x["title"].lower())
+    return json.dumps(simpleDataFilms[:7], ensure_ascii=False)
+
+@app.route("/getFirstSevenSeries")
+def getFirstEightSeries():
+    global allSeriesDict
+    #get the first seven element of the dictionary
+    allSeriesDict7 = dict(list(allSeriesDict.items())[:7])
+    return json.dumps(list(allSeriesDict7.items()), ensure_ascii=False, default=str)
 
 @app.route('/')
 @app.route('/index')
@@ -484,7 +737,14 @@ def films():
 
     return render_template('homeFilms.html', conditionIfOne=searchedFilmsUp0, errorMessage=errorMessage, routeToUse=routeToUse)
 
+@app.route("/series")
+def series():
+    global allSeriesSorted
+    searchedSeriesUp0 = len(searchedSeries) == 0
+    errorMessage = "Verify that the path is correct"
+    routeToUse = "/getFirstSevenSeries"
 
+    return render_template('homeSeries.html', conditionIfOne=searchedSeriesUp0, errorMessage=errorMessage, routeToUse=routeToUse)
 
 @app.route("/movieLibrary")
 def library():
@@ -494,15 +754,22 @@ def library():
     routeToUse = "/getAllMovies"
     return render_template('allFilms.html', conditionIfOne=searchedFilmsUp0, errorMessage=errorMessage, routeToUse=routeToUse)
 
+@app.route("/serieLibrary")
+def seriesLibrary():
+    global allSeriesSorted
+    searchedSeriesUp0 = len(searchedSeries) == 0
+    errorMessage = "Verify that the path is correct"
+    routeToUse = "/getAllSeries"
+    return render_template('allSeries.html', conditionIfOne=searchedSeriesUp0, errorMessage=errorMessage, routeToUse=routeToUse)
 
 @app.route("/searchInAllMovies/<search>")
 def searchInAllMovies(search):    
-    global simpleData
+    global simpleDataFilms
     bestMatchs = {}
     movies = []
     points = {}
 
-    for movie in simpleData:
+    for movie in simpleDataFilms:
         search = search.replace("%20", " ")
         distance = fuzz.ratio(search, movie["title"])
         points[movie["title"]] = distance
@@ -510,20 +777,48 @@ def searchInAllMovies(search):
     bestMatchs = sorted(points.items(), key=lambda x: x[1], reverse=True)
     for movie in bestMatchs:
         thisMovie = movie[0]
-        for films in simpleData:
+        for films in simpleDataFilms:
             if films["title"] == thisMovie:
                 movies.append(films)
                 break
                 
     return json.dumps(movies, ensure_ascii=False)
 
-@app.route("/search/<search>")
-def search(search):
+@app.route("/searchInAllSeries/<search>")
+def searchInAllSeries(search):
+    global simpleDataSeries
+    bestMatchs = {}
+    series = []
+    points = {}
+
+    for serie in simpleDataSeries:
+        search = search.replace("%20", " ")
+        distance = fuzz.ratio(search, serie["title"])
+        points[serie["title"]] = distance
+
+    bestMatchs = sorted(points.items(), key=lambda x: x[1], reverse=True)
+    for serie in bestMatchs:
+        thisSerie = serie[0]
+        for series in simpleDataSeries:
+            if series["title"] == thisSerie:
+                series.append(series)
+                break
+                
+    return json.dumps(series, ensure_ascii=False)
+
+@app.route("/search/movie/<search>")
+def searchMovie(search):
     searchedFilmsUp0 = False
     errorMessage = "Verify your search terms"
     routeToUse = "/searchInAllMovies/" + search
     return render_template('allFilms.html', conditionIfOne=searchedFilmsUp0, errorMessage=errorMessage, routeToUse=routeToUse)
 
+@app.route("/search/series/<search>")
+def searchSeries(search):
+    searchedSeriesUp0 = False
+    errorMessage = "Verify your search terms"
+    routeToUse = "/searchInAllSeries/" + search
+    return render_template('allSeries.html', conditionIfOne=searchedSeriesUp0, errorMessage=errorMessage, routeToUse=routeToUse)
 
 @app.route("/movie/<slug>")
 def movie(slug):
@@ -535,17 +830,29 @@ def movie(slug):
     allCaptions = generateCaption(slug)
     return render_template("film.html", movieSlug=movieSlug, slug=slug, movieUrl=link, allCaptions=allCaptions)
 
+@app.route("/series/<name>/<saison>/<slug>")
+def serie(name, saison, slug):
+    global filmEncode, movieExtension
+    if slug.endswith("ttf") == False:
+        movieSlug = getMovie(slug)
+        rewriteSlug, movieExtension = os.path.splitext(slug)
+        link = f"/video/{rewriteSlug}.m3u8".replace(" ", "%20") 
+    allCaptions = generateCaption(slug)
+    return render_template("film.html", movieSlug=movieSlug, slug=slug, movieUrl=link, allCaptions=allCaptions)
+
 def generateCaption(slug):
-    command = ["ffprobe", "-loglevel", "error", "-select_streams", "s", "-show_entries", "stream=index:stream_tags=language", "-of", "csv=p=0", slug]
-    pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
+    captionCommand = ["ffprobe", "-loglevel", "error", "-select_streams", "s", "-show_entries", "stream=index:stream_tags=language", "-of", "csv=p=0", slug]
+    captionPipe = subprocess.Popen(captionCommand, stdout=subprocess.PIPE)
     try:
         slug = slug.split("\\")[-1]
         slug = slug.split("/")[-1]
     except:
         slug = slug.split("/")[-1]
     rewriteSlug, movieExtension = os.path.splitext(slug)
-    response = pipe.stdout.read().decode("utf-8")
-    response = response.split("\n")
+    captionResponse = captionPipe.stdout.read().decode("utf-8")
+    captionResponse = captionResponse.split("\n")
+
+
     allCaptions = []
     languages = {
         'eng': 'English',
@@ -561,13 +868,51 @@ def generateCaption(slug):
         'srp': 'Srpski',
         }
 
-    response.pop()
-    for line in response:
+    captionResponse.pop()
+
+    for line in captionResponse:
         line = line.rstrip()
         language = line.split(",")[1]
         index = line.split(",")[0]
         allCaptions.append({"index": index, "languageCode" : language, "language": languages[language], "url":f"/chunkCaption/{language}/{index}/{rewriteSlug}.vtt"})
+    
     return allCaptions
+
+@app.route("/generateAudio/<slug>")
+def generateAudio(slug):
+    audioCommand = ["ffprobe", "-loglevel", "error", "-select_streams", "a", "-show_entries", "stream=index:stream_tags=language", "-of", "csv=p=0", slug]
+    audioPipe = subprocess.Popen(audioCommand, stdout=subprocess.PIPE)
+    try:
+        slug = slug.split("\\")[-1]
+        slug = slug.split("/")[-1]
+    except:
+        slug = slug.split("/")[-1]
+    rewriteSlug, movieExtension = os.path.splitext(slug)
+    audioResponse = audioPipe.stdout.read().decode("utf-8")
+    audioResponse = audioResponse.split("\n")
+    audioResponse.pop()
+    allAudio = []
+    languages = {
+        'eng': 'English',
+        'fre': 'Français',
+        'spa': 'Español',
+        'por': 'Português',
+        'ita': 'Italiano',
+        'ger': 'Deutsch',
+        'rus': 'Русский',
+        'pol': 'Polski',
+        'por': 'Português',
+        'chi': '中文',
+        'srp': 'Srpski',
+        }
+    for line in audioResponse:
+        line = line.rstrip()
+        language = line.split(",")[1]
+        index = line.split(",")[0]
+        allAudio.append({"index": index, "languageCode" : language, "language": languages[language], "url":f"/chunkAudio/{language}/{index}/{rewriteSlug}.mp3"})
+
+    return json.dumps(allAudio, ensure_ascii=False)
+
 
 @app.route("/actor/<actorName>")
 def actor(actorName):
@@ -576,7 +921,7 @@ def actor(actorName):
 
 @app.route("/getActorData/<actorName>", methods=['GET', 'POST'])
 def getActorData(actorName):
-    global searchedFilms, simpleData
+    global searchedFilms, simpleDataFilms
     movies = []
     person = Person()
     actorDatas = person.search(actorName)
@@ -584,7 +929,7 @@ def getActorData(actorName):
         actors = movie["theBigCast"]
         for actor in actors:
             if actor[0] == actorName:
-                for movieData in simpleData:
+                for movieData in simpleDataFilms:
                     if movie["title"] == movieData["title"]:
                         movies.append(movie)
                         break
@@ -606,6 +951,6 @@ def getActorData(actorName):
     return json.dumps(actorData, default=lambda o: o.__dict__, ensure_ascii=False)
 
 if __name__ == '__main__':
+    getSeries()
     getMovies()
-    print("Starting server...")
     app.run(host="0.0.0.0", port="8500")
