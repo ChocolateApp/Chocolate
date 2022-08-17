@@ -8,6 +8,8 @@ from pathlib import Path
 import requests, os, subprocess, configparser, socket, datetime, subprocess, socket, platform, GPUtil, json, random
 from Levenshtein import distance as lev
 from fuzzywuzzy import fuzz
+from ask_lib import AskResult, ask
+
 
 
 app = Flask(__name__)
@@ -130,6 +132,7 @@ def getMovies():
             index = filmFileList.index(searchedFilm)
             print(f"{index+1}/{len(filmFileList)}")
             
+            search = sorted(search, key=lambda k: k['popularity'], reverse=True)
             bestMatch = search[0]
             for i in range(len(search)):
                 if lev(movieTitle, search[i].title) < lev(movieTitle, bestMatch.title) and bestMatch.title not in filmFileList:
@@ -274,7 +277,7 @@ def getSeries():
     if allSeriesPath == ".":
         allSeriesPath = str(Path.home() / "Downloads")
     try:
-        allSeries = [ name for name in os.listdir(allSeriesPath) if os.path.isdir(os.path.join(allSeriesPath, name)) ]
+        allSeries = [ name for name in os.listdir(allSeriesPath) if os.path.isdir(os.path.join(allSeriesPath, name)) and name.endswith((".rar", ".zip", ".part")) == False ]
     except OSError:
         print("No series found")
         return
@@ -287,14 +290,27 @@ def getSeries():
         serieSeasons = {}
         for season in seasons:
             path = f"{allSeriesPath}/{series}"
-            if season.startswith(tuple(allSeasonsAppelations)) and season.endswith(("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")):
-                pass
-            else:
+            if not season.startswith(tuple(allSeasonsAppelations)) and not season.endswith(("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")):
                 allSeasons = os.listdir(f"{path}")
                 for allSeason in allSeasons:
-                    if allSeriesPath != str(Path.home() / "Downloads") or allSeriesPath != ".":
-                        actualName = f"{series}/{allSeason}"
-                        os.rename(f"{path}/{allSeason}", f"{path}/S{allSeasons.index(allSeason)+1}")
+                    untouchedSeries = config["ChocolateSettings"]["untouchedSeries"].split(";")
+                    if (allSeriesPath != str(Path.home() / "Downloads") or allSeriesPath != ".") and allSeason not in untouchedSeries and allSeason.startswith(tuple(allSeasonsAppelations)) == False and allSeason.endswith(("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")) == False:
+                        if os.path.isdir(f"{path}/{allSeason}"):
+                            reponse = ask(f"I found that folder, can I rename it from {allSeason} to S{allSeasons.index(allSeason)+1}", AskResult.YES)
+                            if reponse:
+                                try:
+                                    os.rename(f"{path}/{allSeason}", f"{path}/S{allSeasons.index(allSeason)+1}")
+                                except Exception as e:
+                                    print(f"Something went wrong : {e}")
+                            else:
+                                if config["ChocolateSettings"]["untouchedSeries"] == "Empty":
+                                    config.set("ChocolateSettings", "untouchedSeries", allSeason)
+                                else:
+                                    untouchedSeries = config["ChocolateSettings"]["untouchedSeries"]
+                                    config.set("ChocolateSettings", "untouchedSeries", f"{untouchedSeries};{allSeason}")
+                                with open(f'{currentCWD}/config.ini', 'w') as conf:
+                                    config.write(conf)
+
 
             episodesPath = f"{path}\{season}"
             #get the season number
@@ -358,13 +374,13 @@ def getSeries():
         
         index = allSeriesName.index(serieTitle)
         print(f"{index+1}/{len(allSeriesName)}")
-                
+        search = sorted(search, key=lambda k: k['popularity'], reverse=True)
         bestMatch = search[0]
         for i in range(len(search)):
             if lev(serieTitle, search[i].name) < lev(serieTitle, bestMatch.name) and bestMatch.name not in allSeriesName:
                 bestMatch = search[i]
             elif lev(serieTitle, search[i].name) == lev(serieTitle, bestMatch.name) and bestMatch.name not in allSeriesName:
-                bestMatch = bestMatch                
+                bestMatch = bestMatch
             if lev(serieTitle, bestMatch.name) == 0 and bestMatch.name not in allSeriesName:
                 break
                 
@@ -419,7 +435,10 @@ def getSeries():
             seasonCoverPath = f"https://image.tmdb.org/t/p/original{season.poster_path}"
 
             allSeasonsUglyDict = allSeries[serie]["seasons"].keys()
-            allSeasons = [int(season) for season in allSeasonsUglyDict]
+            try:
+                allSeasons = [int(season) for season in allSeasonsUglyDict]
+            except ValueError as e:
+                break
             seasonData = {}
             if seasonNumber in allSeasons:
                 for episode in allSeries[serie]["seasons"][str(seasonNumber)]:
