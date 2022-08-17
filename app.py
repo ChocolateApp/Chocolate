@@ -311,33 +311,31 @@ def getSeries():
                                 with open(f'{currentCWD}/config.ini', 'w') as conf:
                                     config.write(conf)
 
-
+            
             episodesPath = f"{path}\{season}"
-            #get the season number
             try:
                 seasonNumber = season.split(" ")[1]
             except Exception as e:
                 seasonNumber = season[1:]
             if os.path.isdir(episodesPath):
                 episodes = os.listdir(episodesPath)
-            seasonEpisodes = {}
-            for episode in episodes:
-                if os.path.isfile(f"{episodesPath}/{episode}"):
-                    if episode.startswith(tuple(allEpisodesAppelations)) and episode.endswith(("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")):
-                        pass
-                    else:
-                        actualName = f"{episodesPath}/{episode}"
-                        episodeName, extension =  os.path.splitext(episode)
-                        oldIndex = episodes.index(episode)
-                        try:
-                            os.rename(f"{episodesPath}/{episode}", f"{episodesPath}/E{episodes.index(episode)+1}{extension}")
-                        except FileExistsError:
+                seasonEpisodes = {}
+                for episode in episodes:
+                    if os.path.isfile(f"{episodesPath}/{episode}"):
+                        if episode.startswith(tuple(allEpisodesAppelations)) and episode.endswith(("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")):
                             pass
-                        episode = f"E{oldIndex+1}{extension}"
-                    #add episodes to a season list
-                    seasonEpisodes[oldIndex+1] = f"{path}/{season}/{episode}"
-            serieSeasons[seasonNumber] = seasonEpisodes
-
+                        else:
+                            actualName = f"{episodesPath}/{episode}"
+                            episodeName, extension =  os.path.splitext(episode)
+                            oldIndex = episodes.index(episode)
+                            try:
+                                os.rename(f"{episodesPath}/{episode}", f"{episodesPath}/E{episodes.index(episode)+1}{extension}")
+                            except FileExistsError:
+                                pass
+                            episode = f"E{oldIndex+1}{extension}"
+                        #add episodes to a season list
+                        seasonEpisodes[oldIndex+1] = f"{path}/{season}/{episode}"
+                serieSeasons[seasonNumber] = seasonEpisodes
         serieData = {}
         serieData["seasons"] = serieSeasons
         allSeriesDictTemp[series] = serieData
@@ -455,16 +453,21 @@ def getSeries():
                     try:
                         episodeInfo = showEpisode.details(serieId, seasonNumber, episodeIndex)
                         thisEpisodeData = {"episodeName": episodeInfo.name, "episodeNumber": str(episodeInfo.episode_number), "episodeDescription": episodeInfo.overview, "episodeCoverPath": f"https://image.tmdb.org/t/p/original{episodeInfo.still_path}", "releaseDate": episodeInfo.air_date, "episodeSlug": slug, "slug": slugReal}
-                        #print all the type of the values of the episode
                         seasonData[episodeIndex] = thisEpisodeData
                     except TMDbException:
                         continue
-                    #print(f"{serie} S{seasonNumber}E{episodeNumber} / S{len(allSeasons)}E{episodesNumber}")
                 season = {"release": releaseDate, "episodesNumber": episodesNumber, "seasonNumber": seasonNumber, "seasonId": seasonId, "seasonName": seasonName, "seasonDescription": seasonDescription, "seasonCoverPath": seasonCoverPath, "episodes": seasonData}
                 seasons.append(season)
-        serieData = {"name": name, "originalName": originalSerieTitle, "duration": duration, "genre": genreList,"serieId": serieId, "serieCoverPath": serieCoverPath, "banniere": banniere, "description": description, "note": note, "date": date, "cast": cast, "bigCast":bigCast, "bandeAnnonce" : bandeAnnonceUrl, "seasons": seasons}
+        try:
+            episodeSlug = seasons[0]["episodes"][1]["episodeSlug"]
+            episodeNumber = seasons[0]["episodes"][1]["episodeNumber"]
+        except:
+            episodeSlug = ""
+            episodeNumber = "error"
+        serieData = {"name": name, "originalName": originalSerieTitle, "duration": duration, "genre": genreList,"serieId": serieId, "serieCoverPath": serieCoverPath, "banniere": banniere, "description": description, "note": note, "date": date, "cast": cast, "bigCast":bigCast, "bandeAnnonce" : bandeAnnonceUrl, "firstEpisode": episodeSlug, "seasons": seasons}
         searchedSeries.append(serieData)
         allSeriesDict[name] = serieData
+        print(f"Serie : {name} is added to the list\n{serieData}")
 
 def length_video(path: str) -> float:
     seconds = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of",
@@ -491,15 +494,38 @@ def gpuname():
         raise ValueError("No GPUs detected in the system")
     return gpus[0].name 
 
+@app.route("/serievideo/<serie>/<season>/<episode>.m3u8", methods=["GET"])
+def createSerieM3U8(serie, season, episode):
+    seriesPath = config.get("ChocolateSettings", "seriesPath")
+    videoPath = os.path.join(seriesPath, serie, "Season "+season, "Episode "+episode+movieExtension)
+    duration = length_video(videoPath)
+    file = """
+    #EXTM3U
+    #EXT-X-VERSION:4
+    #EXT-X-TARGETDURATION:5
+    """
 
+    for i in range(0, int(duration), CHUNK_LENGTH):
+        file += f"""
+        #EXTINF:5.0,
+        /chunk/{serie}/{season}/{episode}-{(i // CHUNK_LENGTH) + 1}.ts
+        """
+
+    file += """
+    #EXT-X-ENDLIST"
+    """
+
+    response = make_response(file)
+    response.headers.set("Content-Type", "application/x-mpegURL")
+    response.headers.set("Content-Disposition", "attachment", filename=f"{episode}.m3u8")
+
+    return response
 
 @app.route("/video/<video_name>.m3u8", methods=["GET"])
 def create_m3u8(video_name):
     moviesPath = config.get("ChocolateSettings", "MoviesPath")
-    video_path = f"{moviesPath}\{video_name}.mkv"
+    video_path = f"{moviesPath}\{video_name}{movieExtension}"
     duration = length_video(video_path)
-    captions = generateCaption(video_path)
-    print(f"Captions : {captions}")
     file = """
     #EXTM3U
     #EXT-X-VERSION:4

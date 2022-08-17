@@ -77,6 +77,7 @@ function setPopup() {
                 var serieYear = data.date
                 var serieTrailer = data.bandeAnnonce
                 var serieSimilar = data.similarSeries
+                var serieFirstEp = data.firstEpisode
                 containerSimilar = document.getElementsByClassName("containerSimilar")[0]
 
                 if (serieSimilar.length === 0) {
@@ -207,7 +208,7 @@ function setPopup() {
                 }
 
                 var playButton = document.getElementsByClassName("playPopup")[0]
-                playButton.setAttribute("href", serieUrl);
+                playButton.setAttribute("href", serieFirstEp);
             })
         })
     }
