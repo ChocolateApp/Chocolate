@@ -28,11 +28,19 @@ This is what you have to do to get started with Chocolate :
 
 ### Prerequisites
 
-This is an example of how to list things you need to use the software and how to install them.
-* Python
-  ```sh
-  pip install -r requirements.txt
-  ```
+#### For Linux
+* Go to the [releases](https://github.com/Impre-visible/Chocolate/releases/)
+* Download the latest installer named `install.sh`
+* Place it where you want
+* Run it
+* Enjoy !
+
+#### For Windows
+* Go to the [releases](https://github.com/Impre-visible/Chocolate/releases/)
+* Download the latest installer named `install.exe`
+* Run it
+* Do the installation
+* Enjoy !
 
 ### Start Chocolate
 
