@@ -41,7 +41,8 @@ Execution of the following command will start Chocolate :
   ```sh
   python3 -m app.py
   ```
-
+* Wait for the server to start
+* Open your browser and go to http://localhost:8500 (you can change the port in the website settings)
 
 
 

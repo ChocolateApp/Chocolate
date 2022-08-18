@@ -44,6 +44,7 @@ currentCWD = os.getcwd()
 hostname = socket.gethostname()
 local_ip = socket.gethostbyname(hostname)
 config.set("ChocolateSettings", "localIP", local_ip)
+serverPort = config["ChocolateSettings"]["port"]
 filmEncode = None
 CHUNK_LENGTH = 5
 genreList = {
@@ -681,12 +682,15 @@ def saveSettings():
     MoviesPath = request.form['moviesPath']
     SeriesPath = request.form['seriesPath']
     language = request.form['language']
+    port = request.form['port']
     if MoviesPath != "":
         config.set("ChocolateSettings", "moviespath", MoviesPath)
     if SeriesPath != "":
         config.set("ChocolateSettings", "seriespath", SeriesPath)
     if language != "":
         config.set("ChocolateSettings", "language", language)
+    if port != "":
+        config.set("ChocolateSettings", "port", port)
     with open(f'{currentCWD}/config.ini', 'w') as conf:
         config.write(conf)
     return redirect(url_for('settings'))
@@ -1035,4 +1039,4 @@ if __name__ == '__main__':
     getSeries()
     getMovies()
     print('\033[?25h', end="")
-    app.run(host="0.0.0.0", port="8500")
+    app.run(host="0.0.0.0", port=serverPort)
