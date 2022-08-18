@@ -3,3 +3,4 @@ config.ini
 test.py
 rewrite.py
 config.ini
+*.sh
