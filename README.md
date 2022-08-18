@@ -39,7 +39,7 @@ This is an example of how to list things you need to use the software and how to
 Execution of the following command will start Chocolate :
 * Python
   ```sh
-  python3 -m chocolate
+  python3 -m app.py
   ```
 
 
