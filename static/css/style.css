@@ -569,7 +569,15 @@ form#searchForm:hover .form_field {
     cursor: pointer;
 }
 
-.containerSimilar {
+.containerSeasons {
+    display: inline-grid;
+    grid-template-columns: repeat(4, 1fr);
+    margin-top: 20vh;
+    height: auto !important;
+}
+
+.containerSimilar,
+.containerSeasons {
     grid-template-rows: 1fr;
     grid-column-gap: 0px;
     grid-row-gap: 0px;
@@ -586,7 +594,8 @@ form#searchForm:hover .form_field {
 }
 
 .containerSimilar .movie,
-.containerSimilar .serie {
+.containerSimilar .serie,
+.containerSeasons .season {
     width: 12vw;
     height: 38vh;
     margin-left: 1.5vw;
@@ -595,7 +604,8 @@ form#searchForm:hover .form_field {
 }
 
 .containerSimilar .movie .movieImage,
-.containerSimilar .serie .serieImage {
+.containerSimilar .serie .serieImage,
+.containerSeasons .season .seasonCoverImage {
     width: 12vw;
     height: 36vh;
     object-fit: cover;
@@ -603,8 +613,13 @@ form#searchForm:hover .form_field {
 }
 
 .containerSimilar .movie .movieTitle,
-.containerSimilar .serie .serieTitle {
+.containerSimilar .serie .serieTitle,
+.containerSeasons .season .seasonTitle {
     text-align: center;
+}
+
+.season {
+    cursor: pointer !important;
 }
 
 .trailerVideo {

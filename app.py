@@ -129,8 +129,16 @@ def getMovies():
                 
             if not search:
                 continue
-            index = filmFileList.index(searchedFilm)
-            print(f"{index+1}/{len(filmFileList)}")
+            index = filmFileList.index(searchedFilm)+1
+            percentage = index*100/len(filmFileList)
+
+
+            loadingFirstPart = ("•"*int(percentage*0.2))[:-1]
+            loadingFirstPart = loadingFirstPart+"➤"
+            loadingSecondPart = ("•"*(20-int(percentage*0.2)))
+            loading = f"{str(int(percentage)).rjust(3)}% | [\33[32m{loadingFirstPart} \33[31m{loadingSecondPart}\33[0m] | {movieTitle} | {index}/{len(filmFileList)}                   "
+            print('\033[?25l', end="")
+            print(loading, end='\r', flush=True)
             
             search = sorted(search, key=lambda k: k['popularity'], reverse=True)
             bestMatch = search[0]
@@ -263,7 +271,7 @@ def getMovies():
 
         elif searchedFilm.endswith("/") == False :
             allMoviesNotSorted.append(searchedFilm)
-
+    print()
 
 def getSeries():
     print("SerieServer is starting")
@@ -370,8 +378,17 @@ def getSeries():
             allSeriesNotSorted.append(serieTitle)
             break
         
-        index = allSeriesName.index(serieTitle)
-        print(f"{index+1}/{len(allSeriesName)}")
+        index = allSeriesName.index(serieTitle)+1
+        percentage = index*100/len(allSeriesName)
+
+        loadingFirstPart = ("•"*int(percentage*0.2))[:-1]
+        loadingFirstPart = loadingFirstPart+"➤"
+        loadingSecondPart = ("•"*(20-int(percentage*0.2)))
+        loading = f"{str(int(percentage)).rjust(3)}% | [\33[32m{loadingFirstPart} \33[31m{loadingSecondPart}\33[0m] | {serieTitle} | {index}/{len(allSeriesName)}                 "
+        print('\033[?25l', end="")
+        print(loading, end='\r', flush=True)
+
+
         search = sorted(search, key=lambda k: k['popularity'], reverse=True)
         bestMatch = search[0]
         for i in range(len(search)):
@@ -467,8 +484,7 @@ def getSeries():
         serieData = {"name": name, "originalName": originalSerieTitle, "duration": duration, "genre": genreList,"serieId": serieId, "serieCoverPath": serieCoverPath, "banniere": banniere, "description": description, "note": note, "date": date, "cast": cast, "bigCast":bigCast, "bandeAnnonce" : bandeAnnonceUrl, "firstEpisode": episodeSlug, "seasons": seasons}
         searchedSeries.append(serieData)
         allSeriesDict[name] = serieData
-        print(f"Serie : {name} is added to the list\n{serieData}")
-
+    print()
 def length_video(path: str) -> float:
     seconds = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of",
                               "default=noprint_wrappers=1:nokey=1", path], stdout=subprocess.PIPE, text=True)
@@ -791,6 +807,26 @@ def series():
 
     return render_template('homeSeries.html', conditionIfOne=searchedSeriesUp0, errorMessage=errorMessage, routeToUse=routeToUse)
 
+@app.route("/serie/<name>/<id>")
+def serie(name, id):
+    global allSeriesDict
+    if name in allSeriesDict.keys():
+        data = allSeriesDict[name]
+        return render_template('season.html', serie=data)
+    else:
+        return "Not Found"
+
+@app.route("/getSeasonData/<serieName>/<seasonId>/")
+def getSeasonData(serieName, seasonId):
+    global allSeriesDict
+    if serieName in allSeriesDict.keys():
+        data = allSeriesDict[serieName]
+        print(json.dumps(data, indent=4,ensure_ascii=False, default=str))
+        season = data["seasons"][seasonId]
+        return json.dumps(season, ensure_ascii=False, default=str)
+    else:
+        return "Not Found"
+
 @app.route("/movieLibrary")
 def library():
     global allMoviesSorted
@@ -876,7 +912,7 @@ def movie(slug):
     return render_template("film.html", movieSlug=movieSlug, slug=slug, movieUrl=link, allCaptions=allCaptions)
 
 @app.route("/series/<name>/<saison>/<slug>")
-def serie(name, saison, slug):
+def seriesPlayer(name, saison, slug):
     global filmEncode, movieExtension
     if slug.endswith("ttf") == False:
         movieSlug = getMovie(slug)
@@ -998,4 +1034,5 @@ def getActorData(actorName):
 if __name__ == '__main__':
     getSeries()
     getMovies()
+    print('\033[?25h', end="")
     app.run(host="0.0.0.0", port="8500")

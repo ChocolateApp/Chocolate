@@ -248,62 +248,16 @@ function setPopup() {
 }
 
 
-function getFirstSeries() {
+function getSeasonData() {
     series = document.getElementsByClassName("series")[0]
     routeToUse = series.getAttribute("id")
     series.id = "series"
+    url = window.location.href
+    urlArray = url.split("/")
+    serieName = urlArray[urlArray.length - 2]
+    id = urlArray[urlArray.length - 1]
 
-    fetch("/getRandomSerie").then(function(response) {
-        return response.json()
-    }).then(function(data) {
-        bigBanner = document.getElementsByClassName("bigBanner")[0]
-        imageBanner = document.getElementsByClassName("bannerCover")[0]
-        genreBanner = document.getElementsByClassName("bannerGenre")[0]
-        titleBanner = document.getElementsByClassName("bannerTitle")[0]
-        descriptionBanner = document.getElementsByClassName("bannerDescription")[0]
-        watchNow = document.getElementsByClassName("watchNowA")[0]
-
-        serie = data
-        var serieUrl = serie[1]['seasons'][0]['episodes']['1']['slug']
-        theSerieName = serie[0]
-        firstSeason = serie[1]['seasons'][0]
-        seasonNumber = firstSeason['season_number']
-
-        serieUrl = "/serie" + serieUrl
-
-        imageBanner.setAttribute("src", serie[1]['banniere'])
-        if (imageBanner.src == "https://image.tmdb.org/t/p/originalNone") {
-            imageBanner.src = brokenPath
-        }
-        imageBanner.setAttribute("alt", serie[0])
-        imageBanner.setAttribute("title", serie[0])
-
-        titleBanner.innerHTML = serie[0]
-
-        descriptionBanner.innerHTML = serie[1]['description']
-        descriptionBanner.innerHTML = descriptionBanner.innerHTML.substring(0, 200) + "..."
-        descriptionBanner.innerHTML += " <a id='lireLaSuite' href='#'>Lire la suite</a>"
-
-        lireLaSuite = document.getElementById("lireLaSuite")
-        lireLaSuite.addEventListener("click", function() {
-            descriptionBanner.innerHTML = serie[1]['description']
-        })
-
-        genres = serie[1]['genre']
-        for (var i = 0; i < genres.length; i++) {
-            genreBanner.innerHTML += genres[i]
-            if (i != genres.length - 1) {
-                genreBanner.innerHTML += ", "
-            }
-        }
-
-        console.log(firstSeason)
-
-        thisSerieUrl = `/serie/${theSerieName}/${seasonNumber}`
-        watchNow.setAttribute("href", thisSerieUrl)
-    })
-
-    fetch(routeToUse).then(function(response) {
+    fetch(`/getSeasonData/${serieName}/${id}`).then(function(response) {
         return response.json()
     }).then(function(data) {
         data = Object.entries(data)
@@ -334,8 +288,5 @@ function getFirstSeries() {
 }
 
 window.onload = function() {
-    brokenPathDiv = document.getElementsByClassName("brokenPath")[0]
-    brokenPath = brokenPathDiv.getAttribute("id")
-    brokenPathDiv.parentNode.removeChild(brokenPathDiv)
-    getFirstSeries()
+    getSeasonData()
 }
