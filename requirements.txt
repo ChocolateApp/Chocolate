@@ -1,7 +1,10 @@
+ask_lib==1.1.0
 beautifulsoup4==4.11.1
 Flask==2.0.3
 Flask_Cors==3.0.10
+fuzzywuzzy==0.18.0
 get_video_properties==0.1.1
-numpy==1.22.1
+GPUtil==1.4.0
+python_Levenshtein==0.12.2
 requests==2.26.0
 tmdbv3api==1.7.7
