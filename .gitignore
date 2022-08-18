@@ -2,4 +2,4 @@
 config.ini
 test.py
 rewrite.py
-*.ini
+config.ini
