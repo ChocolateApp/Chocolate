@@ -2,9 +2,18 @@
     <img src="https://user-images.githubusercontent.com/69050895/185436929-c80736b3-07ce-434b-ba96-d753c8e9f83c.png" height="300px">
 </p>
 
-<!-- ABOUT THE PROJECT -->
+<div style="font-style: italic; text-align: center;" markdown="1">
+
+[![wakatime](https://wakatime.com/badge/user/4cf4132a-4ced-411d-b714-67bdbdc84527/project/ecce3f45-dba9-4e4b-8f78-693c6d237d1c.svg)](https://wakatime.com/badge/user/4cf4132a-4ced-411d-b714-67bdbdc84527/project/ecce3f45-dba9-4e4b-8f78-693c6d237d1c)
+  [![GitHub release](https://img.shields.io/github/release/Impre-visible/Chocolate?include_prereleases=&sort=semver&color=blue)](https://github.com/Impre-visible/Chocolate/releases/)
+  [![GitHub stars](https://img.shields.io/github/stars/Impre-visible/Chocolate?style=social&label=Stars&color=blue)](https://github.com/Impre-visible/Chocolate)
+  [![GitHub watchers](https://img.shields.io/github/watchers/Impre-visible/Chocolate?style=social&label=Watchers&color=blue)](https://github.com/Impre-visible/Chocolate)
+  [![License](https://img.shields.io/badge/License-MIT-blue)](#license)
+  [![issues - Chocolate](https://img.shields.io/github/issues/Impre-visible/Chocolate)](https://github.com/Impre-visible/Chocolate/issues)
+
+</div>
+
 ## About The Project
-[![wakatime](https://wakatime.com/badge/user/4cf4132a-4ced-411d-b714-67bdbdc84527/project/ecce3f45-dba9-4e4b-8f78-693c6d237d1c.svg)](https://wakatime.com/badge/user/4cf4132a-4ced-411d-b714-67bdbdc84527/project/ecce3f45-dba9-4e4b-8f78-693c6d237d1c)<br>
 Chocolate is an Open Source media manager.<br>
 It allows you to manage your media collection and organize it in a way that is easy to use and easy to search.<br>
 It's a free software.<br>
@@ -25,7 +34,9 @@ Chocolate is actually made with this technology :
 
 This is what you have to do to get started with Chocolate :
 
-### Prerequisites
+## Prerequisites
+
+### Installation
 
 #### For Linux
 * Go to the [releases](https://github.com/Impre-visible/Chocolate/releases/)
@@ -43,15 +54,14 @@ This is what you have to do to get started with Chocolate :
 
 ### Start Chocolate
 
-Execution of the following command will start Chocolate :
-* Python
-  ```sh
-  python3 -m app.py
-  ```
-* Wait for the server to start
-* Open your browser and go to http://localhost:8500 (you can change the port in the website settings)
+#### For Linux
+* Go where you installed Chocolate
+* execute run.sh
 
-
+#### For Windows
+* Press the windows button
+* Search for Chocolate
+* Launch it
 
 <!-- USAGE EXAMPLES -->
 ## Usage
@@ -91,6 +101,9 @@ Project Link: [https://github.com/Impre-visible/Chocolate](https://github.com/Im
 
 <!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments
+
+If you like this project, please consider giving me a star ⭐ to support my work and the futures update of this project. 
+[![stars - Chocolate](https://img.shields.io/github/stars/Impre-visible/Chocolate?style=social)](https://github.com/Impre-visible/Chocolate)
 
 This tool was made by Impre-visible, some features needed the help of several volunteers, that I thank, you can contact them on this server : [Dev'Area](https://discord.gg/hTmbFePH)
 

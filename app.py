@@ -21,7 +21,7 @@ tmdb.api_key = 'cb862a91645ec50312cf636826e5ca1f'
 config = configparser.ConfigParser()
 config.read('config.ini')
 
-if config["ChocolateSettings"]["language"] == "":
+if config["ChocolateSettings"]["language"] == "Empty":
     config["ChocolateSettings"]["language"] = "en-US"
 
 tmdb.language = config["ChocolateSettings"]["language"]
