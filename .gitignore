@@ -7,3 +7,4 @@ config.ini
 static/img/mediaImages/*.png
 scannedFiles.json
 config.ini
+scannedFiles.json
