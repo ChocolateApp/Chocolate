@@ -1,0 +1,1 @@
+Here will be displayed all the covers of your movies, show, and other medias
