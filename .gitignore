@@ -4,5 +4,6 @@ test.py
 rewrite.py
 config.ini
 *.sh
-rewrite.py
-rewrite.py
+static/img/mediaImages/*.png
+scannedFiles.json
+config.ini

@@ -63,6 +63,11 @@ This is what you have to do to get started with Chocolate :
 * Search for Chocolate
 * Launch it
 
+### Important Informations
+* At the first launch, Chocolate will be very slow. Be patient !
+* You can change a lot of settings directly on the website.
+* The default port is 8500.
+
 <!-- USAGE EXAMPLES -->
 ## Usage
 ![screencapture-localhost-8500-2022-08-18-18_03_30](https://user-images.githubusercontent.com/69050895/185441919-61db8093-8aa7-49d1-aa58-d04520b9a250.png)

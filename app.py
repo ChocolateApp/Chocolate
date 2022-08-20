@@ -10,8 +10,6 @@ from Levenshtein import distance as lev
 from fuzzywuzzy import fuzz
 from ask_lib import AskResult, ask
 
-
-
 app = Flask(__name__)
 CORS(app)
 
@@ -39,12 +37,16 @@ simpleDataSeries = {}
 allSeriesNotSorted = []
 allSeriesDict = {}
 allSeriesDictTemp = {}
-
 currentCWD = os.getcwd()
+
+with open(f"{currentCWD}/scannedFiles.json", 'r') as f:
+    jsonFileToRead = json.load(f)
+
 hostname = socket.gethostname()
 local_ip = socket.gethostbyname(hostname)
 config.set("ChocolateSettings", "localIP", local_ip)
 serverPort = config["ChocolateSettings"]["port"]
+
 filmEncode = None
 CHUNK_LENGTH = 5
 genreList = {
@@ -120,8 +122,7 @@ def getMovies():
             movieTitle = searchedFilm
             originalMovieTitle = movieTitle
             size = len(movieTitle)
-            movieTitle = movieTitle[:size - 4]
-
+            movieTitle, extension = os.path.splitext(movieTitle)
             try:
                 search = movie.search(movieTitle)
             except TMDbException:
@@ -137,7 +138,7 @@ def getMovies():
             loadingFirstPart = ("•"*int(percentage*0.2))[:-1]
             loadingFirstPart = loadingFirstPart+"➤"
             loadingSecondPart = ("•"*(20-int(percentage*0.2)))
-            loading = f"{str(int(percentage)).rjust(3)}% | [\33[32m{loadingFirstPart} \33[31m{loadingSecondPart}\33[0m] | {movieTitle} | {index}/{len(filmFileList)}                   "
+            loading = f"{str(int(percentage)).rjust(3)}% | [\33[32m{loadingFirstPart} \33[31m{loadingSecondPart}\33[0m] | {movieTitle} | {index}/{len(filmFileList)}                                                                                                                                                              "
             print('\033[?25l', end="")
             print(loading, end='\r', flush=True)
             
@@ -153,125 +154,184 @@ def getMovies():
             
             res = bestMatch
             name = res.title
-            movieCoverPath = f"https://image.tmdb.org/t/p/original{res.poster_path}"
-            banniere = f"https://image.tmdb.org/t/p/original{res.backdrop_path}"
-            description = res.overview
-            note = res.vote_average
-            date = res.release_date
-            movieId = res.id
-            details = movie.details(movieId)
 
-            casts = details.casts.cast
-            theCast = []
-            for cast in casts:
-                while len(theCast) < 5:
-                    characterName = cast.character
-                    actor = [cast.name, characterName , f"https://www.themoviedb.org/t/p/w600_and_h900_bestv2{cast.profile_path}"]
-                    if actor not in theCast:
-                        theCast.append(actor)
-                    else:
-                        break
-            theBigCast = []
-            for cast in casts:
-                characterName = cast.character
-                actor = [cast.name, characterName , f"https://www.themoviedb.org/t/p/w600_and_h900_bestv2{cast.profile_path}"]
-                if actor not in theBigCast:
-                    theBigCast.append(actor)
-                else:
-                    break
+            with open(f"{currentCWD}/scannedFiles.json", 'r') as f:
+                jsonFileToRead = json.load(f)
+            if name not in jsonFileToRead["movies"]:
+                movieCoverPath = f"https://image.tmdb.org/t/p/original{res.poster_path}"
+                banniere = f"https://image.tmdb.org/t/p/original{res.backdrop_path}"
+                rewritedName = movieTitle.replace(" ", "_")
+                if not os.path.exists(f"{currentCWD}/static/img/mediaImages/{rewritedName}_Cover.png"):
+                    with open(f"{currentCWD}/static/img/mediaImages/{rewritedName}_Cover.png", 'wb') as f:
+                        f.write(requests.get(movieCoverPath).content)
+                if not os.path.exists(f"{currentCWD}/static/img/mediaImages/{rewritedName}_Banner.png"):
+                    with open(f"{currentCWD}/static/img/mediaImages/{rewritedName}_Banner.png", 'wb') as f:
+                        f.write(requests.get(banniere).content)
+                banniere = f"/static/img/mediaImages/{rewritedName}_Banner.png"
+                movieCoverPath = f"/static/img/mediaImages/{rewritedName}_Cover.png"
+                
+                size1 = os.path.getsize(f"{currentCWD}{movieCoverPath}")
+                size2 = os.path.getsize(f"{currentCWD}{banniere}")
+                if size1 < 10240:
+                    movieCoverPath = "/static/img/broken.png"
+                if size2 < 10240:
+                    banniere = "/static/img/brokenBanner.png"
+                description = res.overview
+                note = res.vote_average
+                date = res.release_date
+                movieId = res.id
+                details = movie.details(movieId)
 
-            try:
-                date = datetime.datetime.strptime(date, "%Y-%m-%d").strftime("%d/%m/%Y")
-            except ValueError:
-                date = "Unknown"
-
-            genre = res.genre_ids
-            video_path = f"{path}\{originalMovieTitle}"
-            # convert seconds to hours, minutes and seconds
-            length = length_video(video_path)
-            length = str(datetime.timedelta(seconds=length))
-            length = length.split(":")
-
-            if len(length) == 3:
-                hours = length[0]
-                minutes = length[1]
-                seconds = str(round(float(length[2])))
-                if int(seconds) < 10:
-                    seconds = f"0{seconds}"
-                length = f"{hours}:{minutes}:{seconds}"
-            elif len(length) == 2:
-                minutes = length[0]
-                seconds = str(round(float(length[1])))
-                if int(seconds) < 10:
-                    seconds = f"0{seconds}"
-                length = f"{minutes}:{seconds}"
-            elif len(length) == 1:
-                seconds = str(round(float(length[0])))
-                if int(seconds) < 10:
-                    seconds = "0"+seconds
-                length = f"00:{seconds}"
-            else:
-                length = "0"
-            
-            duration = length
-
-            for genreId in genre:
-                if genreList[genreId] not in genresUsed:
-                    genresUsed.append(genreList[genreId])
-            
-            # replace the id with the name of the genre
-            movieGenre = []
-            for genreId in genre:
-                movieGenre.append(genreList[genreId])
-
-            bandeAnnonce = details.videos.results
-            if len(bandeAnnonce) > 0:
-                for video in bandeAnnonce:
-                    bandeAnnonceType = video.type
-                    bandeAnnonceHost = video.site
-                    bandeAnnonceKey = video.key
-                    if bandeAnnonceType == "Trailer":
-                        try:
-                            bandeAnnonceUrl = websitesTrailers[bandeAnnonceHost] + bandeAnnonceKey
+                casts = details.casts.cast
+                theCast = []
+                for cast in casts:
+                    while len(theCast) < 5:
+                        characterName = cast.character
+                        actor = [cast.name, characterName , f"https://www.themoviedb.org/t/p/w600_and_h900_bestv2{cast.profile_path}"]
+                        if actor not in theCast:
+                            theCast.append(actor)
+                        else:
                             break
-                        except KeyError as e:
-                            bandeAnnonceUrl = "Unknown"
-                            print(e)
+                for cast in theCast:
+                    actorName = cast[0].replace(" ", "_").replace("/", "").replace(" \"", "")
+                    imagePath = cast[2]
+                    if not os.path.exists(f"{currentCWD}/static/img/mediaImages/Actor_{actorName}.png"):
+                        with open(f"{currentCWD}/static/img/mediaImages/Actor_{actorName}.png", 'wb') as f:
+                            f.write(requests.get(imagePath).content)
+                    actorImage = f"/static/img/mediaImages/Actor_{actorName}.png"
+
+                    cast = [actorName, cast[1], actorImage]
+                try:
+                    date = datetime.datetime.strptime(date, "%Y-%m-%d").strftime("%d/%m/%Y")
+                except ValueError:
+                    date = "Unknown"
+
+                genre = res.genre_ids
+                video_path = f"{path}\{originalMovieTitle}"
+                # convert seconds to hours, minutes and seconds
+                length = length_video(video_path)
+                length = str(datetime.timedelta(seconds=length))
+                length = length.split(":")
+
+                if len(length) == 3:
+                    hours = length[0]
+                    minutes = length[1]
+                    seconds = str(round(float(length[2])))
+                    if int(seconds) < 10:
+                        seconds = f"0{seconds}"
+                    length = f"{hours}:{minutes}:{seconds}"
+                elif len(length) == 2:
+                    minutes = length[0]
+                    seconds = str(round(float(length[1])))
+                    if int(seconds) < 10:
+                        seconds = f"0{seconds}"
+                    length = f"{minutes}:{seconds}"
+                elif len(length) == 1:
+                    seconds = str(round(float(length[0])))
+                    if int(seconds) < 10:
+                        seconds = "0"+seconds
+                    length = f"00:{seconds}"
+                else:
+                    length = "0"
+                
+                duration = length
+
+                for genreId in genre:
+                    if genreList[genreId] not in genresUsed:
+                        genresUsed.append(genreList[genreId])
+                
+                # replace the id with the name of the genre
+                movieGenre = []
+                for genreId in genre:
+                    movieGenre.append(genreList[genreId])
+
+                bandeAnnonce = details.videos.results
+                if len(bandeAnnonce) > 0:
+                    for video in bandeAnnonce:
+                        bandeAnnonceType = video.type
+                        bandeAnnonceHost = video.site
+                        bandeAnnonceKey = video.key
+                        if bandeAnnonceType == "Trailer":
+                            try:
+                                bandeAnnonceUrl = websitesTrailers[bandeAnnonceHost] + bandeAnnonceKey
+                                break
+                            except KeyError as e:
+                                bandeAnnonceUrl = "Unknown"
+                                print(e)
 
 
-            filmData = {
-                "title": movieTitle,
-                "realTitle": name,
-                "cover": movieCoverPath,
-                "banner": banniere,
-                "slug": originalMovieTitle,
-                "description": description,
-                "note": note,
-                "date": date,
-                "genre": movieGenre,
-                "duration": str(duration),
-                "id": movieId,
-                "cast": theCast,
-                "theBigCast": theBigCast,
-                "bandeAnnonce": bandeAnnonceUrl,
-            }
+                filmData = {
+                    "title": movieTitle,
+                    "realTitle": name,
+                    "cover": movieCoverPath,
+                    "banner": banniere,
+                    "slug": originalMovieTitle,
+                    "description": description,
+                    "note": note,
+                    "date": date,
+                    "genre": movieGenre,
+                    "duration": str(duration),
+                    "id": movieId,
+                    "cast": theCast,
+                    "bandeAnnonce": bandeAnnonceUrl,
+                }
 
-            searchedFilms.append(filmData)
-            simpleFilmData = {
-                "title": movieTitle,
-                "realTitle": name,
-                "cover": movieCoverPath,
-                "banner": banniere,
-                "genre": movieGenre,
-                "description": description,
-                "slug": originalMovieTitle,
-            }
-            simpleDataFilms.append(simpleFilmData)
-            allMoviesDict[name] = filmData
+                searchedFilms.append(filmData)
+                simpleFilmData = {
+                    "title": movieTitle,
+                    "realTitle": name,
+                    "cover": movieCoverPath,
+                    "banner": banniere,
+                    "genre": movieGenre,
+                    "description": description,
+                    "slug": originalMovieTitle,
+                }
+                simpleDataFilms.append(simpleFilmData)
+                allMoviesDict[name] = filmData
+                jsonData = filmData
 
+                with open(f"{currentCWD}/scannedFiles.json", 'r') as f:
+                    jsonFile = json.load(f)
+                    jsonFile["movies"][name] = jsonData
+                with open(f"{currentCWD}/scannedFiles.json", "w") as f:
+                    json.dump(jsonFile, f)
 
+            else:
+                with open(f"{currentCWD}/scannedFiles.json", 'r') as f:
+                    jsonFileToRead = json.load(f)
+                data = jsonFileToRead["movies"]
+                data = data[name]
+                filmData = {
+                    "title": data["title"],
+                    "realTitle": data["realTitle"],
+                    "cover": data["cover"],
+                    "banner": data["banner"],
+                    "slug": data["slug"],
+                    "description": data["description"],
+                    "note": data["note"],
+                    "date": data["date"],
+                    "genre": data["genre"],
+                    "duration": data["duration"],
+                    "id": data["id"],
+                    "cast": data["cast"],
+                    "bandeAnnonce": data["bandeAnnonce"],
+                }
+
+                searchedFilms.append(filmData)
+                simpleFilmData = {
+                    "title": data["title"],
+                    "realTitle": data["realTitle"],
+                    "cover": data["cover"],
+                    "banner": data["banner"],
+                    "slug": data["slug"],
+                    "description": data["description"],
+                    "genre": data["genre"],
+                }
+                simpleDataFilms.append(simpleFilmData)
+                allMoviesDict[name] = filmData
         elif searchedFilm.endswith("/") == False :
             allMoviesNotSorted.append(searchedFilm)
+
     print()
 
 def getSeries():
@@ -403,89 +463,137 @@ def getSeries():
         
         res = bestMatch
         name = res.name
-        serieCoverPath = f"https://image.tmdb.org/t/p/original{res.poster_path}"
-        banniere = f"https://image.tmdb.org/t/p/original{res.backdrop_path}"
-        description = res.overview
-        note = res.vote_average
-        date = res.first_air_date
-        serieId = res.id
-        details = show.details(serieId)
-        cast = details.credits.cast
-        bigCast = cast
-        cast = cast[:5]
-        runTime = details.episode_run_time
-        duration = ""
-        for i in range(len(runTime)):
-            if i != len(runTime)-1:
-                duration += f"{str(runTime[i])}:"
-            else:
-                duration += f"{str(runTime[i])}"
-        seasonsInfo = details.seasons
-        serieGenre = details.genres
-        bandeAnnonce = details.videos.results
-        bandeAnnonceUrl = ""
-        if len(bandeAnnonce) > 0:
-            for video in bandeAnnonce:
-                bandeAnnonceType = video.type
-                bandeAnnonceHost = video.site
-                bandeAnnonceKey = video.key                   
-                if bandeAnnonceType == "Trailer":
-                    try:
-                        bandeAnnonceUrl = websitesTrailers[bandeAnnonceHost] + bandeAnnonceKey
-                        break
-                    except KeyError as e:
-                        bandeAnnonceUrl = "Unknown"
-                        print(e)
-        genreList = []
-        for genre in serieGenre:
-            genreList.append(genre.name)
-        seasons = []
-        serieData = {}
-        for season in seasonsInfo:
-            releaseDate = season.air_date
-            episodesNumber = season.episode_count
-            seasonNumber = season.season_number
-            seasonId = season.id
-            seasonName = season.name
-            seasonDescription = season.overview
-            seasonCoverPath = f"https://image.tmdb.org/t/p/original{season.poster_path}"
+        with open(f"{currentCWD}/scannedFiles.json", 'r') as f:
+            jsonFileToRead = json.load(f)
+        if name not in jsonFileToRead["series"]:
+            serieCoverPath = f"https://image.tmdb.org/t/p/original{res.poster_path}"
+            banniere = f"https://image.tmdb.org/t/p/original{res.backdrop_path}"
+            rewritedName = originalSerieTitle.replace(" ", "_")
+            if not os.path.exists(f"{currentCWD}/static/img/mediaImages/{rewritedName}_Cover.png"):
+                with open(f"{currentCWD}/static/img/mediaImages/{rewritedName}_Cover.png", 'wb') as f:
+                    f.write(requests.get(serieCoverPath).content)
+            if not os.path.exists(f"{currentCWD}/static/img/mediaImages/{rewritedName}_Banner.png"):
+                with open(f"{currentCWD}/static/img/mediaImages/{rewritedName}_Banner.png", 'wb') as f:
+                    f.write(requests.get(banniere).content)
+            banniere = f"/static/img/mediaImages/{rewritedName}_Banner.png"
+            serieCoverPath = f"/static/img/mediaImages/{rewritedName}_Cover.png"
+            description = res.overview
+            note = res.vote_average
+            date = res.first_air_date
+            serieId = res.id
+            details = show.details(serieId)
+            cast = details.credits.cast
+            cast = cast[:5]
+            runTime = details.episode_run_time
+            duration = ""
+            for i in range(len(runTime)):
+                if i != len(runTime)-1:
+                    duration += f"{str(runTime[i])}:"
+                else:
+                    duration += f"{str(runTime[i])}"
+            seasonsInfo = details.seasons
+            serieGenre = details.genres
+            bandeAnnonce = details.videos.results
+            bandeAnnonceUrl = ""
+            if len(bandeAnnonce) > 0:
+                for video in bandeAnnonce:
+                    bandeAnnonceType = video.type
+                    bandeAnnonceHost = video.site
+                    bandeAnnonceKey = video.key                   
+                    if bandeAnnonceType == "Trailer":
+                        try:
+                            bandeAnnonceUrl = websitesTrailers[bandeAnnonceHost] + bandeAnnonceKey
+                            break
+                        except KeyError as e:
+                            bandeAnnonceUrl = "Unknown"
+                            print(e)
+            genreList = []
+            for genre in serieGenre:
+                genreList.append(genre.name)
+            seasons = []
+            serieData = {}
+            for season in seasonsInfo:
+                releaseDate = season.air_date
+                episodesNumber = season.episode_count
+                seasonNumber = season.season_number
+                seasonId = season.id
+                seasonName = season.name
+                seasonDescription = season.overview
+                seasonCoverPath = f"https://image.tmdb.org/t/p/original{season.poster_path}"
 
-            allSeasonsUglyDict = allSeries[serie]["seasons"].keys()
+                allSeasonsUglyDict = allSeries[serie]["seasons"].keys()
+                try:
+                    allSeasons = [int(season) for season in allSeasonsUglyDict]
+                except ValueError as e:
+                    break
+                seasonData = {}
+                if seasonNumber in allSeasons:
+                    for episode in allSeries[serie]["seasons"][str(seasonNumber)]:
+                        slugs = allSeries[serie]["seasons"][str(seasonNumber)]
+                        slug = slugs[episode]
+                        slugReal = slug.replace(allSeriesPath, "")
+                        slug = slug.replace(allSeriesPath, "http://localhost:8800")
+                        episodeNumber = episode
+                        episodePath = allSeries[serie]["seasons"][str(seasonNumber)][episodeNumber]
+                        episodeName = episodePath.split("/")[-1]
+                        episodeName, extension = os.path.splitext(episodeName)
+                        episodeIndex = int(episodeName[1:])
+                        showEpisode = Episode()
+                        try:
+                            episodeInfo = showEpisode.details(serieId, seasonNumber, episodeIndex)
+                            coverEpisode = f"https://image.tmdb.org/t/p/original{episodeInfo.still_path}"
+                            rewritedName = originalSerieTitle.replace(" ", "_")
+                            if not os.path.exists(f"{currentCWD}/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.png"):
+                                with open(f"{currentCWD}/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.png", 'wb') as f:
+                                    f.write(requests.get(coverEpisode).content)
+                            coverEpisode = f"/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.png"
+
+                            thisEpisodeData = {"episodeName": episodeInfo.name, "episodeNumber": str(episodeInfo.episode_number), "episodeDescription": episodeInfo.overview, "episodeCoverPath": coverEpisode, "releaseDate": episodeInfo.air_date, "episodeSlug": slug, "slug": slugReal}
+                            seasonData[episodeIndex] = thisEpisodeData
+                        except TMDbException:
+                            continue
+                    seasonCoverPath = seasonCoverPath
+                    if not os.path.exists(f"{currentCWD}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png"):
+                        with open(f"{currentCWD}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png", 'wb') as f:
+                            f.write(requests.get(seasonCoverPath).content)
+                    seasonCoverPath = f"/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png"
+                    season = {"release": releaseDate, "episodesNumber": episodesNumber, "seasonNumber": seasonNumber, "seasonId": seasonId, "seasonName": seasonName, "seasonDescription": seasonDescription, "seasonCoverPath": seasonCoverPath, "episodes": seasonData}
+                    seasons.append(season)
             try:
-                allSeasons = [int(season) for season in allSeasonsUglyDict]
-            except ValueError as e:
-                break
-            seasonData = {}
-            if seasonNumber in allSeasons:
-                for episode in allSeries[serie]["seasons"][str(seasonNumber)]:
-                    slugs = allSeries[serie]["seasons"][str(seasonNumber)]
-                    slug = slugs[episode]
-                    slugReal = slug.replace(allSeriesPath, "")
-                    slug = slug.replace(allSeriesPath, "http://localhost:8800")
-                    episodeNumber = episode
-                    episodePath = allSeries[serie]["seasons"][str(seasonNumber)][episodeNumber]
-                    episodeName = episodePath.split("/")[-1]
-                    episodeName, extension = os.path.splitext(episodeName)
-                    episodeIndex = int(episodeName[1:])
-                    showEpisode = Episode()
-                    try:
-                        episodeInfo = showEpisode.details(serieId, seasonNumber, episodeIndex)
-                        thisEpisodeData = {"episodeName": episodeInfo.name, "episodeNumber": str(episodeInfo.episode_number), "episodeDescription": episodeInfo.overview, "episodeCoverPath": f"https://image.tmdb.org/t/p/original{episodeInfo.still_path}", "releaseDate": episodeInfo.air_date, "episodeSlug": slug, "slug": slugReal}
-                        seasonData[episodeIndex] = thisEpisodeData
-                    except TMDbException:
-                        continue
-                season = {"release": releaseDate, "episodesNumber": episodesNumber, "seasonNumber": seasonNumber, "seasonId": seasonId, "seasonName": seasonName, "seasonDescription": seasonDescription, "seasonCoverPath": seasonCoverPath, "episodes": seasonData}
-                seasons.append(season)
-        try:
-            episodeSlug = seasons[0]["episodes"][1]["episodeSlug"]
-            episodeNumber = seasons[0]["episodes"][1]["episodeNumber"]
-        except:
-            episodeSlug = ""
-            episodeNumber = "error"
-        serieData = {"name": name, "originalName": originalSerieTitle, "duration": duration, "genre": genreList,"serieId": serieId, "serieCoverPath": serieCoverPath, "banniere": banniere, "description": description, "note": note, "date": date, "cast": cast, "bigCast":bigCast, "bandeAnnonce" : bandeAnnonceUrl, "firstEpisode": episodeSlug, "seasons": seasons}
-        searchedSeries.append(serieData)
-        allSeriesDict[name] = serieData
+                episodeSlug = seasons[0]["episodes"][1]["episodeSlug"]
+                episodeNumber = seasons[0]["episodes"][1]["episodeNumber"]
+            except:
+                episodeSlug = ""
+                episodeNumber = "error"
+            #cut cast to 5
+            cast = cast[:5]
+            for actor in cast:
+                actorName = actor.name.replace(" ", "_").replace("/", "")
+                actorImage = f"https://image.tmdb.org/t/p/original{actor.profile_path}"
+                if not os.path.exists(f"{currentCWD}/static/img/mediaImages/Actor_{actorName}.png"):
+                    with open(f"{currentCWD}/static/img/mediaImages/Actor_{actorName}.png", 'wb') as f:
+                        f.write(requests.get(actorImage).content)
+                actorImage = f"/static/img/mediaImages/Actor_{actorName}.png"
+                actor.profile_path = actorImage
+            serieData = {"name": name, "originalName": originalSerieTitle, "duration": duration, "genre": genreList,"serieId": serieId, "serieCoverPath": serieCoverPath, "banniere": banniere, "description": description, "note": note, "date": date, "cast": cast, "bandeAnnonce" : bandeAnnonceUrl, "firstEpisode": episodeSlug, "seasons": seasons}
+            searchedSeries.append(serieData)
+            allSeriesDict[name] = serieData
+
+            with open(f"{currentCWD}/scannedFiles.json", 'r') as f:
+                jsonFile = json.load(f)
+                jsonFile["series"][name] = serieData
+            with open(f"{currentCWD}/scannedFiles.json", "w") as f:
+                json.dump(jsonFile, f, default=str)
+        else:
+            with open(f"{currentCWD}/scannedFiles.json", 'r') as f:
+                jsonFileToRead = json.load(f)
+            data = jsonFileToRead["series"]
+            data = data[name]
+            serieData = data
+            searchedSeries.append(serieData)
+            allSeriesDict[name] = serieData
     print()
+
 def length_video(path: str) -> float:
     seconds = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of",
                               "default=noprint_wrappers=1:nokey=1", path], stdout=subprocess.PIPE, text=True)
@@ -1011,7 +1119,7 @@ def getActorData(actorName):
     person = Person()
     actorDatas = person.search(actorName)
     for movie in searchedFilms:
-        actors = movie["theBigCast"]
+        actors = movie["cast"]
         for actor in actors:
             if actor[0] == actorName:
                 for movieData in simpleDataFilms:
