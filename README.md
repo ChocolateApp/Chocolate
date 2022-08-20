@@ -2,7 +2,7 @@
     <img src="https://user-images.githubusercontent.com/69050895/185436929-c80736b3-07ce-434b-ba96-d753c8e9f83c.png" height="300px">
 </p>
 
-<div style="font-style: italic; text-align: center;" markdown="1">
+<div style="font-style: italic; text-align: center;" markdown="1" align="center">
 
 [![wakatime](https://wakatime.com/badge/user/4cf4132a-4ced-411d-b714-67bdbdc84527/project/ecce3f45-dba9-4e4b-8f78-693c6d237d1c.svg)](https://wakatime.com/badge/user/4cf4132a-4ced-411d-b714-67bdbdc84527/project/ecce3f45-dba9-4e4b-8f78-693c6d237d1c)
   [![GitHub release](https://img.shields.io/github/release/Impre-visible/Chocolate?include_prereleases=&sort=semver&color=blue)](https://github.com/Impre-visible/Chocolate/releases/)
