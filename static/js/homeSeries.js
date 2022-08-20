@@ -196,7 +196,6 @@ function setPopup() {
                     castImage = document.createElement("img")
                     castImage.className = "castImage"
                     castImageUrl = cast["profile_path"]
-                    castImageUrl = "https://image.tmdb.org/t/p/original" + castImageUrl
                     castRealName = cast["name"]
                     castCharacterName = cast["character"]
                     castImage.setAttribute("src", castImageUrl)

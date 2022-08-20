@@ -583,7 +583,7 @@ def getSeries():
                 jsonFile = json.load(f)
                 jsonFile["series"][name] = serieData
             with open(f"{currentCWD}/scannedFiles.json", "w") as f:
-                json.dump(jsonFile, f, default=str)
+                json.dump(jsonFile, f, default=dict)
         else:
             with open(f"{currentCWD}/scannedFiles.json", 'r') as f:
                 jsonFileToRead = json.load(f)

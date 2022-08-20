@@ -48,6 +48,11 @@ closePopup.addEventListener("click", function() {
 
 })
 
+function goToSeason(title, id) {
+    href = "/serie/" + title + "/" + id
+    window.location.href = href
+}
+
 function setPopup() {
     covers = document.getElementsByClassName("cover")
     for (var i = 0; i < covers.length; i++) {
@@ -73,12 +78,12 @@ function setPopup() {
                 var serieNote = data.note
                 var seriePoster = data.serieCoverPath
                 var serieUrl = data.slug
-                serieUrl = "/serie/" + serieUrl
                 var serieYear = data.date
                 var serieTrailer = data.bandeAnnonce
                 var serieSimilar = data.similarSeries
-                var serieFirstEp = data.firstEpisode
+                var serieSeasons = data.seasons
                 containerSimilar = document.getElementsByClassName("containerSimilar")[0]
+                containerSeasons = document.getElementsByClassName("containerSeasons")[0]
 
                 if (serieSimilar.length === 0) {
                     containerSimilar.style.display = "none"
@@ -86,34 +91,59 @@ function setPopup() {
                 } else {
                     containerSimilar.style.display = "inline-grid"
                 }
+                console.log(serieSeasons)
+                for (var i = 0; i < serieSeasons.length; i++) {
+                    season = serieSeasons[i]
+                    seasonCover = season.seasonCoverPath
+                    seasonDescription = season.seasonDescription
+                    seasonName = season.seasonName
+                    seasonEpisodesNumber = season.episodesNumber
+                    seasonNumber = season.seasonNumber
+                    seasonUrl = "/serie/" + serieTitle + "/" + seasonNumber
+                    seasonRelease = season.release
+
+                    var seasonDiv = document.createElement("div")
+                    seasonDiv.className = "season"
+                    seasonDiv.setAttribute("id", seasonNumber)
+                    seasonDiv.setAttribute("onclick", `goToSeason("${serieTitle}", "S${seasonNumber}")`)
+
+                    var seasonCoverImage = document.createElement("img")
+                    seasonCoverImage.className = "seasonCoverImage"
+                    seasonCoverImage.setAttribute("src", seasonCover)
+                    seasonCoverImage.setAttribute("alt", seasonName)
+                    seasonCoverImage.setAttribute("title", seasonName)
+                    seasonCoverImage.setAttribute("onclick", `goToSeason("${serieTitle}", "S${seasonNumber}")`)
+
+                    var seasonNameP = document.createElement("p")
+                    seasonNameP.className = "seasonTitle"
+                    seasonNameP.innerHTML = seasonName
+                    seasonNameP.setAttribute("onclick", `goToSeason("${serieTitle}", "S${seasonNumber}")`)
+
+                    seasonDiv.appendChild(seasonCoverImage)
+                    seasonDiv.appendChild(seasonNameP)
+                    containerSeasons.appendChild(seasonDiv)
+                }
 
                 for (var i = 0; i < serieSimilar.length; i++) {
                     if (i < 4) {
                         var serie = serieSimilar[i]
+                        imageUrl = serie.cover
+                        serieName = serie.realTitle
+                        var similar = document.getElementsByClassName("containerSimilar")[0]
+                        var serie = document.createElement("div")
+                        serie.setAttribute("class", "serie")
+                        var image = document.createElement("img")
+                        image.setAttribute("class", "serieImage")
+                        image.setAttribute("src", imageUrl)
+                        image.setAttribute("alt", serieName)
+                        image.setAttribute("title", serieName)
+                        var title = document.createElement("p")
+                        title.setAttribute("class", "serieTitle")
+                        title.innerHTML = serieName
 
-                        fetch("/getSerieData/" + serie).then(function(response) {
-                            return response.json()
-                        }).then(function(data) {
-                            var serie = data
-                            console.log(serie)
-                            imageUrl = serie.serieCoverPath
-                            serieName = serie.name
-                            var similar = document.getElementsByClassName("containerSimilar")[0]
-                            var serie = document.createElement("div")
-                            serie.setAttribute("class", "serie")
-                            var image = document.createElement("img")
-                            image.setAttribute("class", "serieImage")
-                            image.setAttribute("src", imageUrl)
-                            image.setAttribute("alt", serieName)
-                            image.setAttribute("title", serieName)
-                            var title = document.createElement("p")
-                            title.setAttribute("class", "serieTitle")
-                            title.innerHTML = serieName
-
-                            serie.appendChild(image)
-                            serie.appendChild(title)
-                            similar.appendChild(serie)
-                        })
+                        serie.appendChild(image)
+                        serie.appendChild(title)
+                        similar.appendChild(serie)
                     }
                 }
 
@@ -156,16 +186,15 @@ function setPopup() {
 
                 var durationPopup = document.getElementsByClassName("durationPopup")[0]
                 durationPopup.innerHTML = `Durée : ${serieDuration}`;
-                console.log(serieCast)
                 for (var i = 0; i < serieCast.length; i++) {
+                    cast = serieCast[i]
                     castMember = document.createElement("div")
                     castMember.className = "castMember"
                     castImage = document.createElement("img")
                     castImage.className = "castImage"
-                    castImageUrl = serieCast[i]["profile_path"]
-                    castImageUrl = "https://image.tmdb.org/t/p/original" + castImageUrl
-                    castRealName = serieCast[i]["name"]
-                    castCharacterName = serieCast[i]["character"]
+                    castImageUrl = cast["profile_path"]
+                    castRealName = cast["name"]
+                    castCharacterName = cast["character"]
                     castImage.setAttribute("src", castImageUrl)
                     castImage.setAttribute("alt", castRealName)
                     castImage.setAttribute("title", castRealName)
@@ -208,11 +237,12 @@ function setPopup() {
                 }
 
                 var playButton = document.getElementsByClassName("playPopup")[0]
-                playButton.setAttribute("href", serieFirstEp);
+                playButton.setAttribute("href", serieUrl);
             })
         })
     }
 }
+
 
 
 function getFirstSeries() {
