@@ -187,20 +187,17 @@ def getMovies():
                 for cast in casts:
                     while len(theCast) < 5:
                         characterName = cast.character
-                        actor = [cast.name, characterName , f"https://www.themoviedb.org/t/p/w600_and_h900_bestv2{cast.profile_path}"]
+                        actorName = cast.name.replace(" ", "_").replace("/", "").replace(" \"", "")
+                        imagePath = f"https://www.themoviedb.org/t/p/w600_and_h900_bestv2{cast.profile_path}"
+                        if not os.path.exists(f"{currentCWD}/static/img/mediaImages/Actor_{actorName}.png"):
+                            with open(f"{currentCWD}/static/img/mediaImages/Actor_{actorName}.png", 'wb') as f:
+                                f.write(requests.get(imagePath).content)
+                        imagePath = f"/static/img/mediaImages/Actor_{actorName}.png"
+                        actor = [cast.name, characterName , imagePath]
                         if actor not in theCast:
                             theCast.append(actor)
                         else:
                             break
-                for cast in theCast:
-                    actorName = cast[0].replace(" ", "_").replace("/", "").replace(" \"", "")
-                    imagePath = cast[2]
-                    if not os.path.exists(f"{currentCWD}/static/img/mediaImages/Actor_{actorName}.png"):
-                        with open(f"{currentCWD}/static/img/mediaImages/Actor_{actorName}.png", 'wb') as f:
-                            f.write(requests.get(imagePath).content)
-                    actorImage = f"/static/img/mediaImages/Actor_{actorName}.png"
-
-                    cast = [actorName, cast[1], actorImage]
                 try:
                     date = datetime.datetime.strptime(date, "%Y-%m-%d").strftime("%d/%m/%Y")
                 except ValueError:
@@ -1129,7 +1126,7 @@ def getActorData(actorName):
     actorId = actorDatas[0].id
     p = person.details(actorId)
     name = p["name"]
-    image = "https://www.themoviedb.org/t/p/w300_and_h450_bestv2"+ p["profile_path"]
+    image = p["profile_path"]
     birthday = p["birthday"]
     birthplace = p["place_of_birth"]
     actorDescription = p["biography"]
