@@ -1,7 +1,7 @@
-config.ini
 test.py
 rewrite.py
-config.ini
 *.sh
 static/img/mediaImages/*.png
 scannedFiles.json
+config.ini
+static/img/cleanBanner.png
