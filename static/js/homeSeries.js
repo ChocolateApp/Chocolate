@@ -52,7 +52,7 @@ closePopup.addEventListener("click", function() {
 })
 
 function goToSeason(title, id) {
-    href = "/serie/" + title + "/" + id
+    href = "/season/" + title + "/" + id
     window.location.href = href
 }
 
@@ -339,5 +339,9 @@ window.onload = function() {
     brokenPathDiv = document.getElementsByClassName("brokenPath")[0]
     brokenPath = brokenPathDiv.getAttribute("id")
     brokenPathDiv.parentNode.removeChild(brokenPathDiv)
+    playPopup = document.getElementsByClassName("playPopup")[0]
+    playPopup.style.display = "none"
+    popupContent = document.getElementsByClassName("popupContent")[0]
+    popupContent.style.height = "86vh"
     getFirstSeries()
 }

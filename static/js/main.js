@@ -11,8 +11,14 @@ homeButton.addEventListener("click", function() {
 
 function search() {
     var search = document.getElementById("search").value
+    actualHref = window.location.href
+    if (actualHref.includes("serie")) {
+        attribute = "series/"
+    } else {
+        attribute = "movies/"
+    }
     if (search != "") {
-        window.location.href = "/search/" + search
+        window.location.href = "/search/" + attribute + search
     }
 }
 

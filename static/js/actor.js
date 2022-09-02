@@ -221,6 +221,9 @@ function getActorMovies() {
         actorNameTitle = document.getElementsByClassName("actorName")[0]
         actorNameTitle.innerHTML = actorName
 
+        actorMovieDiv = document.getElementsByClassName("actorMoviesList")[0]
+        moviesTitleH2 = document.getElementsByClassName("moviesTitle")[0]
+
         actorImage = document.getElementsByClassName("actorPicture")[0]
         actorImage.setAttribute("src", actorImageLink)
         actorImage.setAttribute("alt", actorName)
@@ -231,7 +234,6 @@ function getActorMovies() {
         if (actorDescription.length > 1100) {
             actorDescription.innerHTML = actorDescription.innerHTML.substring(0, 1100) + "..."
             actorDescription.innerHTML += " <a id='lireLaSuite' href='#'>Lire la suite</a>"
-            actorMovieDiv = document.getElementsByClassName("actorMoviesList")[0]
             lireLaSuite = document.getElementById("lireLaSuite")
             lireLaSuite.addEventListener("click", function() {
                 actorDescription.innerHTML = actorDescriptionText
@@ -264,7 +266,6 @@ function getActorMovies() {
 
             actorMovie.appendChild(actorMoviePicture)
             actorMovie.appendChild(actorMovieTitle)
-            actorMovieDiv = document.getElementsByClassName("actorMoviesList")[0]
             actorMovieContent.appendChild(actorMovie)
             actorMovieDiv.appendChild(actorMovieContent)
 
@@ -272,15 +273,18 @@ function getActorMovies() {
 
         if (actorMovies.length === 1) {
             actorMovieDiv.style.gridTemplateColumns = "repeat(1, 1fr)"
-            actorMovieDiv.style.gridTemplateColumns = "50px 50px 50px";
             actorMovieDiv.style.display = "inline-grid"
+            moviesTitleH2.style.display = "block"
         } else if (actorMovies.length === 2) {
             actorMovieDiv.style.gridTemplateColumns = "repeat(2, 1fr)"
             actorMovieDiv.style.display = "inline-grid"
+            moviesTitleH2.style.display = "block"
         } else if (actorMovies.length >= 3) {
             actorMovieDiv.style.gridTemplateColumns = "repeat(3, 1fr)"
             actorMovieDiv.style.display = "inline-grid"
+            moviesTitleH2.style.display = "block"
         } else {
+            moviesTitleH2.style.display = "none"
             actorMovieDiv.style.display = "none"
         }
         setPopup()

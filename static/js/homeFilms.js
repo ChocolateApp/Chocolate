@@ -64,31 +64,20 @@ function setPopup() {
             fetch("/getMovieData/" + movieTitle).then(function(response) {
                 return response.json()
             }).then(function(data) {
-                var movieTitle = data.realTitle
-
-                var movieCast = data.cast
-                var movieDescription = data.description
-                var movieDuration = data.duration
-                var movieGenre = data.genre
-                var movieNote = data.note
-                var moviePoster = data.cover
-                var movieUrl = data.slug
-                movieUrl = "/movie/" + movieUrl
-                var movieYear = data.date
-                var movieTrailer = data.bandeAnnonce
-                var movieSimilar = data.similarMovies
+                var { realTitle, cast, description, duration, genre, note, cover, slug, date, bandeAnnonce, similarMovies } = data
+                slug = "/movie/" + slug
                 containerSimilar = document.getElementsByClassName("containerSimilar")[0]
 
-                if (movieSimilar.length === 0) {
+                if (similarMovies.length === 0) {
                     containerSimilar.style.display = "none"
 
                 } else {
                     containerSimilar.style.display = "inline-grid"
                 }
 
-                for (var i = 0; i < movieSimilar.length; i++) {
+                for (var i = 0; i < similarMovies.length; i++) {
                     if (i < 4) {
-                        var movie = movieSimilar[i]
+                        var movie = similarMovies[i]
                         imageUrl = movie.cover
                         movieName = movie.realTitle
                         var similar = document.getElementsByClassName("containerSimilar")[0]
@@ -116,27 +105,27 @@ function setPopup() {
 
 
                 var imagePopup = document.getElementsByClassName("coverPopup")[0]
-                imagePopup.setAttribute("src", moviePoster);
+                imagePopup.setAttribute("src", cover);
                 if (imagePopup.src == "https://image.tmdb.org/t/p/originalNone") {
                     imagePopup.src = brokenPath
                 }
-                imagePopup.setAttribute("alt", movieTitle);
-                imagePopup.setAttribute("title", movieTitle);
+                imagePopup.setAttribute("alt", realTitle);
+                imagePopup.setAttribute("title", realTitle);
 
                 var titlePopup = document.getElementsByClassName("titlePopup")[0]
-                titlePopup.innerHTML = movieTitle;
+                titlePopup.innerHTML = realTitle;
 
                 var descriptionPopup = document.getElementsByClassName("descriptionPopup")[0]
-                descriptionPopup.innerHTML = movieDescription;
+                descriptionPopup.innerHTML = description;
 
                 var notePopup = document.getElementsByClassName("notePopup")[0]
-                notePopup.innerHTML = `Note : ${movieNote}/10`;
+                notePopup.innerHTML = `Note : ${note}/10`;
 
                 var yearPopup = document.getElementsByClassName("yearPopup")[0]
-                yearPopup.innerHTML = `Date : ${movieYear}`;
+                yearPopup.innerHTML = `Date : ${date}`;
 
                 var genrePopup = document.getElementsByClassName("genrePopup")[0]
-                var genreList = movieGenre
+                var genreList = genre
                 var genreString = ""
                 for (var i = 0; i < genreList.length; i++) {
                     genreString += genreList[i]
@@ -147,15 +136,15 @@ function setPopup() {
                 genrePopup.innerHTML = `Genre : ${genreString}`;
 
                 var durationPopup = document.getElementsByClassName("durationPopup")[0]
-                durationPopup.innerHTML = `Durée : ${movieDuration}`;
-                for (var i = 0; i < movieCast.length; i++) {
+                durationPopup.innerHTML = `Durée : ${duration}`;
+                for (var i = 0; i < cast.length; i++) {
                     castMember = document.createElement("div")
                     castMember.className = "castMember"
                     castImage = document.createElement("img")
                     castImage.className = "castImage"
-                    castImageUrl = movieCast[i][2]
-                    castRealName = movieCast[i][0]
-                    castCharacterName = movieCast[i][1]
+                    castImageUrl = cast[i][2]
+                    castRealName = cast[i][0]
+                    castCharacterName = cast[i][1]
                     castImage.setAttribute("src", castImageUrl)
                     castImage.setAttribute("alt", castRealName)
                     castImage.setAttribute("title", castRealName)
@@ -182,23 +171,23 @@ function setPopup() {
                 }
 
                 var trailer = document.getElementsByClassName("containerTrailer")[0]
-                if (movieTrailer == "") {
+                if (bandeAnnonce == "") {
                     trailer.style.display = "none"
                 } else {
                     trailer.style.display = "block"
                     trailerVideo = document.createElement("iframe")
                     regex = /^(http|https):\/\//g
-                    if (regex.test(movieTrailer)) {
-                        movieTrailer.replace(regex, "")
+                    if (regex.test(bandeAnnonce)) {
+                        bandeAnnonce.replace(regex, "")
                     }
-                    trailerVideo.setAttribute("src", movieTrailer)
+                    trailerVideo.setAttribute("src", bandeAnnonce)
                     trailerVideo.setAttribute("class", "trailerVideo")
                     trailerVideo.setAttribute("id", "trailerVideo")
                     trailer.appendChild(trailerVideo)
                 }
 
                 var playButton = document.getElementsByClassName("playPopup")[0]
-                playButton.setAttribute("href", movieUrl);
+                playButton.setAttribute("href", slug);
             })
         })
     }
@@ -222,8 +211,8 @@ function getFirstMovies() {
 
         movie = data
 
-        var movieUrl = movie.slug
-        movieUrl = "/movie/" + movieUrl
+        var slug = movie.slug
+        slug = "/movie/" + slug
 
         imageBanner.setAttribute("src", movie.banner)
         if (imageBanner.src == "https://image.tmdb.org/t/p/originalNone") {
@@ -245,7 +234,7 @@ function getFirstMovies() {
 
         genreBanner.innerHTML = movie.genre
 
-        watchNow.setAttribute("href", movieUrl)
+        watchNow.setAttribute("href", slug)
     })
 
     fetch(routeToUse).then(function(response) {

@@ -1,5 +1,7 @@
 {% extends 'header.html' %} {% block content %} {% include 'popup.html' %}
 
+<div class="episodes" id="{{ routeToUse }}"></div>
+<div class="brokenPath" id="{{ url_for('static',filename='img/broken.png') }}"></div>
 <script src="{{ url_for('static',filename='js/season.js') }}"></script>
 
 {% endblock %}

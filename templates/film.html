@@ -5,10 +5,9 @@
     <a id="buttonNo">No</a>
 </div>
 <div id='playerWrapper'>
-    <link href="https://vjs.zencdn.net/7.10.2/video-js.min.css" rel="stylesheet">
-
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/video.js@7.20.2/dist/video-js.min.css">
     <video id="movie" class="video-js" controls preload="auto" data-setup="{}">
-        <source src="{{ movieUrl }}">
+        <source src="{{ movieUrl }}" type="application/x-mpegURL">
         {% for caption in allCaptions %}
             {% if allCaptions.index(caption) == 0 %}
             <track kind="captions" src="{{ caption['url'] }}" srclang="{{ caption['languageCode'] }}" label="{{ caption['language'] }}" default>
@@ -17,7 +16,7 @@
             {% endif %}
         {% endfor %}
     </video>
-    <script src="https://vjs.zencdn.net/7.10.2/video.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/video.js@7.20.2/dist/video.min.js"></script>
     <script src="{{ url_for('static',filename='js/movie.js') }}"></script>
 </div>
 

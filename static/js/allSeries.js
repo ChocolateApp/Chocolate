@@ -43,13 +43,17 @@ closePopup.addEventListener("click", function() {
     similar.style.gridTemplateColumns = "repeat(0, 1fr)"
 
     var trailerVideo = document.getElementById("trailerVideo")
-    trailerVideo.setAttribute("src", "")
-    trailerVideo.remove()
+    try {
+        trailerVideo.setAttribute("src", "")
+        trailerVideo.remove()
+    } catch (error) {
+        console.log("Don't find trailerVideo")
+    }
 
 })
 
 function goToSeason(title, id) {
-    href = "/serie/" + title + "/" + id
+    href = "/season/" + title + "/" + id
     window.location.href = href
 }
 
@@ -81,6 +85,7 @@ function setPopup() {
                 var serieYear = data.date
                 var serieTrailer = data.bandeAnnonce
                 var serieSimilar = data.similarSeries
+
                 var serieSeasons = data.seasons
                 containerSimilar = document.getElementsByClassName("containerSimilar")[0]
                 containerSeasons = document.getElementsByClassName("containerSeasons")[0]
@@ -338,5 +343,9 @@ window.onload = function() {
     brokenPathDiv = document.getElementsByClassName("brokenPath")[0]
     brokenPath = brokenPathDiv.getAttribute("id")
     brokenPathDiv.parentNode.removeChild(brokenPathDiv)
+    playPopup = document.getElementsByClassName("playPopup")[0]
+    playPopup.style.display = "none"
+    popupContent = document.getElementsByClassName("popupContent")[0]
+    popupContent.style.height = "86vh"
     getFirstSeries()
 }

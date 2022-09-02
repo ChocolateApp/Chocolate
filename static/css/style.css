@@ -112,6 +112,28 @@ form#searchForm:hover .form_field {
     grid-row-gap: 0px;
 }
 
+.episodes {
+    margin-top: 20vh;
+    width: calc(100vw - 2.98vw);
+    flex-wrap: wrap;
+    margin-left: 3vw;
+    z-index: 2;
+    position: absolute;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: 1fr;
+    grid-column-gap: 2vw;
+    grid-row-gap: 0px;
+}
+
+.episodes .cover {
+    margin-bottom: 2vh;
+}
+
+.cover_episode {
+    width: 17.82vw;
+}
+
 .cover {
     display: block;
     text-align: center;
