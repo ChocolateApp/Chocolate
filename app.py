@@ -1150,7 +1150,7 @@ def getActorData(actorName):
     return json.dumps(actorData, default=lambda o: o.__dict__, ensure_ascii=False)
 
 if __name__ == '__main__':
-    #getSeries()
+    getSeries()
     getMovies()
     print('\033[?25h', end="")
     app.run(host="0.0.0.0", port=serverPort)
