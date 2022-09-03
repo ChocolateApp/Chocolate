@@ -706,10 +706,16 @@ def get_chunk(video_name, idx=0):
 
     time_start = str(datetime.timedelta(seconds=seconds))
     time_end = str(datetime.timedelta(seconds=seconds + CHUNK_LENGTH))
-
+    videoProperties = get_video_properties(video_path)
+    width = videoProperties["width"]
+    height = videoProperties["height"]
+    newWidth = 1080
+    newHeight = round(width/height*newWidth)
+    if (newHeight % 2) != 0:
+            newHeight += 1
     logLevelValue = "error"
     command = ["ffmpeg", "-loglevel", logLevelValue, "-hide_banner", "-ss", time_start, "-to", time_end, "-i", video_path,
-                "-output_ts_offset", time_start, "-c:v", "libx264", "-vf", "scale=-1:1080", "-c:a", "aac", "-b:a", "128k", "-ac", "2", "-preset", "ultrafast", "-f", "mpegts", "pipe:1"]
+                "-output_ts_offset", time_start, "-c:v", "libx264", "-vf", f"scale={newHeight}:{newWidth}", "-c:a", "aac", "-b:a", "128k", "-ac", "2", "-preset", "ultrafast", "-f", "mpegts", "pipe:1"]
 
     print((" ").join(command))
 
@@ -1144,7 +1150,7 @@ def getActorData(actorName):
     return json.dumps(actorData, default=lambda o: o.__dict__, ensure_ascii=False)
 
 if __name__ == '__main__':
-    getSeries()
+    #getSeries()
     getMovies()
     print('\033[?25h', end="")
     app.run(host="0.0.0.0", port=serverPort)
