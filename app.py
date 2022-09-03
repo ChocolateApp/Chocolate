@@ -81,6 +81,7 @@ genreList = {
 }
 
 genresUsed = []
+moviesGenre = []
 movieExtension = ""
 websitesTrailers = {"YouTube": "https://www.youtube.com/embed/", "Dailymotion": "https://www.dailymotion.com/video/", "Vimeo": "https://vimeo.com/"}
 
@@ -238,7 +239,8 @@ def getMovies():
                 for genreId in genre:
                     if genreList[genreId] not in genresUsed:
                         genresUsed.append(genreList[genreId])
-                
+                    if genreList[genreId] not in moviesGenre:
+                        moviesGenre.append(genreList[genreId])
                 # replace the id with the name of the genre
                 movieGenre = []
                 for genreId in genre:
@@ -705,59 +707,9 @@ def get_chunk(video_name, idx=0):
     time_start = str(datetime.timedelta(seconds=seconds))
     time_end = str(datetime.timedelta(seconds=seconds + CHUNK_LENGTH))
 
-    # check if the server as a nvidia gpu
-    serverGPU = getGpuInfo()
-    if serverGPU != "UNKNOWN":
-        serverGPU = serverGPU.split(" ")[0]
-        if serverGPU == "NVIDIA":
-            videoCodec = "h264_nvenc"
-            PIX = "-pix_fmt"
-            PIXcodec = "yuv420p"
-            preset = "3"
-            bitrate = "-b:v"
-            bitrateValue = "5M"
-            crf = "-crf"
-            crfValue = "22"
-            vsync = "-fps_mode"
-            vsyncValue = "auto"
-        else:
-            videoCodec = "libx264"
-            preset = "ultrafast"
-    else:
-        videoCodec = "libx264"
-        preset = "ultrafast"
-    print(serverGPU)
     logLevelValue = "error"
-    movieVideoStats = get_video_properties(video_path)
-    movieAudioStats = get_audio_properties(video_path)
-    if movieAudioStats['codec_name'] == "aac" and movieVideoStats['codec_name'] == "h264":
-        command = ["ffmpeg", "-loglevel", logLevelValue, "-hide_banner", "-ss", time_start, "-to", time_end, "-i", video_path,
-                    "-output_ts_offset", time_start, "-c:v", "copy", "-c:a", "copy",  "-ac", "2", "-preset", "ultrafast", "-f", "mpegts", "pipe:1"]
-    elif movieAudioStats['codec_name'] == "aac" and movieVideoStats['codec_name'] != "h264":
-        print(f"AudioCodec: {movieAudioStats['codec_name']}")
-        print(f"VideoCodec: {movieVideoStats['codec_name']}")
-
-        if PIX:
-            command = ["ffmpeg", "-loglevel", logLevelValue, "-hide_banner", "-ss", time_start, "-to", time_end, "-i", video_path,
-                "-output_ts_offset", time_start, "-c:v", videoCodec, "-c:a", "copy", PIX, PIXcodec, "-ac", "2", "-preset", preset, bitrate, bitrateValue, crf, crfValue, vsync, vsyncValue, "-f", "mpegts", "pipe:1"]
-        else:
-            command = ["ffmpeg", "-loglevel", logLevelValue, "-hide_banner", "-ss", time_start, "-to", time_end, "-i", video_path,
-               "-output_ts_offset", time_start, "-c:v", videoCodec, "-c:a", "copy",  "-ac", "2", "-preset", preset, "-f", "mpegts", "pipe:1"]
-
-    elif movieAudioStats['codec_name'] != "aac" and movieVideoStats['codec_name'] == "h264":
-        print(f"AudioCodec: {movieAudioStats['codec_name']}")
-        print(f"VideoCodec: {movieVideoStats['codec_name']}")
-        command = ["ffmpeg", "-loglevel", logLevelValue, "-hide_banner", "-ss", time_start, "-to", time_end, "-i", video_path,
-               "-output_ts_offset", time_start, "-c:v", "copy", "-c:a", "aac",  "-ac", "2", "-preset", "ultrafast", "-f", "mpegts", "pipe:1"]
-    else:
-        print(f"AudioCodec: {movieAudioStats['codec_name']}")
-        print(f"VideoCodec: {movieVideoStats['codec_name']}")
-        if PIX:
-            command = ["ffmpeg", "-loglevel", logLevelValue, "-hide_banner", "-ss", time_start, "-to", time_end, "-i", video_path,
-               "-output_ts_offset", time_start, "-c:v", videoCodec, "-c:a", "aac", PIX, PIXcodec, "-ac", "2", "-preset", preset, bitrate, bitrateValue, crf, crfValue, vsync, vsyncValue, "-f", "mpegts", "pipe:1"]
-        else:
-            command = ["ffmpeg", "-loglevel", logLevelValue, "-hide_banner", "-ss", time_start, "-to", time_end, "-i", video_path,
-               "-output_ts_offset", time_start, "-c:v", videoCodec, "-c:a", "aac", "-ac", "2", "-preset", preset, "-f", "mpegts", "pipe:1"]
+    command = ["ffmpeg", "-loglevel", logLevelValue, "-hide_banner", "-ss", time_start, "-to", time_end, "-i", video_path,
+                "-output_ts_offset", time_start, "-c:v", "libx264", "-vf", "scale=-1:1080", "-c:a", "aac", "-b:a", "128k", "-ac", "2", "-preset", "ultrafast", "-f", "mpegts", "pipe:1"]
 
     print((" ").join(command))
 
@@ -774,7 +726,7 @@ def chunkCaption(video_name, language, index):
     global movieExtension
     moviesPath = config.get("ChocolateSettings", "MoviesPath")
     video_path = f"{moviesPath}\{video_name}{movieExtension}"
-    extractCaptionsCommand = ["ffmpeg", "-loglevel", "error", "-hide_banner", "-loglevel", "error", "-i", video_path, "-ac", "2", "-map", f"0:{index}", "-f", "webvtt", "pipe:1"]
+    extractCaptionsCommand = ["ffmpeg", "-loglevel", "error", "-hide_banner", "-loglevel", "error", "-i", video_path, "-map", f"0:{index}", "-f", "webvtt", "pipe:1"]
 
     print(" ".join(extractCaptionsCommand))
 
@@ -791,7 +743,7 @@ def chunkAudio(video_name, language, index):
     global movieExtension
     moviesPath = config.get("ChocolateSettings", "MoviesPath")
     video_path = f"{moviesPath}\{video_name}{movieExtension}"
-    extractAudioCommand = ["ffmpeg", "-loglevel", "error", "-hide_banner", "-loglevel", "error", "-i", video_path, "-ac", "2", "-map", f"a:{index}", "-f", "mp3", "pipe:1"]
+    extractAudioCommand = ["ffmpeg", "-loglevel", "error", "-hide_banner", "-loglevel", "error", "-i", video_path, "-map", f"a:{index}", "-f", "mp3", "pipe:1"]
 
     print(" ".join(extractAudioCommand))
 
@@ -949,7 +901,7 @@ def serie(name, id):
     global allSeriesDict
     if name in allSeriesDict.keys():
         data = allSeriesDict[name]
-        return render_template('season.html', serie=data)
+        return render_template('season.html', serie=data, title=name)
     else:
         return "Not Found"
 
@@ -1058,12 +1010,19 @@ def searchSerie(search):
 
 @app.route("/movie/<slug>")
 def movie(slug):
-    global filmEncode, movieExtension
+    global filmEncode, movieExtension, jsonFileToRead
     if not slug.endswith("ttf"):
         rewriteSlug, movieExtension = os.path.splitext(slug)
         link = f"/video/{rewriteSlug}.m3u8".replace(" ", "%20") 
-    allCaptions = generateCaption(slug)
-    return render_template("film.html", slug=slug, movieUrl=link, allCaptions=allCaptions)
+        allCaptions = generateCaption(slug)
+        for movie in jsonFileToRead["movies"]:
+            movieData= jsonFileToRead["movies"][movie]
+            realTitle = movieData["realTitle"]
+            key = movieData["title"]
+            if key == rewriteSlug:
+                title = realTitle
+                print(key, realTitle, rewriteSlug)
+        return render_template("film.html", slug=slug, movieUrl=link, allCaptions=allCaptions, title=title)
 
 @app.route("/series/<name>/<saison>/<slug>")
 def seriesPlayer(name, saison, slug):

@@ -737,7 +737,8 @@ form#searchForm:hover .form_field {
 }
 
 .cover:hover .cover_movie,
-.cover:hover .cover_serie {
+.cover:hover .cover_serie,
+.cover:hover .timePopup {
     transform: scale(1.05);
     transition: 300ms;
 }
@@ -846,4 +847,17 @@ input[type="search"]::-webkit-search-results-decoration {
 #languages::-webkit-calendar-picker-indicator,
 #language::-webkit-calendar-picker-indicator {
     display: none;
+}
+
+.timePopup {
+    z-index: 99;
+    position: absolute;
+    background-color: #383838;
+    min-width: 4vw;
+    border-radius: 20vh;
+    margin-top: 36.5vh;
+    margin-left: 6.3vw;
+    padding: 0vw 1vw 0 1vw;
+    transform: scale(1);
+    transition: 300ms;
 }

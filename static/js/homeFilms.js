@@ -257,6 +257,20 @@ function getFirstMovies() {
             image.title = movie.realTitle
             image.alt = movie.realTitle
 
+            var movieTitle = movie.realTitle
+            cookieValue = getCookie(movieTitle)
+            timeP = document.createElement("p")
+            if (cookieValue != undefined) {
+                console.log(content)
+                timePopup = document.createElement("div")
+                console.log(movieTitle, cookieValue)
+                timePopup.className = "timePopup"
+                timeP.innerHTML = cookieValue
+                timePopup.appendChild(timeP)
+                content.appendChild(timePopup)
+                console.log(timeP, timePopup)
+            }
+
             content.appendChild(image)
             cover.appendChild(content)
             movies.appendChild(cover)
@@ -264,6 +278,12 @@ function getFirstMovies() {
 
         setPopup()
     })
+}
+
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
 }
 
 window.onload = function() {

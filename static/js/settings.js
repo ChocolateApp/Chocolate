@@ -14,10 +14,13 @@ function saveSettings(event) {
     form.submit()
 }
 
-window.onload = function() {
-    if (document.cookie.includes("language=")) {
-        language = document.cookie.split(";")[0].split("=")[1]
-        document.getElementById("language").value = language
-    }
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+}
 
+window.onload = function() {
+    languageCookie = getCookie("language")
+    document.getElementById("language").value = languageCookie
 }

@@ -48,6 +48,12 @@ closePopup.addEventListener("click", function() {
 
 })
 
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
 function setPopup() {
     contents = document.getElementsByClassName("content")
     Array.from(contents).forEach(function(content) {
@@ -229,6 +235,16 @@ function getFirstMovies() {
                 }
                 image.title = movie.realTitle
                 image.alt = movie.realTitle
+                cookieValue = getCookie(movie.realTitle)
+                if (cookieValue != undefined) {
+                    console.log(movie.realTitle, cookieValue)
+                    timePopup = document.createElement("div")
+                    timePopup.className = "timePopup"
+                    timeP = document.createElement("p")
+                    timeP.innerHTML = cookieValue
+                    timePopup.appendChild(timeP)
+                    cover.appendChild(timePopup)
+                }
 
                 content.appendChild(image)
                 cover.appendChild(content)
