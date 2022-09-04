@@ -3,7 +3,6 @@ from flask_cors import CORS
 from tmdbv3api import TMDb, Movie, TV, Episode, Person
 from tmdbv3api.exceptions import TMDbException
 from videoprops import get_video_properties, get_audio_properties
-from bs4 import BeautifulSoup
 from pathlib import Path
 import requests, os, subprocess, configparser, socket, datetime, subprocess, socket, platform, GPUtil, json, random
 from Levenshtein import distance as lev
@@ -102,16 +101,12 @@ def getMovies():
         path = str(Path.home() / "Downloads")
     os.chdir(path)
     pythonName ='python' if os.name=='nt' else 'python3'
-    print("MovieServer is starting")
     subprocess.Popen([pythonName, f'{currentCWD}\movieServer.py'])
-
-    moviesPathUrl = f"http://localhost:8000"
-    pagesMovie = requests.get(moviesPathUrl)
-    soupMovies = BeautifulSoup(pagesMovie.content, "html.parser")
-    movies = soupMovies.find_all("a")
     filmFileList = []
+    movies = os.listdir(path)
     for movieFile in movies:
-        filmFileList.append(movieFile.text)
+        if os.path.isfile(f"{path}/{movieFile}"):
+            filmFileList.append(movieFile)
 
     filmFileList = filmFileList
     filmFileList.sort()
@@ -343,10 +338,8 @@ def getMovies():
                 del jsonFile["movies"][name]
             with open(f"{currentCWD}/scannedFiles.json", "w", encoding="utf8") as f:
                 json.dump(jsonFile, f, ensure_ascii=False)
-    print()
 
 def getSeries():
-    print("SerieServer is starting")
     try:
         if config["ChocolateSettings"]["SeriesPath"] == "Empty":
             allSeriesPath = str(Path.home() / "Downloads")
@@ -615,7 +608,6 @@ def getSeries():
                 del jsonFile["series"][name]
             with open(f"{currentCWD}/scannedFiles.json", "w", encoding="utf8") as f:
                 json.dump(jsonFile, f, ensure_ascii=False)
-    print()
 
 def length_video(path: str) -> float:
     seconds = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of",
@@ -1150,7 +1142,8 @@ def getActorData(actorName):
     return json.dumps(actorData, default=lambda o: o.__dict__, ensure_ascii=False)
 
 if __name__ == '__main__':
-    getSeries()
     getMovies()
+    getSeries()
+    print()
     print('\033[?25h', end="")
     app.run(host="0.0.0.0", port=serverPort)
