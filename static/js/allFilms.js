@@ -270,14 +270,14 @@ function getFirstMovies() {
                 imageBanner.setAttribute("title", movie.realTitle)
 
                 titleBanner.innerHTML = movie.realTitle
-
-                descriptionBanner.innerHTML = movie.description
+                description = movie.description
+                descriptionBanner.innerHTML = description
                 descriptionBanner.innerHTML = descriptionBanner.innerHTML.substring(0, 200) + "..."
                 descriptionBanner.innerHTML += " <a id='lireLaSuite' href='#'>Lire la suite</a>"
 
                 lireLaSuite = document.getElementById("lireLaSuite")
                 lireLaSuite.addEventListener("click", function() {
-                    descriptionBanner.innerHTML = movie.description
+                    descriptionBanner.innerHTML = description
                 })
 
                 genreBanner.innerHTML = movie.genre

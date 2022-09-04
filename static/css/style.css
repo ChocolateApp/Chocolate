@@ -99,7 +99,7 @@ form#searchForm:hover .form_field {
 
 .movies,
 .series {
-    margin-top: 53vh;
+    margin-top: 52vh;
     width: calc(100vw - 2.98vw);
     flex-wrap: wrap;
     margin-left: 3vw;
@@ -171,14 +171,17 @@ form#searchForm:hover .form_field {
     backdrop-filter: blur(50px);
     border-radius: 2vw;
     width: 22vw;
-    height: 58vh;
+    min-height: 28vh;
     color: #3E72CE;
 }
 
 .card p {
-    text-align: center;
     margin-top: 3vh;
     font-size: 3vh;
+    padding: 2vh 0 2vh 0;
+    align-items: initial;
+    display: block;
+    text-align: center;
 }
 
 .cardsIndex {
@@ -211,7 +214,7 @@ form#searchForm:hover .form_field {
 .logo {
     position: absolute;
     width: 2vw;
-    height: 4vh;
+    height: auto;
     left: 0.5vw;
     top: 3vh;
 }
@@ -231,7 +234,7 @@ form#searchForm:hover .form_field {
     position: absolute;
     color: white;
     font-size: 3vh;
-    left: 0.85vw;
+    width: 3vw;
     top: 16vh;
 }
 
@@ -239,7 +242,7 @@ form#searchForm:hover .form_field {
     position: absolute;
     color: white;
     font-size: 3vh;
-    left: 0.85vw;
+    width: 3vw;
     top: 32vh;
 }
 
@@ -247,7 +250,7 @@ form#searchForm:hover .form_field {
     position: absolute;
     color: white;
     font-size: 3vh;
-    left: 0.85vw;
+    width: 3vw;
     top: 48vh;
 }
 
@@ -860,4 +863,131 @@ input[type="search"]::-webkit-search-results-decoration {
     padding: 0vw 1vw 0 1vw;
     transform: scale(1);
     transition: 300ms;
+}
+
+@media (max-width: 640px) {
+    * {
+        margin: 0;
+        padding: 0;
+    }
+    .timePopup {
+        z-index: 99;
+        position: absolute;
+        background-color: #383838;
+        min-width: 1vw;
+        border-radius: 20vh;
+        margin-top: 9.5vh;
+        margin-left: 3.3vw;
+        padding: 0vw 0.5vw 0 0.5vw;
+        transform: scale(1);
+        transition: 300ms;
+    }
+    .timePopup p {
+        font-size: 2vw;
+    }
+    .cover_movie,
+    .cover_serie {
+        object-fit: cover;
+        border-radius: 1vh;
+        width: 12vw;
+        height: 10vh;
+        transform: scale(1);
+        transition: 300ms;
+    }
+    .watchNowA {
+        font-size: 0.8vh;
+        padding: 1vh 2vw;
+        top: 44vh;
+    }
+    .watchNow {
+        font-size: 1.4vh;
+    }
+    .movies,
+    .series {
+        width: calc(100vw - 5.8vw);
+        margin-left: 5.8vw;
+        grid-column-gap: 1vw;
+    }
+    .bannerTitle {
+        left: 10vw;
+        font-size: 2vh;
+    }
+    .bannerDescription {
+        width: 82vw;
+        height: 18vh;
+        overflow: scroll;
+        top: 22vh;
+    }
+    header {
+        width: 6vw;
+    }
+    header a ion-icon {
+        font-size: 2vh !important;
+        width: 6vw !important;
+        left: 0px !important;
+    }
+    .homeIcon {
+        top: 16vh;
+    }
+    .movieIcon {
+        top: 26vh;
+    }
+    .tvIcon {
+        top: 36vh;
+    }
+    .logo {
+        width: 5.5vw;
+        height: auto;
+        left: 0.25vw;
+        top: 6vh;
+    }
+    .settings ion-icon {
+        font-size: 3vh;
+    }
+    .form_field {
+        border: none;
+        padding-left: 0.5vw;
+        font-size: 0;
+        position: absolute;
+        width: 8vw;
+        height: 3vh;
+        right: 7vw;
+        top: 1vh;
+        background: rgb(157 157 157 / 65%);
+        border-radius: 6vw;
+        z-index: 2;
+        filter: drop-shadow(0.1vh 0.1vh 0.5vh #000);
+        color: white;
+    }
+    form#searchForm:hover .form_field {
+        transition: width 300ms;
+        width: 45vw;
+        font-size: 1.5vh;
+    }
+    .search_icon {
+        right: 8.05vw;
+        top: 1vh;
+        font-size: 6vw;
+        height: 3vh;
+    }
+    .card {
+        border-radius: 2vw;
+        width: 22vw;
+        min-height: 16vh;
+    }
+    .movieCardImage,
+    .serieCardImage {
+        width: 19vw;
+        margin-left: 1.5vw;
+        border-radius: 2vw;
+        margin-top: 1vh;
+    }
+    .card p {
+        text-align: center;
+        margin-top: 0.5vh;
+        font-size: 2vh;
+    }
+    .seeMore {
+        border-radius: 10vw;
+    }
 }
