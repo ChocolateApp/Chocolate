@@ -106,9 +106,9 @@ form#searchForm:hover .form_field {
     z-index: 2;
     position: absolute;
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     grid-template-rows: 1fr;
-    grid-column-gap: 2vw;
+    grid-column-gap: 1vw;
     grid-row-gap: 0px;
 }
 
@@ -859,7 +859,7 @@ input[type="search"]::-webkit-search-results-decoration {
     min-width: 4vw;
     border-radius: 20vh;
     margin-top: 36.5vh;
-    margin-left: 6.3vw;
+    margin-left: 7.3vw;
     padding: 0vw 1vw 0 1vw;
     transform: scale(1);
     transition: 300ms;
@@ -876,21 +876,21 @@ input[type="search"]::-webkit-search-results-decoration {
         background-color: #383838;
         min-width: 1vw;
         border-radius: 20vh;
-        margin-top: 9.5vh;
-        margin-left: 3.3vw;
-        padding: 0vw 0.5vw 0 0.5vw;
+        margin-top: 18vh;
+        margin-left: 14.5vw;
+        padding: 0vw 1.5vw 0 1.5vw;
         transform: scale(1);
         transition: 300ms;
     }
     .timePopup p {
-        font-size: 2vw;
+        font-size: 2.5vw;
     }
     .cover_movie,
     .cover_serie {
         object-fit: cover;
         border-radius: 1vh;
-        width: 12vw;
-        height: 10vh;
+        width: 24vw;
+        height: 19vh;
         transform: scale(1);
         transition: 300ms;
     }
@@ -907,6 +907,7 @@ input[type="search"]::-webkit-search-results-decoration {
         width: calc(100vw - 5.8vw);
         margin-left: 5.8vw;
         grid-column-gap: 1vw;
+        grid-template-columns: repeat(3, 1fr);
     }
     .bannerTitle {
         left: 10vw;

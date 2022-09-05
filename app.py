@@ -855,17 +855,17 @@ def getSeriesData(title):
     else:
         return "Not Found"
 
-@app.route("/getFirstSevenMovies")
+@app.route("/getFirstSixMovies")
 def getFirstEightMovies():
     global simpleDataFilms
     simpleDataFilms.sort(key=lambda x: x["title"].lower())
-    return json.dumps(simpleDataFilms[:7], ensure_ascii=False)
+    return json.dumps(simpleDataFilms[:6], ensure_ascii=False)
 
-@app.route("/getFirstSevenSeries")
+@app.route("/getFirstSixSeries")
 def getFirstEightSeries():
     global allSeriesDict
     #get the first seven element of the dictionary
-    allSeriesDict7 = dict(list(allSeriesDict.items())[:7])
+    allSeriesDict7 = dict(list(allSeriesDict.items())[:6])
     return json.dumps(list(allSeriesDict7.items()), ensure_ascii=False, default=str)
 
 @app.route('/')
@@ -881,7 +881,7 @@ def films():
     global allMoviesSorted
     searchedFilmsUp0 = len(searchedFilms) == 0
     errorMessage = "Verify that the path is correct"
-    routeToUse = "/getFirstSevenMovies"
+    routeToUse = "/getFirstSixMovies"
 
     return render_template('homeFilms.html', conditionIfOne=searchedFilmsUp0, errorMessage=errorMessage, routeToUse=routeToUse)
 
@@ -890,7 +890,7 @@ def series():
     global allSeriesSorted
     searchedSeriesUp0 = len(searchedSeries) == 0
     errorMessage = "Verify that the path is correct"
-    routeToUse = "/getFirstSevenSeries"
+    routeToUse = "/getFirstSixSeries"
 
     return render_template('homeSeries.html', conditionIfOne=searchedSeriesUp0, errorMessage=errorMessage, routeToUse=routeToUse)
 
