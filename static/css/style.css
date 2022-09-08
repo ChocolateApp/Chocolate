@@ -99,7 +99,7 @@ form#searchForm:hover .form_field {
 
 .movies,
 .series {
-    margin-top: 52vh;
+    margin-top: 47.25vh;
     width: calc(100vw - 2.98vw);
     flex-wrap: wrap;
     margin-left: 3vw;
@@ -108,7 +108,7 @@ form#searchForm:hover .form_field {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
     grid-template-rows: 1fr;
-    grid-column-gap: 1vw;
+    grid-column-gap: 4vw;
     grid-row-gap: 0px;
 }
 
@@ -139,6 +139,7 @@ form#searchForm:hover .form_field {
     text-align: center;
     order: 1;
     cursor: pointer;
+    margin-bottom: 2vh;
 }
 
 .cover:hover {
@@ -147,12 +148,11 @@ form#searchForm:hover .form_field {
 
 .cover_movie,
 .cover_serie {
-    object-fit: cover;
     border-radius: 1vh;
-    width: 12vw;
-    height: 38vh;
-    transform: scale(1);
-    transition: 300ms;
+    transition: 300ms transform;
+    display: block;
+    width: 12.8vw;
+    height: 39vh;
 }
 
 .not_seen {
@@ -222,7 +222,7 @@ form#searchForm:hover .form_field {
 .rightEffect {
     width: 2vw;
     height: 100vh;
-    position: absolute;
+    position: fixed;
     right: 0;
     z-index: 999;
     background: rgba(0, 0, 0, 0.7);
@@ -728,7 +728,7 @@ form#searchForm:hover .form_field {
     color: #ffffff;
     font-size: 1.4vh;
     padding: 2vh 4vw;
-    transition: 300ms;
+    transition: 300ms transform;
     text-shadow: 0.1vh 0.1vh 0.5vh #000;
     box-shadow: 0.1vh 0.1vh 0.5vh #000;
 }
@@ -743,7 +743,6 @@ form#searchForm:hover .form_field {
 .cover:hover .cover_serie,
 .cover:hover .timePopup {
     transform: scale(1.05);
-    transition: 300ms;
 }
 
 .watchNow {
@@ -763,10 +762,10 @@ form#searchForm:hover .form_field {
     font-weight: 700;
     display: flex;
     align-items: center;
-    transition: 300ms;
+    transition: 300ms background, color;
     z-index: 5;
     position: absolute;
-    top: 40vh;
+    top: 35vh;
     left: 10vw;
     text-shadow: 0.1vh 0.1vh 0.5vh #000;
     box-shadow: 0.1vh 0.1vh 0.5vh #000;
@@ -805,7 +804,7 @@ form#searchForm:hover .form_field {
 }
 
 .bannerDescription {
-    width: 29vw;
+    width: 35vw;
     position: absolute;
     top: 25vh;
     left: 10vw;
@@ -813,7 +812,7 @@ form#searchForm:hover .form_field {
     line-height: 1.4vh;
     font-weight: 400;
     font-style: normal;
-    height: 8vh;
+    height: 9vh;
     text-shadow: 0.1vh 0.1vh 0.5vh #000;
 }
 
@@ -861,8 +860,28 @@ input[type="search"]::-webkit-search-results-decoration {
     margin-top: 36.5vh;
     margin-left: 7.3vw;
     padding: 0vw 1vw 0 1vw;
-    transform: scale(1);
-    transition: 300ms;
+    transition: 300ms transform;
+}
+
+.timePopup p {
+    font-size: 1.7vh;
+}
+
+.loaderBackground {
+    width: 100%;
+    height: 100%;
+    position: fixed;
+    z-index: 99;
+    background-color: rgb(49 49 49);
+}
+
+.spinner {
+    width: 10vw;
+    height: 10vw;
+    position: fixed;
+    left: calc(50vw - 5vw);
+    z-index: 99999;
+    top: calc(50vh - 8vw);
 }
 
 @media (max-width: 640px) {
@@ -889,8 +908,8 @@ input[type="search"]::-webkit-search-results-decoration {
     .cover_serie {
         object-fit: cover;
         border-radius: 1vh;
-        width: 24vw;
-        height: 19vh;
+        width: 30.4vw;
+        height: 21vh;
         transform: scale(1);
         transition: 300ms;
     }
@@ -908,6 +927,7 @@ input[type="search"]::-webkit-search-results-decoration {
         margin-left: 5.8vw;
         grid-column-gap: 1vw;
         grid-template-columns: repeat(3, 1fr);
+        margin-top: 48vh;
     }
     .bannerTitle {
         left: 10vw;

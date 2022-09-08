@@ -266,7 +266,11 @@ function getFirstSeries() {
         watchNow = document.getElementsByClassName("watchNowA")[0]
 
         serie = data
-        var serieUrl = serie[1]['seasons'][0]['episodes']['1']['slug']
+        try {
+            var serieUrl = serie[1]['seasons'][0]['episodes']['1']['slug']
+        } catch {
+            location.reload()
+        }
         theSerieName = serie[0]
         firstSeason = serie[1]['seasons'][0]
         seasonNumber = firstSeason['season_number']
@@ -311,14 +315,14 @@ function getFirstSeries() {
         data = Object.entries(data)
         for (var i = 0; i < data.length; i++) {
             series = document.getElementsByClassName("series")[0]
-            var serie = data[i]
-            var cover = document.createElement("div")
+            const serie = data[i]
+            let cover = document.createElement("div")
             cover.className = "cover"
-            var content = document.createElement("div")
+            let content = document.createElement("div")
             content.className = "content"
-            var image = document.createElement("img")
+            let image = document.createElement("img")
             image.className = "cover_serie"
-            if (serie[1][1]['serieCoverPath'] == "https://image.tmdb.org/t/p/originalNone" || serie[1][1]['serieCoverPath'] == undefined || serie[1][1]['serieCoverPath'] == "undefined") {
+            if (serie[1][1]['serieCoverPath'] == undefined) {
                 image.src = brokenPath
             } else {
                 image.src = serie[1][1]['serieCoverPath']
@@ -331,9 +335,27 @@ function getFirstSeries() {
             series.appendChild(cover)
         }
 
+        const imgs = document.images
+        const imgsArray = Array.prototype.slice.call(document.images)
+
+        for (img of imgsArray) {
+            const acutalIndex = imgsArray.indexOf(img)
+            img = imgs.item(acutalIndex)
+            img.addEventListener("load", function() {
+                const imagesLenght = imgs.length - 1
+                if (acutalIndex == imagesLenght) {
+                    spinner = document.getElementsByClassName("spinner")[0]
+                    backgroundSpinner = document.getElementById("loaderBackground")
+                    spinner.style.opacity = "0"
+                    backgroundSpinner.style.display = "none"
+                }
+            })
+        }
+
         setPopup()
     })
 }
+
 
 window.onload = function() {
     brokenPathDiv = document.getElementsByClassName("brokenPath")[0]

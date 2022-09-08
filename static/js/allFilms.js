@@ -286,6 +286,23 @@ function getFirstMovies() {
             }
         }
 
+        const imgs = document.images
+        const imgsArray = Array.prototype.slice.call(document.images)
+
+        for (img of imgsArray) {
+            const acutalIndex = imgsArray.indexOf(img)
+            img = imgs.item(acutalIndex)
+            img.addEventListener("load", function() {
+                const imagesLenght = imgs.length - 1
+                if (acutalIndex == imagesLenght) {
+                    spinner = document.getElementsByClassName("spinner")[0]
+                    backgroundSpinner = document.getElementById("loaderBackground")
+                    spinner.style.opacity = "0"
+                    backgroundSpinner.style.display = "none"
+                }
+            })
+        }
+
         setPopup()
     })
 }
@@ -295,4 +312,8 @@ window.onload = function() {
     brokenPath = brokenPathDiv.getAttribute("id")
     brokenPathDiv.parentNode.removeChild(brokenPathDiv)
     getFirstMovies()
+
+    imgs = document.images
+    len = imgs.length
+    counter = 0;
 }

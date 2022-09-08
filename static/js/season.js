@@ -77,6 +77,7 @@ function getSeasonData() {
     }).then(function(data) {
         episodes = data["episodes"]
         episodes = Object.entries(episodes)
+        console.log(data)
         console.log(episodes)
         for (var i = 0; i < episodes.length; i++) {
             console.log("je suis la")

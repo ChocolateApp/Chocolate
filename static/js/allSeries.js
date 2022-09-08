@@ -41,6 +41,10 @@ closePopup.addEventListener("click", function() {
     }
     var similar = document.getElementsByClassName("containerSimilar")[0]
     similar.style.gridTemplateColumns = "repeat(0, 1fr)"
+    similar.innerHTML = ""
+
+    const seasons = document.getElementsByClassName("containerSeasons")[0]
+    seasons.innerHTML = ""
 
     var trailerVideo = document.getElementById("trailerVideo")
     try {
@@ -85,6 +89,8 @@ function setPopup() {
                 var serieYear = data.date
                 var serieTrailer = data.bandeAnnonce
                 var serieSimilar = data.similarSeries
+                console.table(data)
+                console.log(serieSimilar)
 
                 var serieSeasons = data.seasons
                 containerSimilar = document.getElementsByClassName("containerSimilar")[0]
@@ -129,11 +135,21 @@ function setPopup() {
                     containerSeasons.appendChild(seasonDiv)
                 }
 
+                serieSeasonsLength = serieSeasons.length
+                containerSeasons = document.getElementsByClassName("containerSeasons")[0]
+                if (serieSeasonsLength >= 4) {
+                    containerSeasons.style.gridTemplateColumns = "repeat(4, 1fr)"
+                } else if (serieSeasonsLength == 0) {
+                    containerSeasons.style.display = "none"
+                } else {
+                    containerSeasons.style.gridTemplateColumns = "repeat(" + serieSeasonsLength + ", 1fr)"
+                }
+
                 for (var i = 0; i < serieSimilar.length; i++) {
                     if (i < 4) {
                         var serie = serieSimilar[i]
-                        imageUrl = serie.cover
-                        serieName = serie.realTitle
+                        imageUrl = serie.serieCoverPath
+                        serieName = serie.name
                         var similar = document.getElementsByClassName("containerSimilar")[0]
                         var serie = document.createElement("div")
                         serie.setAttribute("class", "serie")
@@ -266,6 +282,7 @@ function getFirstSeries() {
         data = Object.entries(data)
         console.log(data)
         for (serie of data) {
+            console.log(serie)
             index = data.indexOf(serie)
             if (index === 0) {
                 bigBanner = document.getElementsByClassName("bigBanner")[0]
@@ -275,11 +292,11 @@ function getFirstSeries() {
                 descriptionBanner = document.getElementsByClassName("bannerDescription")[0]
                 watchNow = document.getElementsByClassName("watchNowA")[0]
 
-                console.log(serie)
-
-                var serieUrl = serie[1]['seasons'][0]['episodes']['1']['slug']
-
-                serieUrl = "/serie" + serieUrl
+                try {
+                    var serieUrl = "/serie" + serie[1]['seasons'][0]['episodes']['1']['slug']
+                } catch {
+                    serieUrl = "/404"
+                }
 
                 imageBanner.setAttribute("src", serie[1]['banniere'])
                 if (imageBanner.src == "https://image.tmdb.org/t/p/originalNone") {
@@ -316,7 +333,6 @@ function getFirstSeries() {
                 series = document.getElementsByClassName("series")[0]
                 var cover = document.createElement("div")
                 cover.className = "cover"
-                cover.style.marginBottom = "2vh"
                 var content = document.createElement("div")
                 content.className = "content"
                 var image = document.createElement("img")
@@ -334,6 +350,24 @@ function getFirstSeries() {
                 series.appendChild(cover)
             }
         }
+
+        const imgs = document.images
+        const imgsArray = Array.prototype.slice.call(document.images)
+
+        for (img of imgsArray) {
+            const acutalIndex = imgsArray.indexOf(img)
+            img = imgs.item(acutalIndex)
+            img.addEventListener("load", function() {
+                const imagesLenght = imgs.length - 1
+                if (acutalIndex == imagesLenght) {
+                    spinner = document.getElementsByClassName("spinner")[0]
+                    backgroundSpinner = document.getElementById("loaderBackground")
+                    spinner.style.opacity = "0"
+                    backgroundSpinner.style.display = "none"
+                }
+            })
+        }
+
 
         setPopup()
     })

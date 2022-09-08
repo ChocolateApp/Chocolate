@@ -43,41 +43,55 @@ closePopup.addEventListener("click", function() {
     similar.style.gridTemplateColumns = "repeat(0, 1fr)"
 
     var trailerVideo = document.getElementById("trailerVideo")
-    trailerVideo.setAttribute("src", "")
-    trailerVideo.remove()
+    try {
+        trailerVideo.setAttribute("src", "")
+        trailerVideo.remove()
+    } catch (e) {
+
+    }
 
 })
 
 function setPopup() {
-    covers = document.getElementsByClassName("cover")
-    for (var i = 0; i < covers.length; i++) {
-        covers[i].addEventListener("click", function() {
-
+    contents = document.getElementsByClassName("content")
+    Array.from(contents).forEach(function(content) {
+        content.addEventListener("click", function() {
             popup = document.getElementById("popup")
             popup.style.display = "block"
 
             document.body.style.overflow = "hidden"
 
-            var image = this.children[0].children[0]
-            var movieTitle = image.getAttribute("title");
+            image = content.children[0]
+            movieTitle = image.title;
 
             fetch("/getMovieData/" + movieTitle).then(function(response) {
                 return response.json()
             }).then(function(data) {
-                var { realTitle, cast, description, duration, genre, note, cover, slug, date, bandeAnnonce, similarMovies } = data
-                slug = "/movie/" + slug
+                var movieTitle = data.realTitle
+
+                var movieCast = data.cast
+                var movieDescription = data.description
+                var movieDuration = data.duration
+                var movieGenre = data.genre
+                var movieNote = data.note
+                var moviePoster = data.cover
+                var movieUrl = data.slug
+                movieUrl = "/movie/" + movieUrl
+                var movieYear = data.date
+                var movieTrailer = data.bandeAnnonce
+                var movieSimilar = data.similarMovies
                 containerSimilar = document.getElementsByClassName("containerSimilar")[0]
 
-                if (similarMovies.length === 0) {
+                if (movieSimilar.length === 0) {
                     containerSimilar.style.display = "none"
 
                 } else {
                     containerSimilar.style.display = "inline-grid"
                 }
 
-                for (var i = 0; i < similarMovies.length; i++) {
+                for (var i = 0; i < movieSimilar.length; i++) {
                     if (i < 4) {
-                        var movie = similarMovies[i]
+                        var movie = movieSimilar[i]
                         imageUrl = movie.cover
                         movieName = movie.realTitle
                         var similar = document.getElementsByClassName("containerSimilar")[0]
@@ -105,27 +119,27 @@ function setPopup() {
 
 
                 var imagePopup = document.getElementsByClassName("coverPopup")[0]
-                imagePopup.setAttribute("src", cover);
+                imagePopup.setAttribute("src", moviePoster);
                 if (imagePopup.src == "https://image.tmdb.org/t/p/originalNone") {
                     imagePopup.src = brokenPath
                 }
-                imagePopup.setAttribute("alt", realTitle);
-                imagePopup.setAttribute("title", realTitle);
+                imagePopup.setAttribute("alt", movieTitle);
+                imagePopup.setAttribute("title", movieTitle);
 
                 var titlePopup = document.getElementsByClassName("titlePopup")[0]
-                titlePopup.innerHTML = realTitle;
+                titlePopup.innerHTML = movieTitle;
 
                 var descriptionPopup = document.getElementsByClassName("descriptionPopup")[0]
-                descriptionPopup.innerHTML = description;
+                descriptionPopup.innerHTML = movieDescription;
 
                 var notePopup = document.getElementsByClassName("notePopup")[0]
-                notePopup.innerHTML = `Note : ${note}/10`;
+                notePopup.innerHTML = `Note : ${movieNote}/10`;
 
                 var yearPopup = document.getElementsByClassName("yearPopup")[0]
-                yearPopup.innerHTML = `Date : ${date}`;
+                yearPopup.innerHTML = `Date : ${movieYear}`;
 
                 var genrePopup = document.getElementsByClassName("genrePopup")[0]
-                var genreList = genre
+                var genreList = movieGenre
                 var genreString = ""
                 for (var i = 0; i < genreList.length; i++) {
                     genreString += genreList[i]
@@ -136,15 +150,15 @@ function setPopup() {
                 genrePopup.innerHTML = `Genre : ${genreString}`;
 
                 var durationPopup = document.getElementsByClassName("durationPopup")[0]
-                durationPopup.innerHTML = `Durée : ${duration}`;
-                for (var i = 0; i < cast.length; i++) {
+                durationPopup.innerHTML = `Durée : ${movieDuration}`;
+                for (var i = 0; i < movieCast.length; i++) {
                     castMember = document.createElement("div")
                     castMember.className = "castMember"
                     castImage = document.createElement("img")
                     castImage.className = "castImage"
-                    castImageUrl = cast[i][2]
-                    castRealName = cast[i][0]
-                    castCharacterName = cast[i][1]
+                    castImageUrl = movieCast[i][2]
+                    castRealName = movieCast[i][0]
+                    castCharacterName = movieCast[i][1]
                     castImage.setAttribute("src", castImageUrl)
                     castImage.setAttribute("alt", castRealName)
                     castImage.setAttribute("title", castRealName)
@@ -171,26 +185,26 @@ function setPopup() {
                 }
 
                 var trailer = document.getElementsByClassName("containerTrailer")[0]
-                if (bandeAnnonce == "") {
+                if (movieTrailer == "") {
                     trailer.style.display = "none"
                 } else {
                     trailer.style.display = "block"
                     trailerVideo = document.createElement("iframe")
                     regex = /^(http|https):\/\//g
-                    if (regex.test(bandeAnnonce)) {
-                        bandeAnnonce.replace(regex, "")
+                    if (regex.test(movieTrailer)) {
+                        movieTrailer.replace(regex, "")
                     }
-                    trailerVideo.setAttribute("src", bandeAnnonce)
+                    trailerVideo.setAttribute("src", movieTrailer)
                     trailerVideo.setAttribute("class", "trailerVideo")
                     trailerVideo.setAttribute("id", "trailerVideo")
                     trailer.appendChild(trailerVideo)
                 }
 
                 var playButton = document.getElementsByClassName("playPopup")[0]
-                playButton.setAttribute("href", slug);
+                playButton.setAttribute("href", movieUrl);
             })
         })
-    }
+    })
 }
 
 
@@ -245,6 +259,7 @@ function getFirstMovies() {
             var movie = data[i]
             var cover = document.createElement("div")
             cover.className = "cover"
+            cover.style.marginBottom = "2vh"
             var content = document.createElement("div")
             content.className = "content"
             var image = document.createElement("img")
@@ -256,24 +271,37 @@ function getFirstMovies() {
             }
             image.title = movie.realTitle
             image.alt = movie.realTitle
-
-            var movieTitle = movie.realTitle
-            cookieValue = getCookie(movieTitle)
-            timeP = document.createElement("p")
+            cookieValue = getCookie(movie.realTitle)
             if (cookieValue != undefined) {
-                console.log(content)
+                console.log(movie.realTitle, cookieValue)
                 timePopup = document.createElement("div")
-                console.log(movieTitle, cookieValue)
                 timePopup.className = "timePopup"
+                timeP = document.createElement("p")
                 timeP.innerHTML = cookieValue
                 timePopup.appendChild(timeP)
-                content.appendChild(timePopup)
-                console.log(timeP, timePopup)
+                cover.appendChild(timePopup)
             }
 
             content.appendChild(image)
             cover.appendChild(content)
             movies.appendChild(cover)
+        }
+
+        const imgs = document.images
+        const imgsArray = Array.prototype.slice.call(document.images)
+
+        for (img of imgsArray) {
+            const acutalIndex = imgsArray.indexOf(img)
+            img = imgs.item(acutalIndex)
+            img.addEventListener("load", function() {
+                const imagesLenght = imgs.length - 1
+                if (acutalIndex == imagesLenght) {
+                    spinner = document.getElementsByClassName("spinner")[0]
+                    backgroundSpinner = document.getElementById("loaderBackground")
+                    spinner.style.opacity = "0"
+                    backgroundSpinner.style.display = "none"
+                }
+            })
         }
 
         setPopup()

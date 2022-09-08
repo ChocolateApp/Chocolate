@@ -1,3 +1,4 @@
+from textwrap import indent
 from flask import Flask, url_for, request, render_template, redirect, make_response
 from flask_cors import CORS
 from tmdbv3api import TMDb, Movie, TV, Episode, Person
@@ -365,7 +366,7 @@ def getSeries():
         serieSeasons = {}
         for season in seasons:
             path = f"{allSeriesPath}/{series}"
-            if not (season.startswith(tuple(allSeasonsAppelations)) and not season.endswith(("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"))) or season.startswith(tuple(uglySeasonAppelations)):
+            if not (season.startswith(tuple(allSeasonsAppelations)) and not season.endswith(("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"))) or season.startswith(tuple(uglySeasonAppelations)) and season.endswith((".rar", ".zip", ".part")) == False:
                 allSeasons = os.listdir(f"{path}")
                 for allSeason in allSeasons:
                     untouchedSeries = config["ChocolateSettings"]["untouchedSeries"].split(";")
@@ -405,11 +406,12 @@ def getSeries():
                         else:
                             actualName = f"{episodesPath}/{episode}"
                             oldIndex = episodes.index(episode)
-                            try:
-                                os.rename(actualName, f"{episodesPath}/E{episodes.index(episode)+1}{episodeExtension}")
-                            except FileExistsError as e:
-                                print(f"Problème de rename avec {actualName}\n{e}")
-                            episode = f"E{oldIndex+1}{episodeExtension}"
+                            if episode.endswith((".rar", ".zip", ".part")) == False:
+                                try:
+                                    os.rename(actualName, f"{episodesPath}/E{episodes.index(episode)+1}{episodeExtension}")
+                                    episode = f"E{oldIndex+1}{episodeExtension}"
+                                except FileExistsError as e:
+                                    print(f"Problème de rename avec {actualName}\n{e}")
                         seasonEpisodes[oldIndex+1] = f"{path}/{season}/{episode}"
                 serieSeasons[seasonNumber] = seasonEpisodes
         serieData = {}
@@ -589,6 +591,22 @@ def getSeries():
             with open(f"{currentCWD}/scannedFiles.json", "w", encoding="utf8") as f:
                 json.dump(jsonFile, f, ensure_ascii=False, default=dict)
         else:
+            for serie in jsonFileToRead["series"]:
+                #for all seasons, check if in json
+                try:
+                    #print(json.dumps(jsonFileToRead["series"][name]["seasons"], indent=6))
+                    allSeasonsOfSerie = jsonFileToRead["series"][name]["seasons"]
+                    originalName = jsonFileToRead["series"][name]["originalName"]
+                    allSeasonsOnDisk = allSeriesPath+"/"+originalName
+                    allSeasonsOnDisk = [season.replace("S", "") for season in os.listdir(allSeasonsOnDisk)]
+                    print(json.dumps(jsonFileToRead["series"][name]), indent=4)
+                    print(f"{jsonFileToRead['series'][name]['name']} à {len(allSeasonsOfSerie)} saisons dans le json et {len(allSeasonsOnDisk)} saisons sur le disque")
+                    if len(allSeasonsOnDisk) > len(allSeasonsOfSerie):
+                        #add it to the json
+                        pass
+                except TypeError:
+                    break
+            
             with open(f"{currentCWD}/scannedFiles.json", 'r', encoding="utf8") as f:
                 jsonFileToRead = json.load(f)
             data = jsonFileToRead["series"]
@@ -826,7 +844,7 @@ def getSimilarSeries(seriesId):
         for serie in allSeriesDict:
             try:
                 if serieName == allSeriesDict[serie]["name"]:
-                    similarSeriesPossessed.append(serie)
+                    similarSeriesPossessed.append(allSeriesDict[serie])
                     break
             except KeyError as e:
                 print(e)
@@ -847,6 +865,7 @@ def getMovieData(title):
 @app.route("/getSerieData/<title>", methods=['GET', 'POST'])
 def getSeriesData(title):
     global allSeriesDict
+    title = title.replace("%20", " ")
     if title in allSeriesDict.keys():
         data = allSeriesDict[title]
         SeriesId = data["serieId"]
@@ -1142,8 +1161,8 @@ def getActorData(actorName):
     return json.dumps(actorData, default=lambda o: o.__dict__, ensure_ascii=False)
 
 if __name__ == '__main__':
-    getMovies()
     getSeries()
+    getMovies()
     print()
     print('\033[?25h', end="")
     app.run(host="0.0.0.0", port=serverPort)
