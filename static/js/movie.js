@@ -1,6 +1,7 @@
 // when the page is loaded, get the movie duration from the cookie if it exists
 window.onload = function() {
     var video = document.getElementById("movie_html5_api")
+    let lastPush = ""
 
     video.addEventListener("timeupdate", function() {
         actualDuration = video.currentTime
@@ -12,13 +13,20 @@ window.onload = function() {
         percent = roundedDuration / videoDuration * 100
         title = document.title.split(" | ")[0]
         durationInHHMMSS = new Date(roundedDuration * 1000).toISOString().substr(11, 8);
+        secondDurationInHHMMSS = new Date(videoDuration * 1000).toISOString().substr(11, 8);
         if (percent >= 90) {
             cookie = `${title}=Finished; path=/`
         } else {
             cookie = `${title}=${durationInHHMMSS}; path=/`
         }
-        console.log(cookie)
         document.cookie = cookie
+            /*
+            if (durationInHHMMSS != lastPush) {
+                fetch(`/sendDiscordPresence/${title}/${durationInHHMMSS}/${secondDurationInHHMMSS}`)
+                console.log(`/sendDiscordPresence/${title}/${durationInHHMMSS}/${secondDurationInHHMMSS}`)
+                lastPush = durationInHHMMSS
+            }
+            */
     })
     var path = window.location.pathname
 
@@ -56,28 +64,4 @@ window.onload = function() {
     var path = window.location.pathname
     var slug = path.split("/")
     slug = slug[2]
-
-    /*fetch(`/generateAudio/${slug}`).catch(function(response) {
-        return response.json()
-    }).then(function(data) {
-        listOfAudio = data
-        console.log(listOfAudio)
-        for (var i = 0; i < listOfAudio.length; i++) {
-            listOfAudio
-            kind = "audio"
-            srclang = listOfAudio[i].languageCode
-            label = listOfAudio[i].language
-            var track = {
-                kind: kind,
-                src: audio,
-                srclang: srclang,
-                label: label
-            }
-            video.audioTracks().addTrack(track);
-
-            console.log(`I added ${track} to the audio tracks`)
-
-
-        }
-    })*/
 }

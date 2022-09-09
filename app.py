@@ -1,14 +1,18 @@
-from textwrap import indent
-from flask import Flask, url_for, request, render_template, redirect, make_response
+import rpc
+from flask import Flask, url_for, request, render_template, redirect, make_response, g
 from flask_cors import CORS
 from tmdbv3api import TMDb, Movie, TV, Episode, Person
 from tmdbv3api.exceptions import TMDbException
-from videoprops import get_video_properties, get_audio_properties
+from videoprops import get_video_properties
 from pathlib import Path
-import requests, os, subprocess, configparser, socket, datetime, subprocess, socket, platform, GPUtil, json, random
+import requests, os, subprocess, configparser, socket, datetime, subprocess, socket, platform, GPUtil, json, random, time
 from Levenshtein import distance as lev
 from fuzzywuzzy import fuzz
 from ask_lib import AskResult, ask
+from time import mktime
+
+
+start_time = mktime(time.localtime())
 
 app = Flask(__name__)
 CORS(app)
@@ -27,6 +31,8 @@ tmdb.debug = True
 movie = Movie()
 show = TV()
 
+client_id = '771837466020937728' 
+rpc_obj = rpc.DiscordIpcClient.for_platform(client_id)
 searchedFilms = []
 simpleDataFilms = []
 allMoviesNotSorted = []
@@ -85,6 +91,9 @@ moviesGenre = []
 movieExtension = ""
 websitesTrailers = {"YouTube": "https://www.youtube.com/embed/", "Dailymotion": "https://www.dailymotion.com/video/", "Vimeo": "https://vimeo.com/"}
 
+
+
+
 def getMovie(slug):
     for filmData in searchedFilms:
         if filmData["slug"] == slug:
@@ -138,9 +147,28 @@ def getMovies():
             loadingFirstPart = loadingFirstPart+"➤"
             loadingSecondPart = ("•"*(20-int(percentage*0.2)))
             loading = f"{str(int(percentage)).rjust(3)}% | [\33[32m{loadingFirstPart} \33[31m{loadingSecondPart}\33[0m] | {movieTitle} | {index}/{len(filmFileList)}                                                      "
+            loadingPresence = f"{str(int(percentage)).rjust(3)}% | {movieTitle} | {index}/{len(filmFileList)}"
             print('\033[?25l', end="")
             print(loading, end='\r', flush=True)
-            
+            try:
+                activity = {
+                    "state": "Chocolate",  # anything you like
+                    "details": f"{loadingPresence}",  # anything you like
+                            "timestamps": {
+                                "start": mktime(time.localtime()),
+                            },
+                    "assets": {
+                        "small_text": "Chocolate",  # anything you like
+                        "small_image": "None",  # must match the image key
+                        "large_text": "Chocolate",  # anything you like
+                        "large_image": "largeimage"  # must match the image key
+                    }
+                }
+                rpc_obj.set_activity(activity)
+            except:
+                pass
+
+
             bestMatch = search[0]
             for i in range(len(search)):
                 if lev(movieTitle, search[i].title) < lev(movieTitle, bestMatch.title) and bestMatch.title not in filmFileList:
@@ -455,8 +483,23 @@ def getSeries():
         loadingFirstPart = loadingFirstPart+"➤"
         loadingSecondPart = ("•"*(20-int(percentage*0.2)))
         loading = f"{str(int(percentage)).rjust(3)}% | [\33[32m{loadingFirstPart} \33[31m{loadingSecondPart}\33[0m] | {serieTitle} | {index}/{len(allSeriesName)}                              "
+        loadingPresence = f"{str(int(percentage)).rjust(3)}% | {serieTitle} | {index}/{len(allSeriesName)}"
         print('\033[?25l', end="")
         print(loading, end='\r', flush=True)
+        activity = {
+            "state": "Chocolate",  # anything you like
+            "details": f"{loadingPresence}",  # anything you like
+                    "timestamps": {
+                        "start": mktime(time.localtime()),
+                    },
+            "assets": {
+                "small_text": "Chocolate",  # anything you like
+                "small_image": "None",  # must match the image key
+                "large_text": "Chocolate",  # anything you like
+                "large_image": "largeimage"  # must match the image key
+            }
+        }
+        rpc_obj.set_activity(activity)
 
         bestMatch = search[0]
         for i in range(len(search)):
@@ -1038,7 +1081,6 @@ def movie(slug):
             key = movieData["title"]
             if key == rewriteSlug:
                 title = realTitle
-                print(key, realTitle, rewriteSlug)
         return render_template("film.html", slug=slug, movieUrl=link, allCaptions=allCaptions, title=title)
 
 @app.route("/series/<name>/<saison>/<slug>")
@@ -1160,9 +1202,62 @@ def getActorData(actorName):
     }
     return json.dumps(actorData, default=lambda o: o.__dict__, ensure_ascii=False)
 
+
+@app.route("/sendDiscordPresence/<name>/<actualDuration>/<totalDuration>")
+def sendDiscordPresence(name, actualDuration, totalDuration):
+    global rpc_obj, activity
+    actualDuration = actualDuration
+    totalDuration = totalDuration
+    newActivity = {
+        "state": "Chocolate",  # anything you like
+        "details": f"Watching {name} | {actualDuration}/{totalDuration}",  # anything you like
+        "assets": {
+            "small_text": "Chocolate",  # anything you like
+            "small_image": "None",  # must match the image key
+            "large_text": "Chocolate",  # anything you like
+            "large_image": "largeimage"  # must match the image key
+        }
+    }
+    try:
+        rpc_obj.set_activity(newActivity)
+    except:
+        client_id = '771837466020937728' 
+        rpc_obj = rpc.DiscordIpcClient.for_platform(client_id)
+        activity = {
+            "state": "Chocolate",  # anything you like
+            "details": "The all-in-one MediaManager",  # anything you like
+                    "timestamps": {
+                        "start": start_time
+                    },
+            "assets": {
+                "small_text": "Chocolate",  # anything you like
+                "small_image": "None",  # must match the image key
+                "large_text": "Chocolate",  # anything you like
+                "large_image": "largeimage"  # must match the image key
+            }
+        }
+        rpc_obj.set_activity(activity)
+    return json.dumps(f"You sent richPresence Data with this informations : name:{name}, actualDuration:{actualDuration}, totalDuration:{totalDuration}")
+    
 if __name__ == '__main__':
     getSeries()
     getMovies()
     print()
     print('\033[?25h', end="")
+    activity = {
+        "state": "Chocolate",  # anything you like
+        "details": "The all-in-one MediaManager",  # anything you like
+                "timestamps": {
+                    "start": start_time
+                },
+        "assets": {
+            "small_text": "Chocolate",  # anything you like
+            "small_image": "None",  # must match the image key
+            "large_text": "Chocolate",  # anything you like
+            "large_image": "largeimage"  # must match the image key
+        }
+    }
+
+
+    rpc_obj.set_activity(activity)
     app.run(host="0.0.0.0", port=serverPort)

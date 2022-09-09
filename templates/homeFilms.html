@@ -17,7 +17,7 @@
 </div>
 <a class="seeMore" href="/movieLibrary">See more</a>
 <div class="loaderBackground" id="loaderBackground"></div>
-<div class="spinner"></div>
+<img class="spinner" src="{{ url_for('static', filename='img/loader.gif') }}" />
 
 <div class="movies" id="{{ routeToUse }}"></div>
 <div class="brokenPath" id="{{ url_for('static',filename='img/broken.png') }}"></div>
