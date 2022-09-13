@@ -266,6 +266,208 @@ function setPopup() {
             })
         })
     }
+    const watchNowA = document.getElementsByClassName("watchNowA")[0]
+    watchNowA.addEventListener("click", function() {
+
+        popup = document.getElementById("popup")
+        popup.style.display = "block"
+
+        document.body.style.overflow = "hidden"
+
+        var image = document.getElementsByClassName("bannerCover")[0]
+        var serieTitle = image.getAttribute("title");
+
+        fetch("/getSerieData/" + serieTitle).then(function(response) {
+            return response.json()
+        }).then(function(data) {
+            var serieTitle = data.name
+
+            var serieCast = data.cast
+            var serieDescription = data.description
+            var serieDuration = data.duration
+            var serieGenre = data.genre
+            var serieNote = data.note
+            var seriePoster = data.serieCoverPath
+            var serieUrl = data.slug
+            var serieYear = data.date
+            var serieTrailer = data.bandeAnnonce
+            var serieSimilar = data.similarSeries
+            console.table(data)
+            console.log(serieSimilar)
+
+            var serieSeasons = data.seasons
+            containerSimilar = document.getElementsByClassName("containerSimilar")[0]
+            containerSeasons = document.getElementsByClassName("containerSeasons")[0]
+
+            if (serieSimilar.length === 0) {
+                containerSimilar.style.display = "none"
+
+            } else {
+                containerSimilar.style.display = "inline-grid"
+            }
+            console.log(serieSeasons)
+            for (var i = 0; i < serieSeasons.length; i++) {
+                season = serieSeasons[i]
+                seasonCover = season.seasonCoverPath
+                seasonDescription = season.seasonDescription
+                seasonName = season.seasonName
+                seasonEpisodesNumber = season.episodesNumber
+                seasonNumber = season.seasonNumber
+                seasonUrl = "/serie/" + serieTitle + "/" + seasonNumber
+                seasonRelease = season.release
+
+                var seasonDiv = document.createElement("div")
+                seasonDiv.className = "season"
+                seasonDiv.setAttribute("id", seasonNumber)
+                seasonDiv.setAttribute("onclick", `goToSeason("${serieTitle}", "S${seasonNumber}")`)
+
+                var seasonCoverImage = document.createElement("img")
+                seasonCoverImage.className = "seasonCoverImage"
+                seasonCoverImage.setAttribute("src", seasonCover)
+                seasonCoverImage.setAttribute("alt", seasonName)
+                seasonCoverImage.setAttribute("title", seasonName)
+                seasonCoverImage.setAttribute("onclick", `goToSeason("${serieTitle}", "S${seasonNumber}")`)
+
+                var seasonNameP = document.createElement("p")
+                seasonNameP.className = "seasonTitle"
+                seasonNameP.innerHTML = seasonName
+                seasonNameP.setAttribute("onclick", `goToSeason("${serieTitle}", "S${seasonNumber}")`)
+
+                seasonDiv.appendChild(seasonCoverImage)
+                seasonDiv.appendChild(seasonNameP)
+                containerSeasons.appendChild(seasonDiv)
+            }
+
+            serieSeasonsLength = serieSeasons.length
+            containerSeasons = document.getElementsByClassName("containerSeasons")[0]
+            if (serieSeasonsLength >= 4) {
+                containerSeasons.style.gridTemplateColumns = "repeat(4, 1fr)"
+            } else if (serieSeasonsLength == 0) {
+                containerSeasons.style.display = "none"
+            } else {
+                containerSeasons.style.gridTemplateColumns = "repeat(" + serieSeasonsLength + ", 1fr)"
+            }
+
+            for (var i = 0; i < serieSimilar.length; i++) {
+                if (i < 4) {
+                    var serie = serieSimilar[i]
+                    imageUrl = serie.serieCoverPath
+                    serieName = serie.name
+                    var similar = document.getElementsByClassName("containerSimilar")[0]
+                    var serie = document.createElement("div")
+                    serie.setAttribute("class", "serie")
+                    var image = document.createElement("img")
+                    image.setAttribute("class", "serieImage")
+                    image.setAttribute("src", imageUrl)
+                    image.setAttribute("alt", serieName)
+                    image.setAttribute("title", serieName)
+                    var title = document.createElement("p")
+                    title.setAttribute("class", "serieTitle")
+                    title.innerHTML = serieName
+
+                    serie.appendChild(image)
+                    serie.appendChild(title)
+                    similar.appendChild(serie)
+                }
+            }
+
+            var childs = document.getElementsByClassName("serie")
+            var childsLength = childs.length
+            var similar = document.getElementsByClassName("containerSimilar")[0]
+            similar.style.gridTemplateColumns = "repeat(" + childsLength + ", 1fr)"
+
+
+            var imagePopup = document.getElementsByClassName("coverPopup")[0]
+            imagePopup.setAttribute("src", seriePoster);
+            if (imagePopup.src == "https://image.tmdb.org/t/p/originalNone") {
+                imagePopup.src = brokenPath
+            }
+            imagePopup.setAttribute("alt", serieTitle);
+            imagePopup.setAttribute("title", serieTitle);
+
+            var titlePopup = document.getElementsByClassName("titlePopup")[0]
+            titlePopup.innerHTML = serieTitle;
+
+            var descriptionPopup = document.getElementsByClassName("descriptionPopup")[0]
+            descriptionPopup.innerHTML = serieDescription;
+
+            var notePopup = document.getElementsByClassName("notePopup")[0]
+            notePopup.innerHTML = `Note : ${serieNote}/10`;
+
+            var yearPopup = document.getElementsByClassName("yearPopup")[0]
+            yearPopup.innerHTML = `Date : ${serieYear}`;
+
+            var genrePopup = document.getElementsByClassName("genrePopup")[0]
+            var genreList = serieGenre
+            var genreString = ""
+            for (var i = 0; i < genreList.length; i++) {
+                genreString += genreList[i]
+                if (i != genreList.length - 1) {
+                    genreString += ", "
+                }
+            }
+            genrePopup.innerHTML = `Genre : ${genreString}`;
+
+            var durationPopup = document.getElementsByClassName("durationPopup")[0]
+            durationPopup.innerHTML = `Durée : ${serieDuration}`;
+            for (var i = 0; i < serieCast.length; i++) {
+                cast = serieCast[i]
+                castMember = document.createElement("div")
+                castMember.className = "castMember"
+                castImage = document.createElement("img")
+                castImage.className = "castImage"
+                castImageUrl = cast["profile_path"]
+                console.log(castImageUrl)
+                if (castImageUrl == "") {
+                    castImage.src = brokenPath
+                }
+                castRealName = cast["name"]
+                castCharacterName = cast["character"]
+                castImage.setAttribute("src", castImageUrl)
+                castImage.setAttribute("alt", castRealName)
+                castImage.setAttribute("title", castRealName)
+                castMember.appendChild(castImage)
+                castName = document.createElement("p")
+                castName.className = "castName"
+                castName.innerHTML = castRealName
+                castMember.appendChild(castName)
+                castCharacter = document.createElement("p")
+                castCharacter.className = "castCharacter"
+                castCharacter.innerHTML = castCharacterName
+                castMember.appendChild(castCharacter)
+                castPopup.appendChild(castMember)
+            }
+
+            castMembers = document.getElementsByClassName("castMember")
+            for (var i = 0; i < castMembers.length; i++) {
+                castMembers[i].addEventListener("click", function() {
+                    var castImage = this.children[0]
+                    var castRealName = castImage.getAttribute("alt")
+                    var castUrl = "/actor/" + castRealName
+                    window.location.href = castUrl
+                })
+            }
+
+            var trailer = document.getElementsByClassName("containerTrailer")[0]
+            if (serieTrailer == "") {
+                trailer.style.display = "none"
+            } else {
+                trailer.style.display = "block"
+                trailerVideo = document.createElement("iframe")
+                regex = /^(http|https):\/\//g
+                if (regex.test(serieTrailer)) {
+                    serieTrailer.replace(regex, "")
+                }
+                trailerVideo.setAttribute("src", serieTrailer)
+                trailerVideo.setAttribute("class", "trailerVideo")
+                trailerVideo.setAttribute("id", "trailerVideo")
+                trailer.appendChild(trailerVideo)
+            }
+
+            var playButton = document.getElementsByClassName("playPopup")[0]
+            playButton.setAttribute("href", serieUrl);
+        })
+    })
 }
 
 
@@ -280,9 +482,7 @@ function getFirstSeries() {
         return response.json()
     }).then(function(data) {
         data = Object.entries(data)
-        console.log(data)
         for (serie of data) {
-            console.log(serie)
             index = data.indexOf(serie)
             if (index === 0) {
                 bigBanner = document.getElementsByClassName("bigBanner")[0]
@@ -291,12 +491,6 @@ function getFirstSeries() {
                 titleBanner = document.getElementsByClassName("bannerTitle")[0]
                 descriptionBanner = document.getElementsByClassName("bannerDescription")[0]
                 watchNow = document.getElementsByClassName("watchNowA")[0]
-
-                try {
-                    var serieUrl = "/serie" + serie[1]['seasons'][0]['episodes']['1']['slug']
-                } catch {
-                    serieUrl = "/404"
-                }
 
                 imageBanner.setAttribute("src", serie[1]['banniere'])
                 if (imageBanner.src == "https://image.tmdb.org/t/p/originalNone") {
@@ -326,10 +520,7 @@ function getFirstSeries() {
                         genreBanner.innerHTML += ", "
                     }
                 }
-
-                watchNow.setAttribute("href", serieUrl)
             } else {
-                console.log(serie)
                 series = document.getElementsByClassName("series")[0]
                 var cover = document.createElement("div")
                 cover.className = "cover"

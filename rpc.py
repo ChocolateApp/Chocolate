@@ -73,7 +73,7 @@ class DiscordIpcClient(metaclass=ABCMeta):
     def _recv(self, size: int) -> bytes:
         pass
 
-    def _recv_header(self) -> (int, int):
+    def _recv_header(self):
         header = self._recv_exactly(8)
         return struct.unpack("<II", header)
 
@@ -115,7 +115,7 @@ class DiscordIpcClient(metaclass=ABCMeta):
         self._write(header)
         self._write(data_bytes)
 
-    def recv(self) -> (int, "JSON"):
+    def recv(self):
         """Receives a packet from discord.
 
         Returns op code and payload.

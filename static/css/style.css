@@ -140,6 +140,7 @@ form#searchForm:hover .form_field {
     order: 1;
     cursor: pointer;
     margin-bottom: 2vh;
+    width: 13vw;
 }
 
 .cover:hover {
