@@ -23,8 +23,8 @@ It's a free software.<br>
 
 Chocolate is actually made with this technology :
 
-* ![CSS3](https://img.shields.io/badge/css3-%231572B6.svg?style=for-the-badge&logo=css3&logoColor=white)
 * ![HTML5](https://img.shields.io/badge/html5-%23E34F26.svg?style=for-the-badge&logo=html5&logoColor=white)
+* ![CSS3](https://img.shields.io/badge/css3-%231572B6.svg?style=for-the-badge&logo=css3&logoColor=white)
 * ![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
 * ![Flask](https://img.shields.io/badge/flask-%23000.svg?style=for-the-badge&logo=flask&logoColor=white) 
 
@@ -46,11 +46,7 @@ This is what you have to do to get started with Chocolate :
 * Enjoy !
 
 #### For Windows
-* Go to the [releases](https://github.com/Impre-visible/Chocolate/releases/)
-* Download the latest installer named `install.exe`
-* Run it
-* Do the installation
-* Enjoy !
+* Not available actually
 
 ### Start Chocolate
 
@@ -112,6 +108,7 @@ If you like this project, please consider giving me a star ⭐ to support my wor
 
 This tool was made by Impre-visible, some features needed the help of several volunteers, that I thank, you can contact them on this server : [Dev'Area](https://discord.gg/hTmbFePH)
 
+Original website design from [Mart](https://www.figma.com/@Martbrady) on [figma](https://www.figma.com/community/file/970595453636409922)<br>
 A special thanks to Mathias08 who made it possible to release v1 of Chocolate!
 
 This tool was made with ❤ and ☕ by Impre-visible.
