@@ -46,7 +46,8 @@ This is what you have to do to get started with Chocolate :
 * Enjoy !
 
 #### For Windows
-* Not available actually
+* No installer available actually
+* So download the source code and install the dependencies
 
 ### Start Chocolate
 
@@ -55,9 +56,7 @@ This is what you have to do to get started with Chocolate :
 * execute run.sh
 
 #### For Windows
-* Press the windows button
-* Search for Chocolate
-* Launch it
+* Execute app.py
 
 ### Important Informations
 * At the first launch, Chocolate will be very slow. Be patient !
