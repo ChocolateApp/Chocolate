@@ -1,0 +1,28 @@
+{% extends 'header.html' %}{% block title %}{{ title }}{% endblock %}{% block content %}
+<div id="popup" class="moviePopup" style="display: none;">
+    <h1>Do you want to continue where you leaved ?</h1>
+    <a id="buttonYes">Yes</a>
+    <a id="buttonNo">No</a>
+</div>
+<div id='playerWrapper'>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/video.js@7.20.2/dist/video-js.min.css">
+    <video id="movie" class="video-js" controls preload="auto" data-setup="{}">
+        <source src="{{ movieUrl }}" type="application/x-mpegURL">
+        {% for caption in allCaptions %}
+            {% if allCaptions.index(caption) == 0 %}
+            <track kind="captions" src="{{ caption['url'] }}" srclang="{{ caption['languageCode'] }}" label="{{ caption['language'] }}" default>
+            {% else %}
+            <track kind="captions" src="{{ caption['url'] }}" srclang="{{ caption['languageCode'] }}" label="{{ caption['language'] }}">
+            {% endif %}
+        {% endfor %}
+    </video>
+    <script src="https://cdn.jsdelivr.net/npm/video.js@7.20.2/dist/video.min.js"></script>
+    <script src="{{ url_for('static',filename='js/movie.js') }}"></script>
+</div>
+<div class="buttonsShow">
+    {% if buttonPrevious %}
+    <a href="{{ buttonPreviousHREF }}" class="buttonPrevious">Previous</a> {% endif %} {% if buttonNext %}
+    <a href="{{ buttonNextHREF }}" class="buttonNext">Next</a> {% endif %}
+</div>
+
+{% endblock %}

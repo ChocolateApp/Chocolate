@@ -266,6 +266,8 @@ function getFirstMovies() {
                 if (imageBanner.src == "https://image.tmdb.org/t/p/originalNone") {
                     imageBanner.src = brokenPath
                 }
+
+
                 imageBanner.setAttribute("alt", movie.realTitle)
                 imageBanner.setAttribute("title", movie.realTitle)
 

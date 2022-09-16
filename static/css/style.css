@@ -100,7 +100,7 @@ form#searchForm:hover .form_field {
 .movies,
 .series {
     margin-top: 47.25vh;
-    width: calc(100vw - 2.98vw);
+    width: 97vw;
     flex-wrap: wrap;
     margin-left: 3vw;
     z-index: 2;
@@ -108,7 +108,7 @@ form#searchForm:hover .form_field {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
     grid-template-rows: 1fr;
-    grid-column-gap: 4vw;
+    grid-column-gap: 3.84vw;
     grid-row-gap: 0px;
 }
 
@@ -274,7 +274,6 @@ form#searchForm:hover .form_field {
     margin-left: 63vh;
     width: 30vh;
     font-size: 1.5em;
-    font-family: Arial;
     padding: 2vh;
 }
 
@@ -320,7 +319,6 @@ form#searchForm:hover .form_field {
     margin-top: 6vh;
     margin-bottom: 2vw;
     display: inline-block;
-    font-family: Arial;
     text-decoration: none;
     z-index: 5;
     border-radius: 1.5vw;
@@ -717,7 +715,6 @@ form#searchForm:hover .form_field {
 
 .seeMore {
     display: inline-block;
-    font-family: Arial;
     text-decoration: none;
     z-index: 5;
     position: absolute;
@@ -883,6 +880,41 @@ input[type="search"]::-webkit-search-results-decoration {
     left: calc(50vw - 5vw);
     z-index: 99999;
     top: calc(50vh - 8vw);
+}
+
+.hydrated {
+    overflow-x: hidden;
+}
+
+.buttonsShow {
+    position: absolute;
+    top: 92vh;
+}
+
+.buttonsShow a {
+    border-radius: 1.5vw;
+    border: 0.2vw solid #ffffff;
+    cursor: pointer;
+    color: #ffffff;
+    font-size: 1.4vh;
+    padding: 2vh 3vw;
+    text-decoration: none;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    transition: 300ms background, color;
+    z-index: 5;
+    position: absolute;
+    text-shadow: 0.1vh 0.1vh 0.5vh #000;
+    box-shadow: 0.1vh 0.1vh 0.5vh #000;
+}
+
+.buttonNext {
+    left: calc(91vw - (8vw / 2));
+}
+
+.buttonprevious {
+    left: calc(12vw - (8vw / 2));
 }
 
 @media (max-width: 640px) {

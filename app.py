@@ -1,5 +1,3 @@
-from shlex import split
-import string
 import rpc
 from flask import Flask, url_for, request, render_template, redirect, make_response, g
 from flask_cors import CORS
@@ -46,10 +44,9 @@ allSeriesNotSorted = []
 allSeriesDict = {}
 allSeriesDictTemp = {}
 currentCWD = os.getcwd()
-
+jsonFileToRead = {}
 with open(f"{currentCWD}/scannedFiles.json", "r", encoding="utf8") as f:
     jsonFileToRead = json.load(f)
-
 hostname = socket.gethostname()
 local_ip = socket.gethostbyname(hostname)
 config.set("ChocolateSettings", "localIP", local_ip)
@@ -90,6 +87,7 @@ genreList = {
 genresUsed = []
 moviesGenre = []
 movieExtension = ""
+serieExtension = ""
 websitesTrailers = {
     "YouTube": "https://www.youtube.com/embed/",
     "Dailymotion": "https://www.dailymotion.com/video/",
@@ -395,6 +393,8 @@ def getMovies():
                 allMoviesDict[name] = filmData
         elif searchedFilm.endswith("/") == False:
             allMoviesNotSorted.append(searchedFilm)
+    with open(f"{currentCWD}/scannedFiles.json", "r", encoding="utf8") as f:
+        jsonFileToRead = json.load(f)
     allMoviesJson = jsonFileToRead["movies"]
     for movie in allMoviesJson:
         name = movie
@@ -469,12 +469,7 @@ def getSeries():
                         )
                         or season.startswith(tuple(uglySeasonAppelations))
                     ):
-                        if os.path.isdir(f"{path}/{allSeason}") and not (
-                            season.startswith(tuple(allSeasonsAppelations))
-                            and not season.endswith(
-                                ("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")
-                            )
-                        ):
+                        if os.path.isdir(f"{path}/{allSeason}") and not (allSeason.startswith(tuple(allSeasonsAppelations)) and allSeason.endswith(("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"))):
                             print(f"For {uglySeasonAppelations[2]} : {allSeason}")
                             reponse = ask(
                                 f"I found that folder, can I rename it from {allSeason} to S{allSeasons.index(allSeason)+1}",
@@ -533,7 +528,6 @@ def getSeries():
                                 )
                                 if reponse:
                                     try:
-                                        print(f"I will rename {actualName} to {newName}")
                                         os.rename(
                                             actualName,
                                             f"{episodesPath}/{newName}",
@@ -548,7 +542,6 @@ def getSeries():
                                     elif renameNewName.startswith("E"):
                                         renameNewName=renameNewName
                                     try:
-                                        print(f"I will rename {actualName} to {renameNewName}{episodeExtension}")
                                         os.rename(
                                             actualName,
                                             f"{episodesPath}/{renameNewName}{episodeExtension}",
@@ -859,6 +852,9 @@ def getSeries():
             searchedSeries.append(serieData)
             allSeriesDict[name] = serieData
 
+    with open(f"{currentCWD}/scannedFiles.json", "r", encoding="utf8") as f:
+        jsonFileToRead = json.load(f)
+
     allSeriesJson = jsonFileToRead["series"]
     for serie in allSeriesJson:
         name = serie
@@ -890,6 +886,7 @@ def length_video(path: str) -> float:
     return float(seconds.stdout)
 
 
+
 def getGpuInfo() -> str:
     if platform.system() == "Windows":
         return gpuname()
@@ -912,39 +909,6 @@ def gpuname() -> str:
     if len(gpus) == 0:
         raise ValueError("No GPUs detected in the system")
     return gpus[0].name
-
-
-@app.route("/serievideo/<serie>/<season>/<episode>.m3u8", methods=["GET"])
-def createSerieM3U8(serie, season, episode):
-    seriesPath = config.get("ChocolateSettings", "seriesPath")
-    videoPath = os.path.join(
-        seriesPath, serie, f"Season {season}", f"Episode {episode}{movieExtension}"
-    )
-    duration = length_video(videoPath)
-    file = """
-    #EXTM3U
-    #EXT-X-VERSION:4
-    #EXT-X-TARGETDURATION:5
-    """
-
-    for i in range(0, int(duration), CHUNK_LENGTH):
-        file += f"""
-        #EXTINF:5.0,
-        /chunk/{serie}/{season}/{episode}-{(i // CHUNK_LENGTH) + 1}.ts
-        """
-
-    file += """
-    #EXT-X-ENDLIST"
-    """
-
-    response = make_response(file)
-    response.headers.set("Content-Type", "application/x-mpegURL")
-    response.headers.set(
-        "Content-Disposition", "attachment", filename=f"{episode}.m3u8"
-    )
-
-    return response
-
 
 @app.route("/video/<video_name>.m3u8", methods=["GET"])
 def create_m3u8(video_name):
@@ -972,6 +936,95 @@ def create_m3u8(video_name):
     response.headers.set("Content-Type", "application/x-mpegURL")
     response.headers.set(
         "Content-Disposition", "attachment", filename=f"{video_name}.m3u8"
+    )
+
+    return response
+
+@app.route("/videoSerie/<serieName>/<season>/<video_name>.m3u8", methods=["GET"])
+def create_serie_m3u8(serieName, season, video_name):
+    global serieExtension
+    seriesPath = config.get("ChocolateSettings", "SeriesPath")
+    video_path = f"{seriesPath}\{serieName}\S{int(season)+1}\{video_name}{serieExtension}"
+    duration = length_video(video_path)
+    file = """
+    #EXTM3U
+    #EXT-X-VERSION:4
+    #EXT-X-TARGETDURATION:5
+    #EXT-X-MEDIA-SEQUENCE:1
+    """
+
+    for i in range(0, int(duration), CHUNK_LENGTH):
+        file += f"""
+        #EXTINF:5.0,
+        /chunkSerie/{serieName}-{season}-{video_name}-{(i // CHUNK_LENGTH) + 1}.ts
+        """
+
+    file += """
+    #EXT-X-ENDLIST"
+    """
+
+    response = make_response(file)
+    response.headers.set("Content-Type", "application/x-mpegURL")
+    response.headers.set(
+        "Content-Disposition", "attachment", filename=f"{video_name}.m3u8"
+    )
+
+    return response
+@app.route("/chunkSerie/<serieName>-<season>-<video_name>-<int:idx>.ts", methods=["GET"])
+def get_chunk_serie(serieName, season, video_name, idx=0):
+    global movieExtension, serieExtension
+    seconds = (idx - 1) * CHUNK_LENGTH
+    seriesPath = config.get("ChocolateSettings", "SeriesPath")
+    video_path = f"{seriesPath}\{serieName}\S{int(season)+1}\{video_name}{serieExtension}"
+
+    time_start = str(datetime.timedelta(seconds=seconds))
+    time_end = str(datetime.timedelta(seconds=seconds + CHUNK_LENGTH))
+    videoProperties = get_video_properties(video_path)
+    width = videoProperties["width"]
+    height = videoProperties["height"]
+    newWidth = 1080
+    newHeight = round(width / height * newWidth)
+    if (newHeight % 2) != 0:
+        newHeight += 1
+    logLevelValue = "error"
+    command = [
+        "ffmpeg",
+        "-hide_banner",
+        "-loglevel",
+        logLevelValue,
+        "-ss",
+        time_start,
+        "-to",
+        time_end,
+        "-i",
+        video_path,
+        "-output_ts_offset",
+        time_start,
+        "-c:v",
+        "libx264",
+        "-vf",
+        f"scale={newHeight}:{newWidth}",
+        "-c:a",
+        "aac",
+        "-b:a",
+        "128k",
+        "-ac",
+        "2",
+        "-preset",
+        "ultrafast",
+        "-f",
+        "mpegts",
+        "pipe:1",
+    ]
+
+    print((" ").join(command))
+
+    pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
+
+    response = make_response(pipe.stdout.read())
+    response.headers.set("Content-Type", "video/MP2T")
+    response.headers.set(
+        "Content-Disposition", "attachment", filename=f"{video_name}-{idx}.ts"
     )
 
     return response
@@ -1109,6 +1162,36 @@ def settings():
         "settings.html", notSorted=allMoviesNotSorted, conditionIfOne=condition
     )
 
+@app.route("/chunkCaptionSerie/<language>/<index>/<serie>-<season>-<video_name>.vtt", methods=["GET"])
+def chunkCaptionSerie(video_name, language, index, serie, season):
+    global movieExtension
+    seriesPath = config.get("ChocolateSettings", "SeriesPath")
+    video_path = f"{seriesPath}\{serie}\S{int(season)+1}\{video_name}{serieExtension}"
+    extractCaptionsCommand = [
+        "ffmpeg",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-i",
+        video_path,
+        "-map",
+        f"0:{index}",
+        "-f",
+        "webvtt",
+        "pipe:1",
+    ]
+
+    print(" ".join(extractCaptionsCommand))
+
+    extractCaptions = subprocess.run(extractCaptionsCommand, stdout=subprocess.PIPE)
+
+    extractCaptionsResponse = make_response(extractCaptions.stdout)
+    extractCaptionsResponse.headers.set("Content-Type", "text/VTT")
+    extractCaptionsResponse.headers.set(
+        "Content-Disposition", "attachment", filename=f"{serie}-{season}-{video_name}-{index}.vtt"
+    )
+
+    return extractCaptionsResponse
 
 @app.route("/saveSettings/", methods=["POST"])
 def saveSettings():
@@ -1297,11 +1380,12 @@ def getSeasonData(serieName, seasonId):
 def getEpisodeData(serieName, seasonId, episodeId):
     global allSeriesDict
     seasonId = int(seasonId[1:]) - 1
-    episodeId = int(episodeId[1:]) - 1
+    episodeId = int(episodeId) - 1
     if serieName in allSeriesDict.keys():
         data = allSeriesDict[serieName]
         season = data["seasons"][seasonId]
-        episode = season["episodes"][episodeId]
+        print(season["episodes"])
+        episode = season["episodes"][str(episodeId)]
         return json.dumps(episode, ensure_ascii=False, default=str)
     else:
         return "Not Found"
@@ -1415,7 +1499,7 @@ def movie(slug):
     if not slug.endswith("ttf"):
         rewriteSlug, movieExtension = os.path.splitext(slug)
         link = f"/video/{rewriteSlug}.m3u8".replace(" ", "%20")
-        allCaptions = generateCaption(slug)
+        allCaptions = generateCaptionMovie(slug)
         title = rewriteSlug
         for movie in jsonFileToRead["movies"]:
             movieData = jsonFileToRead["movies"][movie]
@@ -1427,36 +1511,97 @@ def movie(slug):
             "film.html", slug=slug, movieUrl=link, allCaptions=allCaptions, title=title
         )
 
-@app.route("/serie/<slug>")
-def serie(slug):
-    global movieExtension, jsonFileToRead
-    if not slug.endswith("ttf"):
-        splitedSlug = slug.split("/")
-        serieName = splitedSlug[0]
-        seasonNumber = splitedSlug[1]
-        episodeNumber = splitedSlug[2]
-        print(f"Your gonna watch the {episodeNumber}th episode of the season {seasonNumber} of {serieName}")
-        rewriteSlug, movieExtension = os.path.splitext(slug)
-        link = f"/video/{rewriteSlug}.m3u8".replace(" ", "%20")
-        allCaptions = generateCaption(slug)
+@app.route("/serie/<name>/<seasonId>/<episodeId>")
+def serie(name, seasonId, episodeId):
+    global jsonFileToRead, serieExtension
+    if not episodeId.endswith("ttf"):
+        seasonId = int(seasonId) -1
+        series = jsonFileToRead["series"]
+        serie = series[name]
+        print(serie)
+        directoryName = serie["originalName"]
+        seasonOfSerie = serie["seasons"][int(seasonId)]
+        lenOfThisSeason = len(seasonOfSerie)
+        thisEpisode = seasonOfSerie["episodes"][str(episodeId)]
+        slug = thisEpisode["slug"]
+        episodeName = thisEpisode["episodeName"]
+        print(f"Your gonna watch the {episodeId}th episode of the season {seasonId+1} of {name}")
+        slugUrl = slug.split("/")[-1]
+        rewriteSlug, fileExtension = os.path.splitext(slugUrl)
+        serieExtension = fileExtension
+        link = f"/videoSerie/{directoryName}/{seasonId}/{rewriteSlug}.m3u8".replace(" ", "%20")
+        allCaptions = generateCaptionSerie(name, seasonId, slugUrl)
+        episodeId = int(episodeId)
+        buttonNext = episodeId-1 < lenOfThisSeason
+        buttonPrevious = episodeId-1 > 0
+        print(f"buttonPrevious = {buttonPrevious}\nbuttonNext = {buttonNext}")
+        buttonPreviousHREF = f"/serie/{name}/{seasonId+1}/{episodeId-1}"
+        buttonNextHREF = f"/serie/{name}/{seasonId+1}/{episodeId+1}"
         return render_template(
-            "film.html", slug=slug, movieUrl=link, allCaptions=allCaptions, title=serieName
+            "serie.html", slug=slug, movieUrl=link, allCaptions=allCaptions, title=episodeName, buttonNext=buttonNext, buttonPrevious=buttonPrevious, buttonNextHREF=buttonNextHREF, buttonPreviousHREF=buttonPreviousHREF
         )
 
+def generateCaptionSerie(serie, season, slug):
+    global serieExtension
+    seriesPath = config.get("ChocolateSettings", "SeriesPath")
+    slug = f"{seriesPath}\\{serie}\\S{season+1}\\{slug}"
+    captionCommand = [
+        "ffprobe",
+        "-loglevel",
+        "error",
+        "-select_streams",
+        "s",
+        "-show_entries",
+        "stream=index:stream_tags=language",
+        "-of",
+        "csv=p=0",
+        slug,
+    ]
+    captionPipe = subprocess.Popen(captionCommand, stdout=subprocess.PIPE)
+    try:
+        slug = slug.split("\\")[-1]
+        slug = slug.split("/")[-1]
+    except:
+        slug = slug.split("/")[-1]
+    rewriteSlug, movieExtension = os.path.splitext(slug)
+    captionResponse = captionPipe.stdout.read().decode("utf-8")
+    captionResponse = captionResponse.split("\n")
 
-@app.route("/series/<name>/<saison>/<slug>")
-def seriesPlayer(name, saison, slug):
-    global movieExtension
-    if not slug.endswith("ttf"):
-        rewriteSlug, movieExtension = os.path.splitext(slug)
-        link = f"/video/{rewriteSlug}.m3u8".replace(" ", "%20")
-        allCaptions = generateCaption(slug)
-        return render_template(
-            "film.html", slug=slug, movieUrl=link, allCaptions=allCaptions
+    allCaptions = []
+    languages = {
+        "eng": "English",
+        "fre": "Français",
+        "spa": "Español",
+        "por": "Português",
+        "ita": "Italiano",
+        "ger": "Deutsch",
+        "rus": "Русский",
+        "pol": "Polski",
+        "por": "Português",
+        "chi": "中文",
+        "srp": "Srpski",
+    }
+
+    captionResponse.pop()
+
+    for line in captionResponse:
+        line = line.rstrip()
+        language = line.split(",")[1]
+        index = line.split(",")[0]
+        allCaptions.append(
+            {
+                "index": index,
+                "languageCode": language,
+                "language": languages[language],
+                "url": f"/chunkCaptionSerie/{language}/{index}/{serie}-{season}-{rewriteSlug}.vtt",
+            }
         )
+    print(f"allCaptions : {allCaptions}")
+    return allCaptions
 
 
-def generateCaption(slug):
+
+def generateCaptionMovie(slug):
     captionCommand = [
         "ffprobe",
         "-loglevel",
@@ -1657,6 +1802,9 @@ if __name__ == "__main__":
             "large_image": "largeimage",  # must match the image key
         },
     }
+    try:
+        rpc_obj.set_activity(activity)
+    except OSError:
+        pass
 
-    rpc_obj.set_activity(activity)
     app.run(host="0.0.0.0", port=serverPort)

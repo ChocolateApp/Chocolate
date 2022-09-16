@@ -108,6 +108,6 @@ If you like this project, please consider giving me a star ⭐ to support my wor
 This tool was made by Impre-visible, some features needed the help of several volunteers, that I thank, you can contact them on this server : [Dev'Area](https://discord.gg/hTmbFePH)
 
 Original website design from [Mart](https://www.figma.com/@Martbrady) on [figma](https://www.figma.com/community/file/970595453636409922)<br>
-A special thanks to Mathias08 who made it possible to release v1 of Chocolate!
+A special thanks to Mathias08 who made it possible to release v1 of Chocolate and MONSTA CARDO !! who made the animated logo !
 
 This tool was made with ❤ and ☕ by Impre-visible.

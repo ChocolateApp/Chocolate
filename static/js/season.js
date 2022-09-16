@@ -51,27 +51,11 @@ closePopup.addEventListener("click", function() {
     trailerVideo.remove()
 })
 
-function setPopup() {
-    covers = document.getElementsByClassName("cover")
-    for (var i = 0; i < covers.length; i++) {
-        covers[i].addEventListener("click", function() {
-            fetch(`/getEpisodeData/${seasonName}/${id}/${this.id}`).then(function(response) {
-                return response.json()
-            }).then(function(data) {
-                data = Object.entries(data)
-                console.log(data)
-            })
-        })
-    }
-}
-
-
 function getSeasonData() {
     url = window.location.href
     urlArray = url.split("/")
     seasonName = urlArray[urlArray.length - 2]
     id = urlArray[urlArray.length - 1]
-    console.log("I'm in getSeasonData")
     fetch(`/getSeasonData/${seasonName}/${id}`).then(function(response) {
         return response.json()
     }).then(function(data) {
@@ -80,7 +64,6 @@ function getSeasonData() {
         console.log(data)
         console.log(episodes)
         for (var i = 0; i < episodes.length; i++) {
-            console.log("je suis la")
             episodesDiv = document.getElementsByClassName("episodes")[0]
             var episode = episodes[i][1]
             episodeNumber = episode["episodeNumber"]
@@ -98,13 +81,16 @@ function getSeasonData() {
             image.title = episode["episodeName"]
             image.alt = episode["episodeName"]
 
+            cover.addEventListener("click", function() {
+                const newUrl = `/serie/${seasonName}/${id}/${cover.id}`
+                window.location = newUrl
+            })
+
             content.appendChild(image)
             cover.appendChild(content)
             cover.id = episodeNumber
             episodesDiv.appendChild(cover)
         }
-
-        setPopup()
     })
 }
 
