@@ -1205,7 +1205,7 @@ def saveSettings():
         config.set("ChocolateSettings", "seriespath", SeriesPath)
     if language != "":
         config.set("ChocolateSettings", "language", language)
-    if port != "":
+    if port != "" or port != " ":
         config.set("ChocolateSettings", "port", port)
     with open(f"{currentCWD}/config.ini", "w") as conf:
         config.write(conf)
@@ -1366,6 +1366,7 @@ def season(name, id):
 @app.route("/getSeasonData/<serieName>/<seasonId>/")
 def getSeasonData(serieName, seasonId):
     global allSeriesDict
+    print(seasonId[1:])
     seasonId = int(seasonId[1:]) - 1
     if serieName in allSeriesDict.keys():
         data = allSeriesDict[serieName]

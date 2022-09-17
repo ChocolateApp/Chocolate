@@ -56,13 +56,18 @@ function getSeasonData() {
     urlArray = url.split("/")
     seasonName = urlArray[urlArray.length - 2]
     id = urlArray[urlArray.length - 1]
-    fetch(`/getSeasonData/${seasonName}/${id}`).then(function(response) {
+    id = id.substring(1)
+    indexOfEpisode = 1
+    https = urlArray[0].replace('http:', 'https:')
+    ndd = urlArray[2]
+    baseURI = `${https}//${ndd}`
+    finalURI = `${baseURI}/getSeasonData/${seasonName}/S${id}`
+    console.log(finalURI)
+    fetch(finalURI).then(function(response) {
         return response.json()
     }).then(function(data) {
         episodes = data["episodes"]
         episodes = Object.entries(episodes)
-        console.log(data)
-        console.log(episodes)
         for (var i = 0; i < episodes.length; i++) {
             episodesDiv = document.getElementsByClassName("episodes")[0]
             var episode = episodes[i][1]
@@ -80,16 +85,16 @@ function getSeasonData() {
             image.src = episode["episodeCoverPath"]
             image.title = episode["episodeName"]
             image.alt = episode["episodeName"]
-
+            episodeId = indexOfEpisode
+            let newURL = `/serie/${seasonName}/${id}/${episodeId}`
             cover.addEventListener("click", function() {
-                const newUrl = `/serie/${seasonName}/${id}/${cover.id}`
-                window.location = newUrl
+                window.location = newURL
             })
 
             content.appendChild(image)
             cover.appendChild(content)
-            cover.id = episodeNumber
             episodesDiv.appendChild(cover)
+            indexOfEpisode += 1
         }
     })
 }

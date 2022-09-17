@@ -270,7 +270,8 @@ form#searchForm:hover .form_field {
 
 .moviesPathDiv,
 .seriesPathDiv,
-.languageDiv {
+.languageDiv,
+.portInput {
     margin-left: 63vh;
     width: 30vh;
     font-size: 1.5em;
@@ -283,7 +284,8 @@ form#searchForm:hover .form_field {
 
 .moviesPathDiv input,
 .seriesPathDiv input,
-.languageDiv input {
+.languageDiv input,
+.portInput input {
     font-size: 2vh;
     top: 24vh;
     position: absolute;
@@ -307,6 +309,10 @@ form#searchForm:hover .form_field {
 
 .seriesPathDiv input {
     margin-top: 7vh;
+}
+
+.portInput input {
+    margin-top: 23vh;
 }
 
 .languageDiv input {

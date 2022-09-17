@@ -3,6 +3,8 @@ window.onload = function() {
     var video = document.getElementById("movie_html5_api")
     let lastPush = ""
 
+    video.chromecast();
+
     video.addEventListener("timeupdate", function() {
         actualDuration = video.currentTime
         var path = window.location.pathname
