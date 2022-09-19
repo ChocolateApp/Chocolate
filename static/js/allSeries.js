@@ -77,7 +77,7 @@ function setPopup() {
             fetch("/getSerieData/" + serieTitle).then(function(response) {
                 return response.json()
             }).then(function(data) {
-                var serieTitle = data.name
+                var serieTitle = data.originalName
 
                 var serieCast = data.cast
                 var serieDescription = data.description
@@ -149,7 +149,7 @@ function setPopup() {
                     if (i < 4) {
                         var serie = serieSimilar[i]
                         imageUrl = serie.serieCoverPath
-                        serieName = serie.name
+                        serieName = serie.originalName
                         var similar = document.getElementsByClassName("containerSimilar")[0]
                         var serie = document.createElement("div")
                         serie.setAttribute("class", "serie")
@@ -280,7 +280,7 @@ function setPopup() {
         fetch("/getSerieData/" + serieTitle).then(function(response) {
             return response.json()
         }).then(function(data) {
-            var serieTitle = data.name
+            var serieTitle = data.originalName
 
             var serieCast = data.cast
             var serieDescription = data.description
@@ -352,7 +352,7 @@ function setPopup() {
                 if (i < 4) {
                     var serie = serieSimilar[i]
                     imageUrl = serie.serieCoverPath
-                    serieName = serie.name
+                    serieName = serie.originalName
                     var similar = document.getElementsByClassName("containerSimilar")[0]
                     var serie = document.createElement("div")
                     serie.setAttribute("class", "serie")

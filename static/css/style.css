@@ -113,25 +113,48 @@ form#searchForm:hover .form_field {
 }
 
 .episodes {
-    margin-top: 20vh;
+    margin-top: 50vh;
     width: calc(100vw - 2.98vw);
     flex-wrap: wrap;
     margin-left: 3vw;
     z-index: 2;
     position: absolute;
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(1, 1fr);
     grid-template-rows: 1fr;
     grid-column-gap: 2vw;
     grid-row-gap: 0px;
 }
 
-.episodes .cover {
-    margin-bottom: 2vh;
+.contentEpisodes {
+    display: inline-flex;
+}
+
+.coverEpisodes {
+    margin-left: 2vw;
+    margin-bottom: 3vh;
 }
 
 .cover_episode {
-    width: 17.82vw;
+    min-width: 35vw;
+    max-width: 35vw;
+}
+
+.episodeText {
+    height: 40vh;
+    margin-left: 2vw;
+    text-shadow: 0.1vh 0.1vh 0.5vh #000;
+}
+
+.episodeTitle {
+    margin-top: 1vh;
+    margin-bottom: 3vh;
+}
+
+.episodeDescription {
+    height: 20vh;
+    display: table-cell;
+    vertical-align: middle;
 }
 
 .cover {
@@ -154,6 +177,7 @@ form#searchForm:hover .form_field {
     display: block;
     width: 12.8vw;
     height: 39vh;
+    object-fit: cover;
 }
 
 .not_seen {
@@ -787,6 +811,38 @@ form#searchForm:hover .form_field {
     filter: drop-shadow(1px 1px 10px rgba(255, 255, 255, 0));
 }
 
+.watchNowSeason {
+    border-radius: 1.5vw;
+    border: 0.2vw solid #ffffff;
+    cursor: pointer;
+    color: #ffffff;
+    font-size: 1.4vh;
+    padding: 3vh 4vw;
+    text-decoration: none;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    transition: 300ms background, color;
+    z-index: 5;
+    position: absolute;
+    text-shadow: 0.1vh 0.1vh 0.5vh #000;
+    box-shadow: 0.1vh 0.1vh 0.5vh #000;
+    margin-top: 28vh;
+    margin-left: 37vw;
+}
+
+.watchNowSeason:hover {
+    background: white;
+    color: #1d1d1d;
+    text-shadow: 0px 0px 0px rgba(0, 0, 0, 0);
+}
+
+.watchNowSeason:hover .watchNow {
+    color: #1d1d1d;
+    transition: 300ms;
+    filter: drop-shadow(1px 1px 10px rgba(255, 255, 255, 0));
+}
+
 .bannerGenre {
     width: auto;
     position: absolute;
@@ -823,6 +879,12 @@ form#searchForm:hover .form_field {
 .bannerCover {
     width: 100vw;
     height: 100vh;
+    object-fit: cover;
+}
+
+.bannerSeasonCover {
+    width: 100vw;
+    height: 60vh;
     object-fit: cover;
 }
 
@@ -1048,6 +1110,155 @@ input[type="search"]::-webkit-search-results-decoration {
         font-size: 2vh;
     }
     .seeMore {
+        display: inline-block;
+        text-decoration: none;
+        z-index: 5;
+        position: absolute;
+        bottom: 2vh;
+        left: calc(45vw - (8vw / 2));
         border-radius: 10vw;
+        border: 0.2vw solid #ffffff;
+        cursor: pointer;
+        color: #ffffff;
+        font-size: 1.4vh;
+        padding: 1vh 4vw;
+        transition: 300ms transform;
+        text-shadow: 0.1vh 0.1vh 0.5vh #000;
+        box-shadow: 0.1vh 0.1vh 0.5vh #000;
+    }
+    .coverPopup {
+        width: 90vw;
+        height: 55vh;
+        object-fit: cover;
+        top: 2vh;
+        position: absolute;
+        left: 3vw;
+        border-radius: 2vh;
+        animation: appearImagePopup 0.5s ease-in-out;
+    }
+    .crossPopup {
+        position: absolute;
+        right: -0.25vw;
+        top: 0.5vh;
+        font-size: 3vh;
+        cursor: pointer;
+        z-index: 1;
+        color: white;
+    }
+    .popupContent {
+        width: 98vw;
+        height: 78vh;
+        margin-left: 0vw;
+        margin-top: 56vh;
+        overflow-y: scroll;
+        overflow-x: hidden;
+    }
+    .descriptionPopup {
+        font-size: 1.4vh;
+        margin-left: 1.75vw;
+        width: 92.25vw;
+        height: 30vh;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .castImage,
+    .castName,
+    .castCharacter {
+        cursor: pointer;
+        font-size: 1.4vh;
+    }
+    .castImage {
+        width: 8vw;
+        height: 8vw;
+        object-fit: cover;
+        border-radius: 100vw;
+    }
+    .containerPopup {
+        margin-left: 1.75vw;
+        font-size: 1.4vh;
+        margin-top: 2vh;
+    }
+    .castPopup {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        grid-template-rows: 1fr;
+        grid-column-gap: 0px;
+        grid-row-gap: 0px;
+        font-size: 2vh;
+        width: 93.5vw;
+        margin-top: 2vh;
+        margin-left: 1.5vw;
+    }
+    .containerSimilar,
+    .containerSeasons {
+        grid-template-rows: 1fr;
+        grid-column-gap: 0px;
+        grid-row-gap: 0px;
+        font-size: 2vh;
+        width: 94vw;
+        margin-top: 2vh;
+        margin-left: -3.5vw;
+        height: 44vh;
+        justify-content: space-evenly;
+        justify-items: center;
+        align-content: space-evenly;
+        align-items: center;
+    }
+    .containerSimilar .movie,
+    .containerSimilar .serie,
+    .containerSeasons .season {
+        width: 12vw;
+        height: 30vh;
+        margin-left: 1.5vw;
+        margin-right: 1.5vw;
+        margin-top: -18vh;
+    }
+    .containerSimilar .movie .movieTitle,
+    .containerSimilar .serie .serieTitle,
+    .containerSeasons .season .seasonTitle {
+        text-align: center;
+        font-size: 1.4vh;
+        width: 20vw;
+    }
+    .containerSimilar .movie .movieImage,
+    .containerSimilar .serie .serieImage,
+    .containerSeasons .season .seasonCoverImage {
+        width: 20vw;
+        height: 14vh;
+        object-fit: cover;
+        border-radius: 2vw;
+    }
+    .playPopup {
+        position: inherit;
+        margin-left: -24.75vw;
+        border-radius: 1.5vw;
+        border: 0.2vw solid #ffffff;
+        cursor: pointer;
+        color: #ffffff;
+        font-size: 1.4vh;
+        padding: 1vh 4vw;
+        text-decoration: none;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        transition: 300ms;
+        margin-right: 34vw;
+        bottom: 43vh;
+        text-shadow: 0.1vh 0.1vh 0.5vh #000;
+        box-shadow: 0.1vh 0.1vh 0.5vh #000;
+    }
+    .popup {
+        width: 100vw;
+        height: 100vh;
+        position: fixed;
+        top: 0vh;
+        background: rgb(39 39 39 / 0.62);
+        backdrop-filter: blur(115px);
+        border-radius: 2vw;
+        margin-left: 0vw;
+        z-index: 99999999999999999999;
+        animation: appearPopup 0.5s ease-in-out;
     }
 }

@@ -1,21 +1,41 @@
-// when the page is loaded, get the movie duration from the cookie if it exists
 window.onload = function() {
-    var video = document.getElementById("movie_html5_api")
     let lastPush = ""
+    let options;
 
-    video.chromecast();
+    options = {
+        controls: true,
+        preload: 'none',
+        techOrder: ['chromecast', 'html5'],
+        html5: {
+            vhs: {
+                overrideNative: !videojs.browser.IS_SAFARI,
+            },
+        },
+    }
+    var player = videojs('movie', options);
+    console.log(player)
+    player.chromecast();
+    player.controls(true);
 
+    var video = document.getElementById("movie_html5_api")
     video.addEventListener("timeupdate", function() {
         actualDuration = video.currentTime
         var path = window.location.pathname
         var cookie = `movieDuration=${actualDuration}; path=${path}`
         document.cookie = cookie
+        if (video.duration == NaN) {
+            video.duration = 1
+        }
         videoDuration = Math.round(video.duration)
         roundedDuration = Math.round(actualDuration)
         percent = roundedDuration / videoDuration * 100
         title = document.title.split(" | ")[0]
         durationInHHMMSS = new Date(roundedDuration * 1000).toISOString().substr(11, 8);
-        secondDurationInHHMMSS = new Date(videoDuration * 1000).toISOString().substr(11, 8);
+        try {
+            secondDurationInHHMMSS = new Date(videoDuration * 1000).toISOString().substr(11, 8);
+        } catch (RangeError) {
+
+        }
         if (percent >= 90) {
             cookie = `${title}=Finished; path=/`
         } else {
@@ -66,4 +86,5 @@ window.onload = function() {
     var path = window.location.pathname
     var slug = path.split("/")
     slug = slug[2]
-}
+
+};
