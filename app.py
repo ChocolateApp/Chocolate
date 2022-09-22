@@ -1,18 +1,14 @@
-from msilib.schema import Error
-from urllib import error
-import rpc
 from flask import Flask, url_for, request, render_template, redirect, make_response, g
 from flask_cors import CORS
 from tmdbv3api import TMDb, Movie, TV, Episode, Person
 from tmdbv3api.exceptions import TMDbException
 from videoprops import get_video_properties
 from pathlib import Path
-import requests, os, subprocess, configparser, socket, datetime, subprocess, socket, platform, GPUtil, json, random, time
+import requests, os, subprocess, configparser, socket, datetime, subprocess, socket, platform, GPUtil, json, random, time, rpc
 from Levenshtein import distance as lev
 from fuzzywuzzy import fuzz
 from ask_lib import AskResult, ask
 from time import mktime
-
 
 start_time = mktime(time.localtime())
 
@@ -34,7 +30,7 @@ movie = Movie()
 show = TV()
 
 client_id = "771837466020937728"
-rpc_obj = rpc.DiscordIpcClient.for_platform(client_id)
+#rpc_obj = rpc.DiscordIpcClient.for_platform(client_id)
 searchedFilms = []
 simpleDataFilms = []
 allMoviesNotSorted = []
@@ -53,6 +49,7 @@ hostname = socket.gethostname()
 local_ip = socket.gethostbyname(hostname)
 config.set("ChocolateSettings", "localIP", local_ip)
 serverPort = config["ChocolateSettings"]["port"]
+#app.config['SERVER_NAME'] = f'chocolate:{serverPort}'
 
 CHUNK_LENGTH = 5
 genreList = {
@@ -119,7 +116,7 @@ def getMovies():
     for searchedFilm in filmFileList:
         if not isinstance(searchedFilm, str):
             continue
-        if searchedFilm.endswith("/") == False and searchedFilm.endswith(
+        if not searchedFilm.endswith("/") and searchedFilm.endswith(
             (
                 "mp4",
                 "mp4v",
@@ -150,8 +147,7 @@ def getMovies():
             loadingPresence = f"{str(int(percentage)).rjust(3)}% | {movieTitle} | {index}/{len(filmFileList)}"
             print("\033[?25l", end="")
             print(loading, end="\r", flush=True)
-            try:
-                activity = {
+            activity = {
                     "state": "Chocolate",  # anything you like
                     "details": f"{loadingPresence}",  # anything you like
                     "timestamps": {
@@ -164,8 +160,9 @@ def getMovies():
                         "large_image": "largeimage",  # must match the image key
                     },
                 }
+            try:
                 rpc_obj.set_activity(activity)
-            except OSError as e:
+            except:
                 pass
             if movieTitle not in jsonFileToRead["movies"].keys():
                 try:
@@ -604,12 +601,14 @@ def getSeries():
         }
         try:
             rpc_obj.set_activity(activity)
-        except OSError as e:
+        except:
             pass
         with open(f"{currentCWD}/scannedFiles.json", "r", encoding="utf8") as f:
             jsonFileToRead = json.load(f)
         series = jsonFileToRead["series"]
-        if serie not in series.keys():
+        seriePath = os.path.join(allSeriesPath, serie)
+        listTempo = [a for a in os.listdir() if os.path.isdir(seriePath)]
+        if serie not in series.keys() and len(listTempo) > 0:
             show = TV()
             serieTitle = serie
             originalSerieTitle = serieTitle
@@ -833,30 +832,94 @@ def getSeries():
                 jsonFile["series"][serie] = serieData
             with open(f"{currentCWD}/scannedFiles.json", "w", encoding="utf8") as f:
                 json.dump(jsonFile, f, ensure_ascii=False, default=dict)
-        else:
-            for serie in jsonFileToRead["series"]:
-                # for all seasons, check if in json
-                try:
-                    allSeasonsOfSerie = jsonFileToRead["series"][serie]["seasons"]
-                    originalName = jsonFileToRead["series"][serie]["originalName"]
-                    allSeasonsOnDisk = f"{allSeriesPath}/{originalName}"
-                    allSeasonsOnDisk = [
-                        season.replace("S", "")
-                        for season in os.listdir(allSeasonsOnDisk)
-                    ]
-                    if len(allSeasonsOnDisk) > len(allSeasonsOfSerie):
-                        # add it to the json
-                        pass
-                except TypeError:
-                    break
+        try:
+            serieId = jsonFileToRead["series"][serie]["serieId"]
+            allSeasonsOfSerie = jsonFileToRead["series"][serie]["seasons"]
+            originalName = jsonFileToRead["series"][serie]["originalName"]
+            allSeasonsOnDisk = f"{allSeriesPath}/{originalName}"
+            nombreSaisonsDisk = list(next(os.walk(allSeasonsOnDisk))[1])
 
-            with open(f"{currentCWD}/scannedFiles.json", "r", encoding="utf8") as f:
-                jsonFileToRead = json.load(f)
-            data = jsonFileToRead["series"]
-            data = data[serie]
-            serieData = data
-            searchedSeries.append(serieData)
-            allSeriesDict[serie] = serieData
+            for saison in nombreSaisonsDisk:
+                index = nombreSaisonsDisk.index(saison)
+                nombreSaisonsDisk[index] = int(nombreSaisonsDisk[index].replace("S", ""))
+                
+            nombreSaisonsDisk = sorted(nombreSaisonsDisk)
+            for saison in nombreSaisonsDisk:
+                index = nombreSaisonsDisk.index(saison)
+                nombreSaisonsDisk[index] = str(nombreSaisonsDisk[index])
+
+            for saison in nombreSaisonsDisk:
+                seasonData = {}
+                seasonNumber = nombreSaisonsDisk.index(saison)+1
+                if seasonNumber > len(allSeasonsOfSerie) and len(nombreSaisonsDisk) != len(allSeasonsOfSerie):
+                        
+                    show = TV()
+                    details = show.details(serieId)
+                    seasonsInfo = details.seasons[seasonNumber]
+                    releaseDate = seasonsInfo.air_date
+                    episodesNumber = seasonsInfo.episode_count
+                    seasonNumber = seasonsInfo.season_number
+                    seasonId = seasonsInfo.id
+                    seasonName = seasonsInfo.name
+                    seasonDescription = seasonsInfo.overview
+                    
+                    for episode in nombreSaisonsDisk:
+                        episodeName = episode.split("/")[-1]
+                        episodeName, extension = os.path.splitext(episode)
+                        episodeIndex = int(episodeName)
+                        rewritedName = serie.replace(" ", "_")
+                        with open(f"{currentCWD}/scannedFiles.json", "r", encoding="utf8") as f:
+                            jsonFileToRead = json.load(f)
+                        print(f"Création de l'épisode {episodeIndex} pour la saison {seasonNumber} de {serie}")
+                        showEpisode = Episode()
+                        try:
+                            episodeInfo = showEpisode.details(serieId, seasonNumber, episodeIndex)
+                            coverEpisode = f"https://image.tmdb.org/t/p/original{episodeInfo.still_path}"
+                            if not os.path.exists(
+                                f"{currentCWD}/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.png"
+                            ):
+                                with open(
+                                    f"{currentCWD}/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.png",
+                                    "wb",
+                                ) as f:
+                                    f.write(requests.get(coverEpisode).content)
+                            coverEpisode = f"/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.png"
+
+                            thisEpisodeData = {
+                                "episodeName": episodeInfo.name,
+                                "episodeNumber": str(episodeInfo.episode_number),
+                                "episodeDescription": episodeInfo.overview,
+                                "episodeCoverPath": coverEpisode,
+                                "releaseDate": episodeInfo.air_date,
+                            }
+                            seasonData[episodeIndex] = thisEpisodeData
+                        except TMDbException as e:
+                            print(e)
+                    seasonCoverPath = (
+                        f"https://image.tmdb.org/t/p/original{seasonsInfo.poster_path}"
+                    )
+                    if not os.path.exists(f"{currentCWD}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png"):
+                        with open(f"{currentCWD}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png", "wb",) as f:
+                            f.write(requests.get(seasonCoverPath).content)
+                    seasonCoverPath = f"/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png"
+                    season = {
+                        "release": releaseDate,
+                        "episodesNumber": episodesNumber,
+                        "seasonNumber": seasonNumber,
+                        "seasonId": seasonId,
+                        "seasonName": seasonName,
+                        "seasonDescription": seasonDescription,
+                        "seasonCoverPath": seasonCoverPath,
+                        "episodes": seasonData,
+                    }
+
+                    with open(f"{currentCWD}/scannedFiles.json", "r", encoding="utf8") as f:
+                        jsonFileToRead = json.load(f)
+                    jsonFileToRead["series"][serie]["seasons"].append(season)
+                    with open(f"{currentCWD}/scannedFiles.json", "w", encoding="utf8") as f:
+                        json.dump(jsonFileToRead, f, ensure_ascii=False)
+        except KeyError:
+            break
 
     with open(f"{currentCWD}/scannedFiles.json", "r", encoding="utf8") as f:
         jsonFileToRead = json.load(f)
@@ -1253,12 +1316,18 @@ def getRandomMovie():
 @app.route("/getRandomSerie")
 def getRandomSeries():
     global allSeriesDict
-    randomSerie = random.choice(list(allSeriesDict.items()))
+    try:
+        randomSerie = random.choice(list(allSeriesDict.items()))
+    except IndexError:
+        randomSerie = random.choice(list(allSeriesDict.items()))
     return json.dumps(randomSerie, ensure_ascii=False, default=str)
 
 
 def getSimilarMovies(movieId):
     global simpleDataFilms
+    with open(f"{currentCWD}/scannedFiles.json", "r", encoding="utf8") as f:
+        jsonFileToRead = json.load(f)
+        simpleDataFilms = jsonFileToRead["movies"]
     similarMoviesPossessed = []
     movie = Movie()
     similarMovies = movie.recommendations(movieId)
@@ -1273,6 +1342,9 @@ def getSimilarMovies(movieId):
 
 def getSimilarSeries(seriesId) -> list:
     global allSeriesDict
+    with open(f"{currentCWD}/scannedFiles.json", "r", encoding="utf8") as f:
+        jsonFileToRead = json.load(f)
+        allSeriesDict = jsonFileToRead["series"]
     similarSeriesPossessed = []
     show = TV()
     similarSeries = show.recommendations(seriesId)
@@ -1304,6 +1376,9 @@ def getMovieData(title):
 @app.route("/getSerieData/<title>", methods=["GET", "POST"])
 def getSeriesData(title):
     global allSeriesDict
+    with open(f"{currentCWD}/scannedFiles.json", "r", encoding="utf8") as f:
+        jsonFileToRead = json.load(f)
+        allSeriesDict = jsonFileToRead["series"]
     title = title.replace("%20", " ")
     if title in allSeriesDict.keys():
         data = allSeriesDict[title]
@@ -1358,7 +1433,10 @@ def films():
 @app.route("/series")
 def series():
     global allSeriesSorted
-    searchedSeriesUp0 = len(searchedSeries) == 0
+    with open(f"{currentCWD}/scannedFiles.json", "r", encoding="utf8") as f:
+        jsonFileToRead = json.load(f)
+        allSeriesSorted = jsonFileToRead["series"]
+    searchedSeriesUp0 = len(allSeriesSorted) == 0
     errorMessage = "Verify that the path is correct"
     routeToUse = "/getFirstSixSeries"
 
@@ -1386,11 +1464,12 @@ def season(name, id):
 @app.route("/getSeasonData/<serieName>/<seasonId>/", methods=["GET", "POST"])
 def getSeasonData(serieName, seasonId):
     global allSeriesDict
-    print(seasonId[1:])
+    with open(f"{currentCWD}/scannedFiles.json", "r", encoding="utf8") as f:
+        jsonFileToRead = json.load(f)
+        allSeriesDict = jsonFileToRead["series"]
     seasonId = int(seasonId[1:]) - 1
     if serieName in allSeriesDict.keys():
         data = allSeriesDict[serieName]
-        print(len(data["seasons"]))
         season = data["seasons"][seasonId]
         return json.dumps(season, ensure_ascii=False, default=str)
     else:
@@ -1430,7 +1509,10 @@ def library():
 @app.route("/serieLibrary")
 def seriesLibrary():
     global allSeriesSorted
-    searchedSeriesUp0 = len(searchedSeries) == 0
+    with open(f"{currentCWD}/scannedFiles.json", "r", encoding="utf8") as f:
+        jsonFileToRead = json.load(f)
+        allSeriesSorted = jsonFileToRead["series"]
+    searchedSeriesUp0 = len(allSeriesSorted) == 0
     errorMessage = "Verify that the path is correct"
     routeToUse = "/getAllSeries"
     return render_template(
@@ -1824,7 +1906,7 @@ if __name__ == "__main__":
     }
     try:
         rpc_obj.set_activity(activity)
-    except OSError:
+    except:
         pass
 
     app.run(host="0.0.0.0", port=serverPort)

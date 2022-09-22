@@ -56,7 +56,7 @@ function getSeasonData() {
     urlArray = url.split("/")
     seasonName = urlArray[urlArray.length - 2]
     id = urlArray[urlArray.length - 1]
-    id = id.substring(1)
+    id = id.substring(1).replace("#", "")
     indexOfEpisode = 1
     https = urlArray[0]
     if (https == "https:") {
@@ -99,6 +99,17 @@ function getSeasonData() {
                 image.alt = episode["episodeName"]
                 episodeId = indexOfEpisode
 
+                cookieValue = getCookie(image.title)
+                if (cookieValue != undefined) {
+                    console.log(image.title, cookieValue)
+                    timePopup = document.createElement("div")
+                    timePopup.className = "timePopupSeason"
+                    timeP = document.createElement("p")
+                    timeP.innerHTML = cookieValue
+                    timePopup.appendChild(timeP)
+                    cover.appendChild(timePopup)
+                }
+
                 episodeText = document.createElement("div")
                 episodeText.className = "episodeText"
                 episodeText.appendChild(episodeTitle)
@@ -138,7 +149,7 @@ function getSeasonData() {
                 imageBanner.setAttribute("title", episode.episodeName)
                 imageBanner.setAttribute("src", episode.episodeCoverPath)
 
-                titleBanner.innerHTML = episode.episodeName
+                titleBanner.innerHTML = "EP 1 - " + episode.episodeName
                 description = episode.episodeDescription
                 descriptionBanner.innerHTML = description
                 descriptionBanner.innerHTML = descriptionBanner.innerHTML.substring(0, 200) + "..."
@@ -155,6 +166,13 @@ function getSeasonData() {
         }
     })
 }
+
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
 
 window.onload = function() {
     brokenPathDiv = document.getElementsByClassName("brokenPath")[0]
