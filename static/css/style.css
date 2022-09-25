@@ -880,8 +880,9 @@ form#searchForm:hover .form_field {
 
 .bannerCover {
     width: 100vw;
-    height: 100vh;
-    object-fit: cover;
+    height: 60vh;
+    background-repeat: no-repeat;
+    background-size: cover;
 }
 
 .bannerSeasonCover {
@@ -1036,7 +1037,7 @@ input[type="search"]::-webkit-search-results-decoration {
     .watchNowA {
         font-size: 0.8vh;
         padding: 1vh 2vw;
-        top: 44vh;
+        top: 42vh;
     }
     .watchNow {
         font-size: 1.4vh;
@@ -1052,13 +1053,13 @@ input[type="search"]::-webkit-search-results-decoration {
     .bannerTitle {
         left: 10vw;
         font-size: 2vh;
-        top: 30.5vh;
+        top: 18.5vh;
     }
     .bannerDescription {
         width: 82vw;
         height: 9vh;
         overflow: scroll;
-        top: 34vh;
+        top: 22vh;
     }
     header {
         width: 6vw;
@@ -1357,5 +1358,9 @@ input[type="search"]::-webkit-search-results-decoration {
         height: 31vh !important;
         top: 9.15vh;
         left: 6vw;
+    }
+    .bannerCover {
+        width: 100vw;
+        height: 27vh;
     }
 }

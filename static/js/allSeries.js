@@ -103,8 +103,10 @@ function setPopup() {
                     containerSimilar.style.display = "inline-grid"
                 }
                 console.log(serieSeasons)
-                for (var i = 0; i < serieSeasons.length; i++) {
-                    season = serieSeasons[i]
+
+                for (const key of Object.keys(serieSeasons)) {
+                    console.log(serieSeasons[key])
+                    season = serieSeasons[key]
                     seasonCover = season.seasonCoverPath
                     seasonDescription = season.seasonDescription
                     seasonName = season.seasonName
@@ -134,7 +136,6 @@ function setPopup() {
                     seasonDiv.appendChild(seasonNameP)
                     containerSeasons.appendChild(seasonDiv)
                 }
-
                 serieSeasonsLength = serieSeasons.length
                 containerSeasons = document.getElementsByClassName("containerSeasons")[0]
                 if (serieSeasonsLength >= 4) {
@@ -492,12 +493,9 @@ function getFirstSeries() {
                 descriptionBanner = document.getElementsByClassName("bannerDescription")[0]
                 watchNow = document.getElementsByClassName("watchNowA")[0]
 
-                imageBanner.setAttribute("src", serie[1]['banniere'])
-                if (imageBanner.src == "https://image.tmdb.org/t/p/originalNone") {
-                    imageBanner.src = brokenPath
-                }
-                imageBanner.setAttribute("alt", serie[0])
-                imageBanner.setAttribute("title", serie[0])
+                bannerImage = serie[1]['banniere']
+                cssBigBanner = `background-image: linear-gradient(to bottom, rgb(255 255 255 / 0%), rgb(29 29 29)), url("${bannerImage}");`
+                imageBanner.setAttribute('style', cssBigBanner)
 
                 titleBanner.innerHTML = serie[0]
                 fullDescription = serie[1]['description']

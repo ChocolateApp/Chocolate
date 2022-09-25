@@ -95,8 +95,9 @@ function setPopup() {
                     containerSimilar.style.display = "inline-grid"
                 }
                 console.log(serieSeasons)
-                for (var i = 0; i < serieSeasons.length; i++) {
-                    season = serieSeasons[i]
+                for (const key of Object.keys(serieSeasons)) {
+                    console.log(serieSeasons[key])
+                    season = serieSeasons[key]
                     seasonCover = season.seasonCoverPath
                     seasonDescription = season.seasonDescription
                     seasonName = season.seasonName
@@ -466,15 +467,15 @@ function getFirstSeries() {
 
         serie = data
         theSerieName = serie[0]
-        firstSeason = serie[1]['seasons'][0]
-        seasonNumber = firstSeason['season_number']
+        firstSeason = serie[1]['seasons']
+        keys = Object.keys(firstSeason)[0]
+        firstSeason = firstSeason[keys]
+        seasonNumber = firstSeason['seasonNumber']
+        bannerImage = serie[1]['banniere']
+        cssBigBanner = `background-image: linear-gradient(to bottom, rgb(255 255 255 / 0%), rgb(29 29 29)), url("${bannerImage}");`
+        imageBanner.setAttribute('style', cssBigBanner)
 
-        imageBanner.setAttribute("src", serie[1]['banniere'])
-        if (imageBanner.src == "https://image.tmdb.org/t/p/originalNone") {
-            imageBanner.src = brokenPath
-        }
-        imageBanner.setAttribute("alt", serie[0])
-        imageBanner.setAttribute("title", serie[0])
+        titleBanner.innerHTML = serie[0]
 
         titleBanner.innerHTML = serie[0]
 

@@ -49,6 +49,21 @@ This is what you have to do to get started with Chocolate :
 * No installer available actually
 * So download the source code and install the dependencies
 
+### Files organizations
+
+#### For Movies :
+* Create a directory
+* Put all your movies in with a proper name, like "Batman Begins.mkv" instead of "Batman.Begins.H264.AAC.XxMOVIESxX.mkv"
+* It's done
+
+#### For Shows :
+* Create a directory
+* Create a directory for each shows
+* In this directory create directory for each seasons, if possible named them like that : "S1", "S2", "S26"
+* In this seasons directory put all épisodes files, and if possible named them like that : "E1.mkv", "E2.mp4", "E56.avi"
+* Precisions : Chocolate will ask you to rename files and directory if it don't understand, you can agree or disagree is proposition
+* It's done
+
 ### Start Chocolate
 
 #### For Linux
@@ -59,7 +74,8 @@ This is what you have to do to get started with Chocolate :
 * Execute app.py
 
 ### Important Informations
-* At the first launch, Chocolate will be very slow. Be patient !
+* At the first launch, Chocolate will be very fast if you don't renseign the path in config.ini.
+* If you don't change all the paths. Go to the settings, and fill in the forms.
 * You can change a lot of settings directly on the website.
 * The default port is 8500.
 
@@ -96,7 +112,7 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 
 Impre'visible#2576 - [@romeo_chevrier](https://twitter.com/romeo_chevrier) - impr.visible@gmail.com
 
-Project Link: [https://github.com/Impre-visible/Chocolate](https://github.com/Impre-visible/Chocolate)
+Project Link: [https://github.com/ChocolateApp/Chocolate](https://github.com/ChocolateApp/Chocolate)
 
 
 <!-- ACKNOWLEDGMENTS -->

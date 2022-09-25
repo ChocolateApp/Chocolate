@@ -1,3 +1,4 @@
+from calendar import THURSDAY
 from flask import Flask, url_for, request, render_template, redirect, make_response, g
 from flask_cors import CORS
 from tmdbv3api import TMDb, Movie, TV, Episode, Person
@@ -211,6 +212,7 @@ def getMovies():
                         "wb",
                     ) as f:
                         f.write(requests.get(movieCoverPath).content)
+
                 if not os.path.exists(
                     f"{currentCWD}/static/img/mediaImages/{rewritedName}_Banner.png"
                 ):
@@ -308,6 +310,7 @@ def getMovies():
                     movieGenre.append(genreList[genreId])
 
                 bandeAnnonce = details.videos.results
+                bandeAnnonceUrl = ""
                 if len(bandeAnnonce) > 0:
                     for video in bandeAnnonce:
                         bandeAnnonceType = video.type
@@ -507,7 +510,7 @@ def getSeries():
             try:
                 seasonNumber = season.split(" ")[1]
             except Exception as e:
-                seasonNumber = season[1:]
+                seasonNumber = season.replace("S", "")
             if os.path.isdir(episodesPath):
                 episodes = os.listdir(episodesPath)
                 seasonEpisodes = {}
@@ -703,7 +706,7 @@ def getSeries():
             genreList = []
             for genre in serieGenre:
                 genreList.append(genre.name)
-            seasons = []
+            seasons = {}
             serieData = {}
             for season in seasonsInfo:
                 releaseDate = season.air_date
@@ -735,7 +738,7 @@ def getSeries():
                         episodeName = episodePath.split("/")[-1]
                         episodeName, extension = os.path.splitext(episodeName)
                         try:
-                            episodeIndex = int(episodeName[1:])
+                            episodeIndex = int(episodeName.replace("E", ""))
                         except:
                             break
                         showEpisode = Episode()
@@ -787,10 +790,11 @@ def getSeries():
                         "seasonCoverPath": seasonCoverPath,
                         "episodes": seasonData,
                     }
-                    seasons.append(season)
+                    seasons[seasonNumber]= season
             try:
-                episodeSlug = seasons[0]["episodes"][1]["episodeSlug"]
-                episodeNumber = seasons[0]["episodes"][1]["episodeNumber"]
+                firstEpisodeDict = list(seasons.keys())[0]
+                episodeSlug = seasons[firstEpisodeDict]["episodes"][1]["episodeSlug"]
+                episodeNumber = seasons[firstEpisodeDict]["episodes"][1]["episodeNumber"]
             except:
                 episodeSlug = ""
                 episodeNumber = "error"
@@ -832,94 +836,6 @@ def getSeries():
                 jsonFile["series"][serie] = serieData
             with open(f"{currentCWD}/scannedFiles.json", "w", encoding="utf8") as f:
                 json.dump(jsonFile, f, ensure_ascii=False, default=dict)
-        try:
-            serieId = jsonFileToRead["series"][serie]["serieId"]
-            allSeasonsOfSerie = jsonFileToRead["series"][serie]["seasons"]
-            originalName = jsonFileToRead["series"][serie]["originalName"]
-            allSeasonsOnDisk = f"{allSeriesPath}/{originalName}"
-            nombreSaisonsDisk = list(next(os.walk(allSeasonsOnDisk))[1])
-
-            for saison in nombreSaisonsDisk:
-                index = nombreSaisonsDisk.index(saison)
-                nombreSaisonsDisk[index] = int(nombreSaisonsDisk[index].replace("S", ""))
-                
-            nombreSaisonsDisk = sorted(nombreSaisonsDisk)
-            for saison in nombreSaisonsDisk:
-                index = nombreSaisonsDisk.index(saison)
-                nombreSaisonsDisk[index] = str(nombreSaisonsDisk[index])
-
-            for saison in nombreSaisonsDisk:
-                seasonData = {}
-                seasonNumber = nombreSaisonsDisk.index(saison)+1
-                if seasonNumber > len(allSeasonsOfSerie) and len(nombreSaisonsDisk) != len(allSeasonsOfSerie):
-                        
-                    show = TV()
-                    details = show.details(serieId)
-                    seasonsInfo = details.seasons[seasonNumber]
-                    releaseDate = seasonsInfo.air_date
-                    episodesNumber = seasonsInfo.episode_count
-                    seasonNumber = seasonsInfo.season_number
-                    seasonId = seasonsInfo.id
-                    seasonName = seasonsInfo.name
-                    seasonDescription = seasonsInfo.overview
-                    
-                    for episode in nombreSaisonsDisk:
-                        episodeName = episode.split("/")[-1]
-                        episodeName, extension = os.path.splitext(episode)
-                        episodeIndex = int(episodeName)
-                        rewritedName = serie.replace(" ", "_")
-                        with open(f"{currentCWD}/scannedFiles.json", "r", encoding="utf8") as f:
-                            jsonFileToRead = json.load(f)
-                        print(f"Création de l'épisode {episodeIndex} pour la saison {seasonNumber} de {serie}")
-                        showEpisode = Episode()
-                        try:
-                            episodeInfo = showEpisode.details(serieId, seasonNumber, episodeIndex)
-                            coverEpisode = f"https://image.tmdb.org/t/p/original{episodeInfo.still_path}"
-                            if not os.path.exists(
-                                f"{currentCWD}/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.png"
-                            ):
-                                with open(
-                                    f"{currentCWD}/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.png",
-                                    "wb",
-                                ) as f:
-                                    f.write(requests.get(coverEpisode).content)
-                            coverEpisode = f"/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.png"
-
-                            thisEpisodeData = {
-                                "episodeName": episodeInfo.name,
-                                "episodeNumber": str(episodeInfo.episode_number),
-                                "episodeDescription": episodeInfo.overview,
-                                "episodeCoverPath": coverEpisode,
-                                "releaseDate": episodeInfo.air_date,
-                            }
-                            seasonData[episodeIndex] = thisEpisodeData
-                        except TMDbException as e:
-                            print(e)
-                    seasonCoverPath = (
-                        f"https://image.tmdb.org/t/p/original{seasonsInfo.poster_path}"
-                    )
-                    if not os.path.exists(f"{currentCWD}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png"):
-                        with open(f"{currentCWD}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png", "wb",) as f:
-                            f.write(requests.get(seasonCoverPath).content)
-                    seasonCoverPath = f"/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png"
-                    season = {
-                        "release": releaseDate,
-                        "episodesNumber": episodesNumber,
-                        "seasonNumber": seasonNumber,
-                        "seasonId": seasonId,
-                        "seasonName": seasonName,
-                        "seasonDescription": seasonDescription,
-                        "seasonCoverPath": seasonCoverPath,
-                        "episodes": seasonData,
-                    }
-
-                    with open(f"{currentCWD}/scannedFiles.json", "r", encoding="utf8") as f:
-                        jsonFileToRead = json.load(f)
-                    jsonFileToRead["series"][serie]["seasons"].append(season)
-                    with open(f"{currentCWD}/scannedFiles.json", "w", encoding="utf8") as f:
-                        json.dump(jsonFileToRead, f, ensure_ascii=False)
-        except KeyError:
-            break
 
     with open(f"{currentCWD}/scannedFiles.json", "r", encoding="utf8") as f:
         jsonFileToRead = json.load(f)
@@ -935,6 +851,95 @@ def getSeries():
                 del jsonFile["series"][name]
             with open(f"{currentCWD}/scannedFiles.json", "w", encoding="utf8") as f:
                 json.dump(jsonFile, f, ensure_ascii=False)
+            
+    #for all dir in seriesPath check if each season is in the json, and if each episodes of each seasons is in the json
+    with open(f"{currentCWD}/scannedFiles.json", "r", encoding="utf8") as f:
+        jsonFileToRead = json.load(f)
+    jsonFileToRead = jsonFileToRead["series"]
+    allSeries = [a for a in os.listdir(allSeriesPath) if os.path.isdir(f"{allSeriesPath}/{a}")]
+    for serie in allSeries:
+        allSeasons = [b for b in os.listdir(f"{allSeriesPath}/{serie}") if os.path.isdir(f"{allSeriesPath}/{serie}/{b}") and b.startswith("S")]
+        with open(f"{currentCWD}/scannedFiles.json", "r", encoding="utf8") as f:
+            jsonFileToRead = json.load(f)
+        serieId = jsonFileToRead["series"][serie]["serieId"]
+        serieTMDB = TV()
+        details = serieTMDB.details(serieId)
+        seasonsInfo = details.seasons
+        for season in allSeasons:
+            allEpisodes = [c for c in os.listdir(f"{allSeriesPath}/{serie}/{season}") if os.path.isfile(f"{allSeriesPath}/{serie}/{season}/{c}") and c.startswith("E")]
+            seasonId = season.replace("S", "")
+            thisSeasonInfo={}
+            for seasonInfo in seasonsInfo:
+                if str(seasonInfo["season_number"]) == seasonId:
+                    thisSeasonInfo = seasonInfo
+                    try:
+                        if seasonId not in jsonFileToRead["series"][serie]["seasons"].keys():
+                            #print(f"{serie} n'a pas la Saison {seasonId} dans le json")
+                            #create the season object and add it to the season
+                            releaseDate = thisSeasonInfo["air_date"]
+                            episodesNumber = thisSeasonInfo.episode_count
+                            seasonNumber = thisSeasonInfo.season_number
+                            seasonId = thisSeasonInfo.id
+                            seasonName = thisSeasonInfo.name
+                            seasonDescription = thisSeasonInfo.overview
+                            seasonCoverPath = (
+                                f"https://image.tmdb.org/t/p/original{thisSeasonInfo.poster_path}"
+                            )
+
+                            seasonData = {
+                                    "release": releaseDate,
+                                    "episodesNumber": episodesNumber,
+                                    "seasonNumber": seasonNumber,
+                                    "seasonId": seasonId,
+                                    "seasonName": seasonName,
+                                    "seasonDescription": seasonDescription,
+                                    "seasonCoverPath": seasonCoverPath,
+                                    "episodes": {},
+                                }
+                            with open(f"{currentCWD}/scannedFiles.json", "r", encoding="utf8") as f:
+                                jsonFileToRead = json.load(f)
+                            jsonFileToRead["series"][serie]["seasons"][seasonNumber] = seasonData
+                            with open(f"{currentCWD}/scannedFiles.json", "w", encoding="utf8") as f:
+                                json.dump(jsonFileToRead, f, ensure_ascii=False)
+                    except KeyError:
+                        pass
+            for episode in allEpisodes:
+                with open(f"{currentCWD}/scannedFiles.json", "r", encoding="utf8") as f:
+                    jsonFileToRead = json.load(f)
+                episodeId = episode.replace("E", "")
+                episodeId, extension = os.path.splitext(episodeId)
+                try:
+                    if episodeId not in jsonFileToRead["series"][serie]["seasons"][seasonId]["episodes"].keys():
+                        try:
+                            showEpisode = Episode()
+                            episodeInfo = showEpisode.details(serieId, seasonId, episodeId)
+                            coverEpisode = f"https://image.tmdb.org/t/p/original{episodeInfo.still_path}"
+                            rewritedName = serie.replace(" ", "_")
+                            if not os.path.exists(f"{currentCWD}/static/img/mediaImages/{rewritedName}S{seasonId}E{episodeId}_Cover.png"):
+                                with open(f"{currentCWD}/static/img/mediaImages/{rewritedName}S{seasonId}E{episodeId}_Cover.png", "wb") as f:
+                                    f.write(requests.get(coverEpisode).content)
+                            coverEpisode = f"/static/img/mediaImages/{rewritedName}S{seasonId}E{episodeId}_Cover.png"
+
+                            thisEpisodeData = {
+                                "episodeName": episodeInfo.name,
+                                "episodeNumber": str(episodeInfo.episode_number),
+                                "episodeDescription": episodeInfo.overview,
+                                "episodeCoverPath": coverEpisode,
+                                "releaseDate": episodeInfo.air_date,
+                                "episodeSlug": episode,
+                                "slug": f"{serie}/{season}/{episode}",
+                            }
+                            with open(f"{currentCWD}/scannedFiles.json", "r", encoding="utf8") as f:
+                                jsonFileToRead = json.load(f)
+                            jsonFileToRead["series"][serie]["seasons"][seasonId]["episodes"][episodeId] = thisEpisodeData
+                            with open(f"{currentCWD}/scannedFiles.json", "w", encoding="utf8") as f:
+                                json.dump(jsonFileToRead, f, ensure_ascii=False)
+                        except TMDbException as e:
+                            print("Error",e)
+                except:
+                    break
+
+
 
 
 def length_video(path: str) -> float:
@@ -1291,8 +1296,11 @@ def saveSettings():
 @app.route("/getAllMovies", methods=["GET"])
 def getAllMovies():
     global simpleDataFilms
-    simpleDataFilms.sort(key=lambda x: x["title"].lower())
-    return json.dumps(simpleDataFilms, ensure_ascii=False)
+    with open(f"{currentCWD}/scannedFiles.json", "r", encoding="utf8") as f:
+        jsonFileToRead = json.load(f)
+        simpleDataFilms = jsonFileToRead["movies"]
+    simpleDataFilms = dict(sorted(simpleDataFilms.items()))
+    return json.dumps(list(simpleDataFilms.items()), ensure_ascii=False)
 
 
 @app.route("/getAllSeries", methods=["GET"])
@@ -1309,13 +1317,19 @@ def getAllSeries():
 @app.route("/getRandomMovie")
 def getRandomMovie():
     global simpleDataFilms
-    randomMovie = random.choice(simpleDataFilms)
+    with open(f"{currentCWD}/scannedFiles.json", "r", encoding="utf8") as f:
+        jsonFileToRead = json.load(f)
+        simpleDataFilms = jsonFileToRead["movies"]
+    randomMovie = random.choice(list(simpleDataFilms.values()))
     return json.dumps(randomMovie, ensure_ascii=False)
 
 
 @app.route("/getRandomSerie")
 def getRandomSeries():
     global allSeriesDict
+    with open(f"{currentCWD}/scannedFiles.json", "r", encoding="utf8") as f:
+        jsonFileToRead = json.load(f)
+        allSeriesDict = jsonFileToRead["series"]
     try:
         randomSerie = random.choice(list(allSeriesDict.items()))
     except IndexError:
@@ -1334,7 +1348,7 @@ def getSimilarMovies(movieId):
     for movieInfo in similarMovies:
         movieName = movieInfo.title
         for movie in simpleDataFilms:
-            if movieName == movie["title"]:
+            if movieName == movie:
                 similarMoviesPossessed.append(movie)
                 break
     return similarMoviesPossessed
@@ -1392,8 +1406,11 @@ def getSeriesData(title):
 @app.route("/getFirstSixMovies")
 def getFirstEightMovies():
     global simpleDataFilms
-    simpleDataFilms.sort(key=lambda x: x["title"].lower())
-    return json.dumps(simpleDataFilms[:6], ensure_ascii=False)
+    with open(f"{currentCWD}/scannedFiles.json", "r", encoding="utf8") as f:
+        jsonFileToRead = json.load(f)
+        simpleDataFilms = jsonFileToRead["movies"]
+    simpleDataFilms = {k: simpleDataFilms[k] for k in list(simpleDataFilms.keys())[:6]}
+    return json.dumps(list(simpleDataFilms.items()), ensure_ascii=False)
 
 
 @app.route("/getFirstSixSeries")
@@ -1402,8 +1419,8 @@ def getFirstEightSeries():
     with open(f"{currentCWD}/scannedFiles.json", "r", encoding="utf8") as f:
         jsonFileToRead = json.load(f)
         allSeriesDict = jsonFileToRead["series"]
-    allSeriesDict7 = dict(list(allSeriesDict.items())[:6])
-    return json.dumps(list(allSeriesDict7.items()), ensure_ascii=False, default=str)
+    allSeriesDict6 = {k: allSeriesDict[k] for k in list(allSeriesDict.keys())[:6]}
+    return json.dumps(list(allSeriesDict6.items()), ensure_ascii=False, default=str)
 
 
 @app.route("/")
@@ -1467,10 +1484,11 @@ def getSeasonData(serieName, seasonId):
     with open(f"{currentCWD}/scannedFiles.json", "r", encoding="utf8") as f:
         jsonFileToRead = json.load(f)
         allSeriesDict = jsonFileToRead["series"]
-    seasonId = int(seasonId[1:]) - 1
+    seasonId = seasonId.replace("S", "")
     if serieName in allSeriesDict.keys():
         data = allSeriesDict[serieName]
         season = data["seasons"][seasonId]
+        print(season)
         return json.dumps(season, ensure_ascii=False, default=str)
     else:
         response = {"response": "Not Found"}
@@ -1479,12 +1497,16 @@ def getSeasonData(serieName, seasonId):
 @app.route("/getEpisodeData/<serieName>/<seasonId>/<episodeId>/", methods=["GET", "POST"])
 def getEpisodeData(serieName, seasonId, episodeId):
     global allSeriesDict
-    seasonId = int(seasonId[1:]) - 1
-    episodeId = int(episodeId) - 1
+    with open(f"{currentCWD}/scannedFiles.json", "r", encoding="utf8") as f:
+        jsonFileToRead = json.load(f)
+        allSeriesDict = jsonFileToRead["series"]
+    seasonId = seasonId.replace("S", "")
+    episodeId = episodeId
+    print(serieName, allSeriesDict.keys())
     if serieName in allSeriesDict.keys():
         data = allSeriesDict[serieName]
         season = data["seasons"][seasonId]
-        print(season["episodes"])
+        print(data["seasons"])
         episode = season["episodes"][str(episodeId)]
         return json.dumps(episode, ensure_ascii=False, default=str)
     else:

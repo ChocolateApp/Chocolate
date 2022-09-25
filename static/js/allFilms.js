@@ -69,6 +69,7 @@ function setPopup() {
             fetch("/getMovieData/" + movieTitle).then(function(response) {
                 return response.json()
             }).then(function(data) {
+                console.log(data)
                 var movieTitle = data.realTitle
 
                 var movieCast = data.cast
@@ -218,6 +219,7 @@ function getFirstMovies() {
         return response.json()
     }).then(function(data) {
         for (var i = 0; i < data.length; i++) {
+            data[i]
             if (i != 0) {
                 movies = document.getElementsByClassName("movies")[0]
                 var movie = data[i]
@@ -228,16 +230,15 @@ function getFirstMovies() {
                 content.className = "content"
                 var image = document.createElement("img")
                 image.className = "cover_movie"
-
+                movie = movie[1]
                 image.src = movie.cover
                 if (image.src == "https://image.tmdb.org/t/p/originalNone") {
                     image.src = brokenPath
                 }
-                image.title = movie.realTitle
+                image.title = movie.title
                 image.alt = movie.realTitle
                 cookieValue = getCookie(movie.realTitle)
                 if (cookieValue != undefined) {
-                    console.log(movie.realTitle, cookieValue)
                     timePopup = document.createElement("div")
                     timePopup.className = "timePopup"
                     timeP = document.createElement("p")
@@ -257,19 +258,13 @@ function getFirstMovies() {
                 descriptionBanner = document.getElementsByClassName("bannerDescription")[0]
                 watchNow = document.getElementsByClassName("watchNowA")[0]
 
-                movie = data[i]
+                movie = data[i][1]
+                var slug = movie.slug
+                slug = "/movie/" + slug
+                bannerImage = movie.banner
+                cssBigBanner = `background-image: linear-gradient(to bottom, rgb(255 255 255 / 0%), rgb(29 29 29)), url("${bannerImage}")`
+                imageBanner.setAttribute('style', cssBigBanner)
 
-                var movieUrl = movie.slug
-                movieUrl = "/movie/" + movieUrl
-
-                imageBanner.setAttribute("src", movie.banner)
-                if (imageBanner.src == "https://image.tmdb.org/t/p/originalNone") {
-                    imageBanner.src = brokenPath
-                }
-
-
-                imageBanner.setAttribute("alt", movie.realTitle)
-                imageBanner.setAttribute("title", movie.realTitle)
 
                 titleBanner.innerHTML = movie.realTitle
                 description = movie.description
@@ -283,7 +278,7 @@ function getFirstMovies() {
                 })
 
                 genreBanner.innerHTML = movie.genre
-
+                movieUrl = movie.slug
                 watchNow.setAttribute("href", movieUrl)
             }
         }

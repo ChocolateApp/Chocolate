@@ -228,12 +228,8 @@ function getFirstMovies() {
         var slug = movie.slug
         slug = "/movie/" + slug
 
-        imageBanner.setAttribute("src", movie.banner)
-        if (imageBanner.src == "https://image.tmdb.org/t/p/originalNone") {
-            imageBanner.src = brokenPath
-        }
-        imageBanner.setAttribute("alt", movie.realTitle)
-        imageBanner.setAttribute("title", movie.realTitle)
+        cssBigBanner = `background-image: linear-gradient(to bottom, rgb(255 255 255 / 0%), rgb(29 29 29)), url("${movie.banner}")`
+        imageBanner.setAttribute('style', cssBigBanner)
 
         titleBanner.innerHTML = movie.realTitle
 
@@ -264,12 +260,12 @@ function getFirstMovies() {
             content.className = "content"
             var image = document.createElement("img")
             image.className = "cover_movie"
-
+            movie = movie[1]
             image.src = movie.cover
             if (image.src == "https://image.tmdb.org/t/p/originalNone") {
                 image.src = brokenPath
             }
-            image.title = movie.realTitle
+            image.title = movie.title
             image.alt = movie.realTitle
             cookieValue = getCookie(movie.realTitle)
             if (cookieValue != undefined) {
