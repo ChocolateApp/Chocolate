@@ -1643,13 +1643,13 @@ def serie(name, seasonId, episodeId):
     if episodeId.endswith("ttf"):
         pass
     else:
-        seasonId = int(seasonId) -1
+        seasonId = seasonId
         series = jsonFileToRead["series"]
         serie = series[name]
         directoryName = serie["originalName"]
-        seasonOfSerie = serie["seasons"][int(seasonId)]
-        lenOfThisSeason = len(seasonOfSerie)
-        thisEpisode = seasonOfSerie["episodes"][str(episodeId)]
+        seasonOfSerie = serie["seasons"][seasonId]
+        lenOfThisSeason = len(seasonOfSerie.keys())
+        thisEpisode = seasonOfSerie["episodes"][episodeId]
         slug = thisEpisode["slug"]
         episodeName = thisEpisode["episodeName"]
         slugUrl = slug.split("/")[-1]
@@ -1660,8 +1660,8 @@ def serie(name, seasonId, episodeId):
         episodeId = int(episodeId)
         buttonNext = episodeId-1 < lenOfThisSeason
         buttonPrevious = episodeId-1 > 0
-        buttonPreviousHREF = f"/serie/{name}/{seasonId+1}/{episodeId-1}"
-        buttonNextHREF = f"/serie/{name}/{seasonId+1}/{episodeId+1}"
+        buttonPreviousHREF = f"/serie/{name}/{seasonId}/{episodeId-1}"
+        buttonNextHREF = f"/serie/{name}/{seasonId}/{episodeId+1}"
         return render_template(
             "serie.html", slug=slug, movieUrl=link, allCaptions=allCaptions, title=episodeName, buttonNext=buttonNext, buttonPrevious=buttonPrevious, buttonNextHREF=buttonNextHREF, buttonPreviousHREF=buttonPreviousHREF
         )
@@ -1670,7 +1670,7 @@ def serie(name, seasonId, episodeId):
 def generateCaptionSerie(serie, season, slug):
     global serieExtension
     seriesPath = config.get("ChocolateSettings", "SeriesPath")
-    slug = f"{seriesPath}\\{serie}\\S{season+1}\\{slug}"
+    slug = f"{seriesPath}\\{serie}\\S{season}\\{slug}"
     captionCommand = [
         "ffprobe",
         "-loglevel",
