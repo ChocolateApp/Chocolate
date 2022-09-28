@@ -1,5 +1,4 @@
-from calendar import THURSDAY
-from flask import Flask, url_for, request, render_template, redirect, make_response, g
+from flask import Flask, url_for, request, render_template, redirect, make_response
 from flask_cors import CORS
 from tmdbv3api import TMDb, Movie, TV, Episode, Person
 from tmdbv3api.exceptions import TMDbException
@@ -31,7 +30,7 @@ movie = Movie()
 show = TV()
 
 client_id = "771837466020937728"
-#rpc_obj = rpc.DiscordIpcClient.for_platform(client_id)
+rpc_obj = rpc.DiscordIpcClient.for_platform(client_id)
 searchedFilms = []
 simpleDataFilms = []
 allMoviesNotSorted = []
@@ -50,7 +49,13 @@ hostname = socket.gethostname()
 local_ip = socket.gethostbyname(hostname)
 config.set("ChocolateSettings", "localIP", local_ip)
 serverPort = config["ChocolateSettings"]["port"]
+configLanguage = config["ChocolateSettings"]["language"]
 #app.config['SERVER_NAME'] = f'chocolate:{serverPort}'
+
+if jsonFileToRead["language"] != configLanguage:
+    jsonFileToRead = {"movies": {}, "series": {}, "language": {configLanguage}}
+    with open(f"{currentCWD}/scannedFiles.json", "w", encoding="utf8") as f:
+        json.dump(jsonFileToRead, f, ensure_ascii=False)
 
 CHUNK_LENGTH = 5
 genreList = {
@@ -196,7 +201,10 @@ def getMovies():
                         break
 
                 res = bestMatch
-                name = res.title
+                try:
+                    name = res.title
+                except AttributeError as e:
+                    name = res.original_title
 
             with open(f"{currentCWD}/scannedFiles.json", "r", encoding="utf8") as f:
                 jsonFileToRead = json.load(f)
@@ -232,7 +240,10 @@ def getMovies():
                     banniere = "/static/img/brokenBanner.png"
                 description = res.overview
                 note = res.vote_average
-                date = res.release_date
+                try:
+                    date = res.release_date
+                except AttributeError as e:
+                    date = "Unknown"
                 movieId = res.id
                 details = movie.details(movieId)
 
@@ -266,7 +277,8 @@ def getMovies():
                         "%d/%m/%Y"
                     )
                 except ValueError as e:
-                    print(e)
+                    date = "Unknown"
+                except UnboundLocalError:
                     date = "Unknown"
 
                 genre = res.genre_ids
@@ -619,7 +631,7 @@ def getSeries():
             try:
                 search = show.search(serieTitle)
             except TMDbException as e:
-                print(e)
+                #print(f"I didn't find {serieTitle} on TMDB, check on the website if it exist",e)
                 allSeriesNotSorted.append(serieTitle)
                 break
 
@@ -629,30 +641,42 @@ def getSeries():
                     f"{originalSerieTitle} return nothing, try to rename it, the english name return more results."
                 )
                 continue
-
-            bestMatch = search[0]
-            for i in range(len(search)):
-                if (
-                    lev(serieTitle, search[i].name) < lev(serieTitle, bestMatch.name)
-                    and bestMatch.name not in allSeriesName
-                ):
-                    bestMatch = search[i]
-                elif (
-                    lev(serieTitle, search[i].name) == lev(serieTitle, bestMatch.name)
-                    and bestMatch.name not in allSeriesName
-                ):
-                    bestMatch = bestMatch
-                if (
-                    lev(serieTitle, bestMatch.name) == 0
-                    and bestMatch.name not in allSeriesName
-                ):
-                    break
+            
+            askForGoodSerie = config["ChocolateSettings"]["askWhichSerie"]
+            print(askForGoodSerie, len(search))
+            if askForGoodSerie == "false" and len(search)>1:
+                bestMatch = search[0]
+                for i in range(len(search)):
+                    if (
+                        lev(serieTitle, search[i].name) < lev(serieTitle, bestMatch.name)
+                        and bestMatch.name not in allSeriesName
+                    ):
+                        bestMatch = search[i]
+                    elif (
+                        lev(serieTitle, search[i].name) == lev(serieTitle, bestMatch.name)
+                        and bestMatch.name not in allSeriesName
+                    ):
+                        bestMatch = bestMatch
+                    if (
+                        lev(serieTitle, bestMatch.name) == 0
+                        and bestMatch.name not in allSeriesName
+                    ):
+                        break
+            else:
+                print(f"I found {len(search)} series that can be the one you want")
+                for serieSearched in search:
+                    indexOfTheSerie = search.index(serieSearched)
+                    print(f"{serieSearched.name} id:{indexOfTheSerie}")
+                valueSelected = int(input("Which serie is it (id):"))
+                if valueSelected < len(search):
+                    bestMatch = search[valueSelected]
+                print(f"Ok, I will create do all the job for {bestMatch.name}")
 
             res = bestMatch
             name = res.name
             serieCoverPath = f"https://image.tmdb.org/t/p/original{res.poster_path}"
             banniere = f"https://image.tmdb.org/t/p/original{res.backdrop_path}"
-            rewritedName = originalSerieTitle.replace(" ", "_")
+            rewritedName = name.replace(" ", "_")
             if not os.path.exists(
                 f"{currentCWD}/static/img/mediaImages/{rewritedName}_Cover.png"
             ):
@@ -769,7 +793,7 @@ def getSeries():
                             }
                             seasonData[episodeIndex] = thisEpisodeData
                         except TMDbException as e:
-                            print(e)
+                            print(f"I didn't find an the episode {episodeIndex} of the season {seasonNumber} of the serie with ID {serieId}",e)
                     seasonCoverPath = seasonCoverPath
                     if not os.path.exists(
                         f"{currentCWD}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png"
@@ -901,8 +925,8 @@ def getSeries():
                             jsonFileToRead["series"][serie]["seasons"][seasonNumber] = seasonData
                             with open(f"{currentCWD}/scannedFiles.json", "w", encoding="utf8") as f:
                                 json.dump(jsonFileToRead, f, ensure_ascii=False)
-                    except KeyError:
-                        pass
+                    except KeyError as e:
+                        print(f"Error ligne 925 {e}")
             for episode in allEpisodes:
                 with open(f"{currentCWD}/scannedFiles.json", "r", encoding="utf8") as f:
                     jsonFileToRead = json.load(f)
@@ -912,7 +936,7 @@ def getSeries():
                     if episodeId not in jsonFileToRead["series"][serie]["seasons"][seasonId]["episodes"].keys():
                         try:
                             showEpisode = Episode()
-                            episodeInfo = showEpisode.details(serieId, seasonId, episodeId)
+                            episodeInfo = showEpisode.details(serieId, int(seasonId), int(episodeId))
                             coverEpisode = f"https://image.tmdb.org/t/p/original{episodeInfo.still_path}"
                             rewritedName = serie.replace(" ", "_")
                             if not os.path.exists(f"{currentCWD}/static/img/mediaImages/{rewritedName}S{seasonId}E{episodeId}_Cover.png"):
@@ -935,10 +959,9 @@ def getSeries():
                             with open(f"{currentCWD}/scannedFiles.json", "w", encoding="utf8") as f:
                                 json.dump(jsonFileToRead, f, ensure_ascii=False)
                         except TMDbException as e:
-                            print("Error",e)
-                except:
-                    break
-
+                            print(f"Error I didn't find this {serieId, seasonId, episodeId} on TMDB, check if the episode exist",e)
+                except KeyError as e:
+                    print(f"Error : {e} is not in the seasons")
 
 
 
@@ -1273,7 +1296,7 @@ def chunkCaptionSerie(video_name, language, index, serie, season):
 
     return extractCaptionsResponse
 
-@app.route("/saveSettings/", methods=["POST"])
+@app.route("/saveSettings", methods=["POST"])
 def saveSettings():
     MoviesPath = request.form["moviesPath"]
     SeriesPath = request.form["seriesPath"]

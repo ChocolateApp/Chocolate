@@ -235,7 +235,7 @@ function getFirstMovies() {
 
         descriptionBanner.innerHTML = movie.description
         descriptionBanner.innerHTML = descriptionBanner.innerHTML.substring(0, 200) + "..."
-        descriptionBanner.innerHTML += " <a id='lireLaSuite' href='#'>Lire la suite</a>"
+        descriptionBanner.innerHTML += " <a id='lireLaSuite' href='_blanck'>Lire la suite</a>"
 
         lireLaSuite = document.getElementById("lireLaSuite")
         lireLaSuite.addEventListener("click", function() {

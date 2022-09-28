@@ -3,11 +3,7 @@ function saveSettings(event) {
     language = document.getElementById("language").value
     document.cookie = "language=" + language + "; path=/";
     port = document.getElementById("port").value
-
-    if (port === "8000" || port === "8800") {
-        alert("The port " + port + " is reserved for the web server. Please choose another port.")
-        return
-    }
+    document.cookie = "port=" + port + "; path=/";
 
     form = document.getElementById("saveSettingsForm")
     form.action = "/saveSettings"
@@ -23,4 +19,6 @@ function getCookie(name) {
 window.onload = function() {
     languageCookie = getCookie("language")
     document.getElementById("language").value = languageCookie
+    portCookie = getCookie("port")
+    document.getElementById("port").value = portCookie
 }
