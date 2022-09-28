@@ -53,9 +53,9 @@ configLanguage = config["ChocolateSettings"]["language"]
 #app.config['SERVER_NAME'] = f'chocolate:{serverPort}'
 
 if jsonFileToRead["language"] != configLanguage:
-    jsonFileToRead = {"movies": {}, "series": {}, "language": {configLanguage}}
+    jsonFileToRead = {"movies": {}, "series": {}, "language": str(configLanguage)}
     with open(f"{currentCWD}/scannedFiles.json", "w", encoding="utf8") as f:
-        json.dump(jsonFileToRead, f, ensure_ascii=False)
+        json.dump(jsonFileToRead, f, ensure_ascii=False, default=str)
 
 CHUNK_LENGTH = 5
 genreList = {
@@ -643,8 +643,7 @@ def getSeries():
                 continue
             
             askForGoodSerie = config["ChocolateSettings"]["askWhichSerie"]
-            print(askForGoodSerie, len(search))
-            if askForGoodSerie == "false" and len(search)>1:
+            if askForGoodSerie == "false" or len(search)==1:
                 bestMatch = search[0]
                 for i in range(len(search)):
                     if (
