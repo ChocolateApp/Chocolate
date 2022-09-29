@@ -669,7 +669,6 @@ def getSeries():
                 valueSelected = int(input("Which serie is it (id):"))
                 if valueSelected < len(search):
                     bestMatch = search[valueSelected]
-                print(f"Ok, I will create do all the job for {bestMatch.name}")
 
             res = bestMatch
             name = res.name
