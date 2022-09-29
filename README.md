@@ -100,7 +100,16 @@ Don't forget to give the project a star! Thanks again!
 4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
+## TO-DO for Chocolate Server
 
+- [ ] Increase the search system
+- [ ] Replace JSON by a DB
+- [ ] Create a local account system for child and members of the family/friends
+- [ ] Path few bugs like :
+  - [ ] Actors page
+  - [ ] Popup of the first and random show
+- [ ] Add Books, PDF, Epub
+- [ ] Add musics
 
 <!-- LICENSE -->
 ## License
