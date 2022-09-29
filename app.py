@@ -109,7 +109,6 @@ def getMovies():
     except KeyError:
         path = str(Path.home() / "Downloads")
     os.chdir(path)
-    pythonName = "python" if os.name == "nt" else "python3"
     filmFileList = []
     movies = os.listdir(path)
     for movieFile in movies:
@@ -150,26 +149,8 @@ def getMovies():
             loadingFirstPart = f"{loadingFirstPart}➤"
             loadingSecondPart = "•" * (20 - int(percentage * 0.2))
             loading = f"{str(int(percentage)).rjust(3)}% | [\33[32m{loadingFirstPart} \33[31m{loadingSecondPart}\33[0m] | {movieTitle} | {index}/{len(filmFileList)}                                                      "
-            loadingPresence = f"{str(int(percentage)).rjust(3)}% | {movieTitle} | {index}/{len(filmFileList)}"
             print("\033[?25l", end="")
             print(loading, end="\r", flush=True)
-            activity = {
-                    "state": "Chocolate",  # anything you like
-                    "details": f"{loadingPresence}",  # anything you like
-                    "timestamps": {
-                        "start": mktime(time.localtime()),
-                    },
-                    "assets": {
-                        "small_text": "Chocolate",  # anything you like
-                        "small_image": "None",  # must match the image key
-                        "large_text": "Chocolate",  # anything you like
-                        "large_image": "largeimage",  # must match the image key
-                    },
-                }
-            try:
-                rpc_obj.set_activity(activity)
-            except:
-                pass
             if movieTitle not in jsonFileToRead["movies"].keys():
                 try:
                     search = movie.search(movieTitle)
@@ -181,24 +162,35 @@ def getMovies():
                 if not search:
                     allMoviesNotSorted.append(originalMovieTitle)
                     continue
-
-                bestMatch = search[0]
-                for i in range(len(search)):
-                    if (
-                        lev(movieTitle, search[i].title) < lev(movieTitle, bestMatch.title)
-                        and bestMatch.title not in filmFileList
-                    ):
-                        bestMatch = search[i]
-                    elif (
-                        lev(movieTitle, search[i].title) == lev(movieTitle, bestMatch.title)
-                        and bestMatch.title not in filmFileList
-                    ):
-                        bestMatch = bestMatch
-                    if (
-                        lev(movieTitle, bestMatch.title) == 0
-                        and bestMatch.title not in filmFileList
-                    ):
-                        break
+                if config["ChocolateSettings"]["askwhichmovie"] == "false" or len(search)==1:
+                    bestMatch = search[0]
+                    for i in range(len(search)):
+                        if (
+                            lev(movieTitle, search[i].title) < lev(movieTitle, bestMatch.title)
+                            and bestMatch.title not in filmFileList
+                        ):
+                            bestMatch = search[i]
+                        elif (
+                            lev(movieTitle, search[i].title) == lev(movieTitle, bestMatch.title)
+                            and bestMatch.title not in filmFileList
+                        ):
+                            bestMatch = bestMatch
+                        if (
+                            lev(movieTitle, bestMatch.title) == 0
+                            and bestMatch.title not in filmFileList
+                        ):
+                            break
+                else:
+                    print(f"I found {len(search)} movies for {movieTitle}                                       ")
+                    for serieSearched in search:
+                        indexOfTheSerie = search.index(serieSearched)
+                        try:
+                            print(f"{serieSearched.title} id:{indexOfTheSerie} date:{serieSearched.release_date}")
+                        except:
+                            print(f"{serieSearched.title} id:{indexOfTheSerie} date:Unknown")
+                    valueSelected = int(input("Which movie is it (id):"))
+                    if valueSelected < len(search):
+                        bestMatch = search[valueSelected]
 
                 res = bestMatch
                 try:
@@ -598,26 +590,8 @@ def getSeries():
         loadingFirstPart = f"{loadingFirstPart}➤"
         loadingSecondPart = "•" * (20 - int(percentage * 0.2))
         loading = f"{str(int(percentage)).rjust(3)}% | [\33[32m{loadingFirstPart} \33[31m{loadingSecondPart}\33[0m] | {serie} | {index}/{len(allSeriesName)}                              "
-        loadingPresence = f"{str(int(percentage)).rjust(3)}% | {serie} | {index}/{len(allSeriesName)}"
         print("\033[?25l", end="")
         print(loading, end="\r", flush=True)
-        activity = {
-            "state": "Chocolate",  # anything you like
-            "details": f"{loadingPresence}",  # anything you like
-            "timestamps": {
-                "start": mktime(time.localtime()),
-            },
-            "assets": {
-                "small_text": "Chocolate",  # anything you like
-                "small_image": "None",  # must match the image key
-                "large_text": "Chocolate",  # anything you like
-                "large_image": "largeimage",  # must match the image key
-            },
-        }
-        try:
-            rpc_obj.set_activity(activity)
-        except:
-            pass
         with open(f"{currentCWD}/scannedFiles.json", "r", encoding="utf8") as f:
             jsonFileToRead = json.load(f)
         series = jsonFileToRead["series"]
@@ -1042,7 +1016,8 @@ def create_m3u8(video_name):
 def create_serie_m3u8(serieName, season, video_name):
     global serieExtension
     seriesPath = config.get("ChocolateSettings", "SeriesPath")
-    video_path = f"{seriesPath}\{serieName}\S{int(season)+1}\{video_name}{serieExtension}"
+    video_path = f"{seriesPath}\{serieName}\S{season}\{video_name}{serieExtension}"
+    print(video_path)
     duration = length_video(video_path)
     file = """
     #EXTM3U
@@ -1074,7 +1049,7 @@ def get_chunk_serie(serieName, season, video_name, idx=0):
     global movieExtension, serieExtension
     seconds = (idx - 1) * CHUNK_LENGTH
     seriesPath = config.get("ChocolateSettings", "SeriesPath")
-    video_path = f"{seriesPath}\{serieName}\S{int(season)+1}\{video_name}{serieExtension}"
+    video_path = f"{seriesPath}\{serieName}\S{season}\{video_name}{serieExtension}"
 
     time_start = str(datetime.timedelta(seconds=seconds))
     time_end = str(datetime.timedelta(seconds=seconds + CHUNK_LENGTH))
@@ -1266,9 +1241,10 @@ def settings():
 
 @app.route("/chunkCaptionSerie/<language>/<index>/<serie>-<season>-<video_name>.vtt", methods=["GET"])
 def chunkCaptionSerie(video_name, language, index, serie, season):
-    global movieExtension
+    global serieExtension
     seriesPath = config.get("ChocolateSettings", "SeriesPath")
-    video_path = f"{seriesPath}\{serie}\S{int(season)+1}\{video_name}{serieExtension}"
+    video_path = f"{seriesPath}\{serie}\S{int(season)}\{video_name}{serieExtension}"
+
     extractCaptionsCommand = [
         "ffmpeg",
         "-hide_banner",
@@ -1664,7 +1640,6 @@ def serie(name, seasonId, episodeId):
     if episodeId.endswith("ttf"):
         pass
     else:
-        seasonId = seasonId
         series = jsonFileToRead["series"]
         serie = series[name]
         directoryName = serie["originalName"]
@@ -1674,8 +1649,7 @@ def serie(name, seasonId, episodeId):
         slug = thisEpisode["slug"]
         episodeName = thisEpisode["episodeName"]
         slugUrl = slug.split("/")[-1]
-        rewriteSlug, fileExtension = os.path.splitext(slugUrl)
-        serieExtension = fileExtension
+        rewriteSlug, serieExtension = os.path.splitext(slugUrl)
         link = f"/videoSerie/{directoryName}/{seasonId}/{rewriteSlug}.m3u8".replace(" ", "%20")
         allCaptions = generateCaptionSerie(name, seasonId, slugUrl)
         episodeId = int(episodeId)
@@ -1710,7 +1684,7 @@ def generateCaptionSerie(serie, season, slug):
         slug = slug.split("/")[-1]
     except:
         slug = slug.split("/")[-1]
-    rewriteSlug, movieExtension = os.path.splitext(slug)
+    rewriteSlug, serieExtension = os.path.splitext(slug)
     captionResponse = captionPipe.stdout.read().decode("utf-8")
     captionResponse = captionResponse.split("\n")
 
@@ -1932,6 +1906,21 @@ def sendDiscordPresence(name, actualDuration, totalDuration):
     )
 
 if __name__ == "__main__":
+    activity = {
+        "state": "Loading Chocolate...",  # anything you like
+        "details": "The all-in-one MediaManager",  # anything you like
+        "timestamps": {"start": start_time},
+        "assets": {
+            "small_text": "Chocolate",  # anything you like
+            "small_image": "None",  # must match the image key
+            "large_text": "Chocolate",  # anything you like
+            "large_image": "loader",  # must match the image key
+        },
+    }
+    try:
+        rpc_obj.set_activity(activity)
+    except:
+        pass
     getSeries()
     getMovies()
     print()
