@@ -108,6 +108,8 @@ Don't forget to give the project a star! Thanks again!
 - [ ] Path few bugs like :
   - [ ] Actors page
   - [ ] Popup of the first and random show
+- [ ] Edit movie metadata directly on the website
+- [ ] Enable or not RPC for Discord
 - [ ] Add Books, PDF, Epub
 - [ ] Add musics
 
