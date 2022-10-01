@@ -648,7 +648,7 @@ def getSeries():
             name = res.name
             serieCoverPath = f"https://image.tmdb.org/t/p/original{res.poster_path}"
             banniere = f"https://image.tmdb.org/t/p/original{res.backdrop_path}"
-            rewritedName = name.replace(" ", "_")
+            rewritedName = serieTitle.replace(" ", "_")
             if not os.path.exists(
                 f"{currentCWD}/static/img/mediaImages/{rewritedName}_Cover.png"
             ):
