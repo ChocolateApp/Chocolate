@@ -112,6 +112,7 @@ Don't forget to give the project a star! Thanks again!
 - [ ] Enable or not RPC for Discord
 - [ ] Add Books, PDF, Epub
 - [ ] Add musics
+- [ ] Translate in multiple languages
 
 <!-- LICENSE -->
 ## License
