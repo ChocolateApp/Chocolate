@@ -18,6 +18,9 @@ Chocolate is an Open Source media manager.<br>
 It allows you to manage your media collection and organize it in a way that is easy to use and easy to search.<br>
 It's a free software.<br>
 
+## Note of the 08/10
+Don't worry, I'm actually working on the biggest update of Chocolate. You will be notified soon about that update.
+Thanks for your support ! ❤
 
 ### Built With
 
@@ -111,7 +114,9 @@ Don't forget to give the project a star! Thanks again!
 - [ ] Edit movie metadata directly on the website
 - [ ] Enable or not RPC for Discord
 - [ ] Add Books, PDF, Epub
-- [ ] Add musics
+- [ ] Add Musics
+- [ ] Add TV with M3U8
+- [ ] Add a watchtogether system
 - [ ] Translate in multiple languages
 
 <!-- LICENSE -->
