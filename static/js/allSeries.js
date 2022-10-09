@@ -275,8 +275,8 @@ function setPopup() {
 
         document.body.style.overflow = "hidden"
 
-        var image = document.getElementsByClassName("bannerCover")[0]
-        var serieTitle = image.getAttribute("title");
+        var imageBanner = document.getElementsByClassName("bannerCover")[0]
+        serieTitle = imageBanner.style.backgroundImage.split("mediaImages/")[1].replace("\")", "").replace("_Banner.png", "").replace("_", " ")
 
         fetch("/getSerieData/" + serieTitle).then(function(response) {
             return response.json()
