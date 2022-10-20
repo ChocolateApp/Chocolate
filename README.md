@@ -18,10 +18,6 @@ Chocolate is an Open Source media manager.<br>
 It allows you to manage your media collection and organize it in a way that is easy to use and easy to search.<br>
 It's a free software.<br>
 
-## Note of the 08/10
-Don't worry, I'm actually working on the biggest update of Chocolate. You will be notified soon about that update.
-Thanks for your support ! ❤
-
 ### Built With
 
 Chocolate is actually made with this technology :
@@ -106,8 +102,8 @@ Don't forget to give the project a star! Thanks again!
 ## TO-DO for Chocolate Server
 
 - [ ] Increase the search system
-- [ ] Replace JSON by a DB
-- [ ] Create a local account system for child and members of the family/friends
+- [X] Replace JSON by a DB
+- [X] Create a local account system for child and members of the family/friends
 - [ ] Path few bugs like :
   - [ ] Actors page
   - [X] Popup of the first and random show
