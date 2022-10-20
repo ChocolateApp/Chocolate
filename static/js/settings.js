@@ -10,6 +10,12 @@ function saveSettings(event) {
     form.submit()
 }
 
+function createAccount(event) {
+    form = document.getElementById("createAccount")
+    form.action = "/createAccount"
+    form.submit()
+}
+
 function getCookie(name) {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
@@ -21,4 +27,16 @@ window.onload = function() {
     document.getElementById("language").value = languageCookie
     portCookie = getCookie("port")
     document.getElementById("port").value = portCookie
+
+    typeInputList = document.getElementById("type")
+    typeInputList.addEventListener("change", function() {
+        if (typeInputList.value == "Kid") {
+            passwordAccountCreator = document.getElementsByClassName("passwordAccountCreator")[0]
+            passwordAccountCreator.style.display = "none"
+        } else {
+            passwordAccountCreator = document.getElementsByClassName("passwordAccountCreator")[0]
+            passwordAccountCreator.style.display = "block"
+        }
+    })
+
 }

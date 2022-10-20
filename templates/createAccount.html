@@ -1,0 +1,31 @@
+{% extends 'header.html' %}{% block title %}Settings{% endblock %} {% block content %}
+
+<form class="createAccount" id="createAccount" method="post" enctype="multipart/form-data">
+    <div class="accountCreateFields">
+        <div class="nameAccountCreator">
+            <label for="name">Name : </label>
+            <input type="text" name="name" id="name" class="name form_field_create_account">
+        </div>
+        <div class="passwordAccountCreator">
+            <label for="password">Password : </label>
+            <input type="password" name="password" id="password" class="password form_field_create_account">
+        </div>
+        <div class="profileAccountCreator">
+            <label for="profilePicture">Profile picture : </label>
+            <input type="file" name="profilePicture" id="profilePicture" accept="image/*">
+        </div>
+        <div class="typeAccountCreator">
+            <label for="type">Account type : </label>
+            <input list="accountType" name="type" id="type" class="type form_field_create_account">
+            <datalist id="accountType">
+                <option value="Admin"></option>
+                <option value="Adult"></option>
+                <option value="Teen"></option>
+                <option value="Kid"></option>
+            </datalist>
+        </div>
+    </div>
+    <input id="createAccountButton" type="submit" value="Create account" class="createAccountButton">
+</form>
+<script src="{{ url_for('static',filename='js/createAccount.js') }}" defer></script>
+{% endblock %}

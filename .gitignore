@@ -6,4 +6,4 @@ scannedFiles.json
 config.ini
 static/img/cleanBanner.png
 .vscode/settings.json
-__pycache__/rpc.cpython-310.pyc
+*.pyc

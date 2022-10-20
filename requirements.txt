@@ -1,10 +1,14 @@
 ask_lib==1.1.0
 beautifulsoup4==4.11.1
-Flask==2.0.3
+Flask==2.2.2
 Flask_Cors==3.0.10
+Flask_Login==0.6.2
+flask_sqlalchemy==3.0.2
 fuzzywuzzy==0.18.0
 get_video_properties==0.1.1
 GPUtil==1.4.0
-python_Levenshtein==0.12.2
+python_Levenshtein==0.20.7
 requests==2.26.0
+SQLAlchemy==1.4.41
 tmdbv3api==1.7.7
+Werkzeug==2.2.2

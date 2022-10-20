@@ -54,9 +54,8 @@ closePopup.addEventListener("click", function() {
 function getSeasonData() {
     url = window.location.href
     urlArray = url.split("/")
-    seasonName = urlArray[urlArray.length - 2]
     id = urlArray[urlArray.length - 1]
-    id = id.substring(1).replace("#", "")
+    id = id.replace("#", "")
     indexOfEpisode = 1
     https = urlArray[0]
     if (https == "https:") {
@@ -64,7 +63,7 @@ function getSeasonData() {
     }
     ndd = urlArray[2]
     baseURI = `${https}//${ndd}`
-    finalURI = `${baseURI}/getSeasonData/${seasonName}/S${id}`
+    finalURI = `${baseURI}/getSeasonData/${id}`
     console.log(ndd, baseURI, finalURI)
     fetch(finalURI).then(function(response) {
         return response.json()
@@ -97,7 +96,7 @@ function getSeasonData() {
                 image.src = episode["episodeCoverPath"]
                 image.title = episode["episodeName"]
                 image.alt = episode["episodeName"]
-                episodeId = indexOfEpisode
+                episodeId = episode["episodeId"]
 
                 cookieValue = getCookie(image.title)
                 if (cookieValue != undefined) {
@@ -123,7 +122,7 @@ function getSeasonData() {
                 ionIcon.setAttribute("name", "play")
                 ionIcon.setAttribute("role", "img")
                 ionIcon.setAttribute("aria-label", "play outline")
-                let serieURL = `/serie/${seasonName}/${id}/${episodeId}`
+                let serieURL = `/serie/${episodeId}`
                 watchNowButton.href = serieURL
                 watchNowButton.appendChild(ionIcon)
                 watchNowButton.innerHTML = watchNowButton.innerHTML + "Watch Now"
@@ -141,9 +140,9 @@ function getSeasonData() {
                 watchNow = document.getElementsByClassName("watchNowA")[0]
 
                 var episode = episodes[i][1]
-                episodeId = indexOfEpisode
+                episodeId = episode["episodeId"]
 
-                let serieURL = `/serie/${seasonName}/${id}/${episodeId}`
+                let serieURL = `/serie/${episodeId}`
 
                 imageBanner.setAttribute("alt", episode.episodeName)
                 imageBanner.setAttribute("title", episode.episodeName)

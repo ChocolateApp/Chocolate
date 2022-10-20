@@ -69,10 +69,10 @@ function setPopup() {
             }).then(function(data) {
                 var movieTitle = data.realTitle
 
-                var movieCast = data.cast
+                var movieCast = JSON.parse(data.cast)
                 var movieDescription = data.description
                 var movieDuration = data.duration
-                var movieGenre = data.genre
+                var movieGenre = JSON.parse(data.genre)
                 var movieNote = data.note
                 var moviePoster = data.cover
                 var movieUrl = data.slug
@@ -242,7 +242,7 @@ function getFirstMovies() {
             descriptionBanner.innerHTML = movie.description
         })
 
-        genreBanner.innerHTML = movie.genre
+        genreBanner.innerHTML = JSON.parse(movie.genre).join(", ")
 
         watchNow.setAttribute("href", slug)
     })
@@ -260,7 +260,6 @@ function getFirstMovies() {
             content.className = "content"
             var image = document.createElement("img")
             image.className = "cover_movie"
-            movie = movie[1]
             image.src = movie.cover
             if (image.src == "https://image.tmdb.org/t/p/originalNone") {
                 image.src = brokenPath

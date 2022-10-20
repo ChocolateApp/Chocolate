@@ -67,6 +67,36 @@ form#searchForm:hover .form_field {
 .form_field {
     border: none;
     padding-left: 0.5vw;
+    width: 20vw;
+    height: 4vh;
+    background: rgba(157, 157, 157, 0.25);
+    border-radius: 2vw;
+    z-index: 2;
+    filter: drop-shadow(0.1vh 0.1vh 0.5vh #000);
+    color: white;
+}
+
+.form_field::placeholder {
+    color: white;
+}
+
+.form_field:focus {
+    outline: none;
+}
+
+form#searchForm .form_field_search {
+    transition: width 300ms;
+}
+
+form#searchForm:hover .form_field_search {
+    transition: width 300ms;
+    width: 15vw;
+    font-size: 2vh;
+}
+
+.form_field_search {
+    border: none;
+    padding-left: 0.5vw;
     font-size: 0;
     position: absolute;
     width: 2vw;
@@ -80,11 +110,11 @@ form#searchForm:hover .form_field {
     color: white;
 }
 
-.form_field::placeholder {
+.form_field_search::placeholder {
     color: white;
 }
 
-.form_field:focus {
+.form_field_search:focus {
     outline: none;
 }
 
@@ -280,6 +310,23 @@ form#searchForm:hover .form_field {
     top: 48vh;
 }
 
+.logoutIcon {
+    position: absolute;
+    color: white;
+    font-size: 3vh;
+    width: 3vw;
+    bottom: 10vh;
+    margin-left: 0.1vw;
+}
+
+.personIcon {
+    position: absolute;
+    color: white;
+    font-size: 3vh;
+    width: 3vw;
+    bottom: 2vh;
+}
+
 .settings {
     position: absolute;
     right: 1vw;
@@ -297,51 +344,11 @@ form#searchForm:hover .form_field {
 .seriesPathDiv,
 .languageDiv,
 .portInput {
-    margin-left: 63vh;
-    width: 30vh;
-    font-size: 1.5em;
     padding: 2vh;
 }
 
 .languageDiv {
     margin-top: 1vh;
-}
-
-.moviesPathDiv input,
-.seriesPathDiv input,
-.languageDiv input,
-.portInput input {
-    font-size: 2vh;
-    top: 24vh;
-    position: absolute;
-    left: calc(50vw - 4vw);
-    margin-bottom: 8vw;
-    bottom: 0;
-    width: 20vw !important;
-    padding: 0.2vw;
-}
-
-.moviesPathDiv label,
-.seriesPathDiv label,
-.languageDiv label {
-    vertical-align: 20%;
-    font-size: 2.5vh;
-}
-
-.moviesPathDiv input {
-    margin-top: -1.25vh;
-}
-
-.seriesPathDiv input {
-    margin-top: 7vh;
-}
-
-.portInput input {
-    margin-top: 23vh;
-}
-
-.languageDiv input {
-    margin-top: 15.25vh;
 }
 
 .saveSettings {
@@ -357,19 +364,68 @@ form#searchForm:hover .form_field {
     cursor: pointer;
     color: #ffffff;
     font-size: 1.4vh;
-    padding: 2vh 4vw;
+    padding: 2vh 3vw;
+    transition: 300ms;
+    background: none;
+    margin-right: 4vw;
+}
+
+.createAccountButton {
+    height: 10vh;
+    width: 12vw;
+    margin-right: 4vw;
+    text-decoration: none;
+    z-index: 5;
+    border-radius: 1.5vw;
+    border: 0.2vw solid #ffffff;
+    cursor: pointer;
+    color: #ffffff;
+    font-size: 1.4vh;
+    padding: 2vh 3vw;
     transition: 300ms;
     background: none;
 }
 
-.saveSettings:hover {
+.saveSettings:hover,
+.createAccountButton:hover {
     background: white;
     color: #1d1d1d;
 }
 
 .saveSettingsForm {
-    margin-top: 21vh;
-    text-align: center;
+    margin-top: 0vh;
+    text-align: end;
+    position: absolute;
+    left: 31.6vw;
+}
+
+.createAccount {
+    margin-top: 10vh;
+    text-align: end;
+    margin-left: 17vw;
+    width: 45vw;
+}
+
+.form_field_create_account {
+    border: none;
+    width: 20vw;
+    height: 4vh;
+    background: rgba(157, 157, 157, 0.25);
+    border-radius: 2vw;
+    z-index: 2;
+    filter: drop-shadow(0.1vh 0.1vh 0.5vh #000);
+    color: white;
+    margin-bottom: 3vh;
+    padding-left: 0.5vw;
+    margin-left: 0 !important;
+}
+
+.form_field_create_account::placeholder {
+    color: white;
+}
+
+.form_field_create_account:focus {
+    outline: none;
 }
 
 #playPauseButton,
@@ -876,6 +932,7 @@ form#searchForm:hover .form_field {
     font-style: normal;
     height: 9vh;
     text-shadow: 0.1vh 0.1vh 0.5vh #000;
+    overflow: scroll;
 }
 
 .bannerCover {
@@ -1003,6 +1060,149 @@ input[type="search"]::-webkit-search-results-decoration {
 
 .buttonprevious {
     left: calc(12vw - (8vw / 2));
+}
+
+.allUsers {
+    gap: 8vw;
+    flex-wrap: wrap;
+    margin-left: 3vw;
+    z-index: 2;
+    position: absolute;
+    display: inline-grid;
+    grid-template-rows: 1fr;
+    grid-row-gap: 0px;
+    width: 97vw;
+    margin-top: 14vw;
+    justify-items: center;
+    align-items: center;
+}
+
+.allUsers>div>img {
+    border-radius: 1vh;
+    height: 13vw;
+    width: 13vw;
+}
+
+.allUsers>div>h1 {
+    width: 13vw;
+    text-align: center;
+}
+
+#password {
+    border: none;
+    padding-left: 0.5vw;
+    background: rgba(157, 157, 157, 0.25);
+    border-radius: 2vw;
+    z-index: 2;
+    filter: drop-shadow(0.1vh 0.1vh 0.5vh #000);
+    color: white;
+    margin-left: calc((97vw/4) - 4vw);
+    margin-bottom: 3vh;
+    margin-top: -10vh;
+    height: 4vh;
+    width: 20vw;
+}
+
+#password:focus {
+    outline: none;
+}
+
+#submitLogin {
+    background: none;
+    border-radius: 1.5vw;
+    border: 0.2vw solid #ffffff;
+    cursor: pointer;
+    color: #ffffff;
+    font-size: 1.4vh;
+    padding: 3vh 4vw;
+    text-decoration: none;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    transition: 300ms background, color;
+    margin-left: calc((119vw/4) - 4vw);
+    text-shadow: 0.1vh 0.1vh 0.5vh #000;
+    box-shadow: 0.1vh 0.1vh 0.5vh #000;
+}
+
+#profilePicture {
+    margin-bottom: 3vh;
+    margin-top: -10vh;
+    width: 20vw;
+}
+
+.loginForm {
+    display: none;
+    margin-left: 0vw;
+    z-index: 2;
+    position: absolute;
+    width: 60vw;
+    padding: 50vh 20vw 41vh;
+    margin-top: 0vh;
+    background: #272727f7;
+    animation: appearPopup 0.5s ease-in-out;
+}
+
+.profileUsername {
+    top: 30vh;
+    position: absolute;
+    left: calc((97vw / 2) + 2vw);
+}
+
+.profilePassword {
+    top: 47vh;
+    position: absolute;
+    left: 50.5vw !important;
+}
+
+.profileDiv {
+    width: 50vw;
+    margin-top: 12vh;
+    margin-left: calc(47vw / 2);
+}
+
+.profileDiv>img {
+    border-radius: 1vh;
+    height: 53vh;
+    width: 26vw;
+}
+
+.profileSubmitChanges {
+    top: 47vh;
+    position: absolute;
+    left: calc((54vw / 2) + 2vw);
+    background: none;
+    border-radius: 1.5vw;
+    border: 0.2vw solid #ffffff;
+    cursor: pointer;
+    color: #ffffff;
+    font-size: 1.4vh;
+    padding: 3vh 4vw;
+    text-decoration: none;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    transition: 300ms background, color;
+    margin-left: calc((119vw/4) - 4vw);
+    text-shadow: 0.1vh 0.1vh 0.5vh #000;
+    box-shadow: 0.1vh 0.1vh 0.5vh #000;
+}
+
+.profileSubmitChanges:hover {
+    background: white;
+    color: #1d1d1d;
+}
+
+.editProfilePicture {
+    font-size: 6vw;
+    position: absolute;
+    padding: 22vh 11vw;
+    height: 9vh;
+    width: 4vw;
+    color: white;
+    background: #4545458c;
+    border-radius: 1vh;
+    display: none;
 }
 
 @media (max-width: 640px) {

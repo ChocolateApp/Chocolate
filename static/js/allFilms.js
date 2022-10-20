@@ -69,13 +69,11 @@ function setPopup() {
             fetch("/getMovieData/" + movieTitle).then(function(response) {
                 return response.json()
             }).then(function(data) {
-                console.log(data)
                 var movieTitle = data.realTitle
-
-                var movieCast = data.cast
+                var movieCast = JSON.parse(data.cast)
                 var movieDescription = data.description
                 var movieDuration = data.duration
-                var movieGenre = data.genre
+                var movieGenre = JSON.parse(data.genre)
                 var movieNote = data.note
                 var moviePoster = data.cover
                 var movieUrl = data.slug
@@ -230,7 +228,6 @@ function getFirstMovies() {
                 content.className = "content"
                 var image = document.createElement("img")
                 image.className = "cover_movie"
-                movie = movie[1]
                 image.src = movie.cover
                 if (image.src == "https://image.tmdb.org/t/p/originalNone") {
                     image.src = brokenPath
@@ -258,7 +255,7 @@ function getFirstMovies() {
                 descriptionBanner = document.getElementsByClassName("bannerDescription")[0]
                 watchNow = document.getElementsByClassName("watchNowA")[0]
 
-                movie = data[i][1]
+                movie = data[i]
                 var slug = movie.slug
                 slug = "/movie/" + slug
                 bannerImage = movie.banner
@@ -277,7 +274,7 @@ function getFirstMovies() {
                     descriptionBanner.innerHTML = description
                 })
 
-                genreBanner.innerHTML = movie.genre
+                genreBanner.innerHTML = JSON.parse(movie.genre).join(", ")
                 movieUrl = movie.slug
                 watchNow.setAttribute("href", movieUrl)
             }

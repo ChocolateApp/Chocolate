@@ -1,0 +1,18 @@
+{% extends 'header.html' %}{% block title %}Login{% endblock %} {% block content %}
+<div class="allUsers">
+    {% for user in allUsers %}
+    <div id="{{ user.name }}" class="user" type="{{ user.accountType }}">
+        <img src="{{ user.profilePicture }}" alt="{{ user.name }}">
+        <h1>{{ user.name }}</h1>
+    </div>
+    {% endfor %}
+</div>
+
+<form method="POST" action='{{ url_for("login") }}' class="loginForm">
+    <ion-icon name="close-outline" class="crossPopup" id="crossPopup"></ion-icon>
+    <input style="display: none;" type="text" name="name" id="name" class="nameInputForm" placeholder="Username">
+    <input type="password" name="password" id="password" placeholder="password">
+    <input type="submit" value="login" id="submitLogin">
+</form>
+<script src="{{ url_for('static',filename='js/login.js') }}" defer></script>
+{% endblock %}
