@@ -1446,6 +1446,7 @@ def home():
 
 
 @app.route("/movies")
+@login_required
 def films():
     global allMoviesDict, searchedFilms
     searchedFilms = list(allMoviesDict.values())
@@ -1457,6 +1458,7 @@ def films():
 
 
 @app.route("/series")
+@login_required
 def series():
     global allSeriesDict
     searchedSeriesUp0 = len(allSeriesDict) == 0
@@ -1467,6 +1469,7 @@ def series():
 
 
 @app.route("/season/<theId>")
+@login_required
 def season(theId):
     #do the request to get the season
     with app.app_context():
@@ -1510,6 +1513,7 @@ def getEpisodeData(serieName, seasonId, episodeId):
 
 
 @app.route("/movieLibrary")
+@login_required
 def library():
     global allMoviesDict
     searchedFilms = list(allMoviesDict.values())
@@ -1524,6 +1528,7 @@ def library():
 
 
 @app.route("/serieLibrary")
+@login_required
 def seriesLibrary():
     global allSeriesDict
     searchedSeriesUp0 = len(allSeriesDict.keys()) == 0
@@ -1533,6 +1538,7 @@ def seriesLibrary():
 
 
 @app.route("/searchInMovies/<search>")
+@login_required
 def searchInAllMovies(search):
     global searchedFilms
     bestMatchs = {}
@@ -1567,6 +1573,7 @@ def searchInAllMovies(search):
 
 
 @app.route("/searchInSeries/<search>")
+@login_required
 def searchInAllSeries(search):
     global allSeriesDict
     bestMatchs = {}
@@ -1589,6 +1596,7 @@ def searchInAllSeries(search):
 
 
 @app.route("/search/movies/<search>")
+@login_required
 def searchMovie(search):
     searchedFilmsUp0 = False
     errorMessage = "Verify your search terms"
@@ -1601,6 +1609,7 @@ def searchMovie(search):
 
 
 @app.route("/search/series/<search>")
+@login_required
 def searchSerie(search):
     searchedFilmsUp0 = False
     errorMessage = "Verify your search terms"
@@ -1613,6 +1622,7 @@ def searchSerie(search):
 
 
 @app.route("/movie/<slug>")
+@login_required
 def movie(slug):
     global movieExtension, searchedFilms
     if not slug.endswith("ttf"):
@@ -1625,6 +1635,7 @@ def movie(slug):
         )
 
 @app.route("/serie/<episodeId>")
+@login_required
 def serie(episodeId):
     global allSeriesDict
     if episodeId.endswith("ttf"):
@@ -1824,6 +1835,7 @@ def generateAudio(slug):
 
 
 @app.route("/actor/<actorName>")
+@login_required
 def actor(actorName):
     routeToUse = f"/getActorData/{actorName}"
     return render_template("actor.html", routeToUse=routeToUse)
