@@ -284,55 +284,58 @@ def IGDBRequest(url, console):
             game = response.json()[0]
             if "platforms" in game:
                 gamePLatforms = game["platforms"]
-                platforms = [i["abbreviation"] for i in gamePLatforms]
+                try:
+                    platforms = [i["abbreviation"] for i in gamePLatforms]
 
-                realConsoleName = {
-                    "GB": "Game Boy",
-                    "GBA": "Game Boy Advance",
-                    "GBC": "Game Boy Color",
-                    "N64": "Nintendo 64",
-                    "NES": "Nintendo Entertainment System",
-                    "NDS": "Nintendo DS",
-                    "SNES": "Super Nintendo Entertainment System",
-                    "Sega Master System": "Sega Master System",
-                    "Sega Mega Drive": "Sega Mega Drive",
-                }
+                    realConsoleName = {
+                        "GB": "Game Boy",
+                        "GBA": "Game Boy Advance",
+                        "GBC": "Game Boy Color",
+                        "N64": "Nintendo 64",
+                        "NES": "Nintendo Entertainment System",
+                        "NDS": "Nintendo DS",
+                        "SNES": "Super Nintendo Entertainment System",
+                        "Sega Master System": "Sega Master System",
+                        "Sega Mega Drive": "Sega Mega Drive",
+                    }
 
-                if realConsoleName[console] not in platforms:
-                    #print(realConsoleName[console], platforms)
+                    if realConsoleName[console] not in platforms and console not in platforms:
+                        #print(realConsoleName[console], platforms)
+                        continue
+                    #print(f"Game found: {game['name']} on {realConsoleName[console]}")
+                    if "total_rating" not in game:
+                        game["total_rating"] = "Unknown"
+                    if "genres" not in game:
+                        game["genres"] = [{"name": "Unknown"}]
+                    if "summary" not in game:
+                        game["summary"] = "Unknown"
+                    if "first_release_date" not in game:
+                        game["first_release_date"] = "Unknown"
+                    if "cover" not in game:
+                        game["cover"] = {"url": "/static/img/broken.png"}
+
+                    #translate all the data
+                    game["summary"] = translate(game["summary"])
+                    game["genres"][0]["name"] = translate(game["genres"][0]["name"])
+
+
+                    genres = []
+                    for genre in game["genres"]:
+                        genres.append(genre["name"])
+                    genres = ", ".join(genres)
+
+                    gameData = {
+                        "title": game["name"],
+                        "cover": game["cover"]["url"].replace("//", "https://"),
+                        "description": game["summary"],
+                        "note": game["total_rating"],
+                        "date": game["first_release_date"],
+                        "genre": genres,
+                        "id": game["id"]
+                    }
+                    return gameData
+                except:
                     continue
-                #print(f"Game found: {game['name']} on {realConsoleName[console]}")
-                if "total_rating" not in game:
-                    game["total_rating"] = "Unknown"
-                if "genres" not in game:
-                    game["genres"] = [{"name": "Unknown"}]
-                if "summary" not in game:
-                    game["summary"] = "Unknown"
-                if "first_release_date" not in game:
-                    game["first_release_date"] = "Unknown"
-                if "cover" not in game:
-                    game["cover"] = {"url": "/static/img/broken.png"}
-
-                #translate all the data
-                game["summary"] = translate(game["summary"])
-                game["genres"][0]["name"] = translate(game["genres"][0]["name"])
-
-
-                genres = []
-                for genre in game["genres"]:
-                    genres.append(genre["name"])
-                genres = ", ".join(genres)
-
-                gameData = {
-                    "title": game["name"],
-                    "cover": game["cover"]["url"].replace("//", "https://"),
-                    "description": game["summary"],
-                    "note": game["total_rating"],
-                    "date": game["first_release_date"],
-                    "genre": genres,
-                    "id": game["id"]
-                }
-                return gameData
         return None
 
 def translate(string):
@@ -995,8 +998,6 @@ def getGames():
         return
     supportedConsoles = ['3DO', 'Amiga', 'Atari 2600', 'Atari 5200', 'Atari 7800', 'Atari Jaguar', 'Atari Lynx', 'GB', 'GBA', 'GBC', 'N64', 'NDS', 'NES', 'SNES', 'Neo Geo Pocket', 'PSX', 'Sega 32X', 'Sega CD', 'Sega Game Gear', 'Sega Master System', 'Sega Mega Drive', 'Sega Saturn', "PS1"]
     supportedFileTypes = [".bin", ".cue", ".iso", ".adf", ".adz", ".dms", ".fdi", ".ipf", ".hdf", ".lha", ".slave", ".info", ".cue", ".cdd", ".nrg", ".mds", ".chd", ".uae", ".m3u", ".a26", ".a52", ".a78", ".j64", ".lnx", ".gb", ".gba", ".gbc", ".n64", ".nds", ".nes", ".ngp", ".psx", ".sfc", ".smd", ".32x", ".cd", ".gg", ".md", ".sat", ".sms"]
-    snesFileTypes = [".sfc", ".smc"]
-    nesFileTypes = [".nes"]
     for console in allConsoles:
         if console not in supportedConsoles:
             print(f"{console} is not supported or the console name is not correct, here is the list of supported consoles : {','.join(supportedConsoles)} rename the folder to one of these names if it's the correct console")
@@ -1007,10 +1008,14 @@ def getGames():
                 if file.endswith(tuple(supportedFileTypes)) and exists == None:
 
                     newFileName = re.sub(r'\([^)]*\)', '', file)
+                    newFileName = re.sub(r'\d{5} - ', '', newFileName)
+                    newFileName = re.sub(r'\d{4} - ', '', newFileName)
+                    newFileName = re.sub(r'\d{3} - ', '', newFileName)
                     newFileName, extension = os.path.splitext(newFileName)
                     newFileName = newFileName.rstrip()
                     newFileName = f"{newFileName}{extension}"
-
+                    os.rename(f"{allGamesPath}/{console}/{file}", f"{allGamesPath}/{console}/{newFileName}")
+                    file = newFileName
                     while ".." in newFileName:
                         newFileName = newFileName.replace("..", ".")
                     try:
