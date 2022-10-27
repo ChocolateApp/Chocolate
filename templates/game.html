@@ -1,0 +1,12 @@
+{% extends 'header.html' %}{% block title %}{{ gameName }} - {{ consoleName }}{% endblock %} {% block content %}{% include 'popup.html' %}
+<div class="backButton" id="backButton">
+    <ion-icon name="arrow-back-outline" class="backArrow"></ion-icon>
+    <p>Back</p>
+</div>
+<div class="gameScreen">
+    <div id="game"></div>
+</div>
+{{ script }}
+<script src="https://www.emulatorjs.com/loader.js"></script>
+<script src="{{ url_for('static',filename='js/game.js') }}" defer></script>
+{% endblock %}

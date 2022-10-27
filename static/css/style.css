@@ -310,6 +310,14 @@ form#searchForm:hover .form_field_search {
     top: 48vh;
 }
 
+.gameIcon {
+    position: absolute;
+    color: white;
+    font-size: 3vh;
+    width: 3vw;
+    top: 64vh;
+}
+
 .logoutIcon {
     position: absolute;
     color: white;
@@ -342,6 +350,7 @@ form#searchForm:hover .form_field_search {
 
 .moviesPathDiv,
 .seriesPathDiv,
+.gamesPathDiv,
 .languageDiv,
 .portInput {
     padding: 2vh;
@@ -354,7 +363,7 @@ form#searchForm:hover .form_field_search {
 .saveSettings {
     height: 10vh;
     width: 12vw;
-    margin-top: 6vh;
+    margin-top: 2vh;
     margin-bottom: 2vw;
     display: inline-block;
     text-decoration: none;
@@ -367,7 +376,7 @@ form#searchForm:hover .form_field_search {
     padding: 2vh 3vw;
     transition: 300ms;
     background: none;
-    margin-right: 4vw;
+    margin-right: 5vw;
 }
 
 .createAccountButton {
@@ -1205,6 +1214,133 @@ input[type="search"]::-webkit-search-results-decoration {
     display: none;
 }
 
+.consoleList {
+    display: grid;
+    grid-template-columns: repeat(3, 30vw);
+    grid-template-rows: 50vh;
+    grid-column-gap: 0px;
+    grid-row-gap: 0px;
+    width: 97vw;
+    margin-left: 9.5vw;
+    margin-top: 7vh;
+}
+
+.systemDiv {
+    width: 22vw;
+}
+
+.systemImage {
+    border-radius: 2vh;
+    width: 22vw;
+}
+
+.systemImage:hover {
+    cursor: pointer;
+}
+
+.systemName {
+    margin-right: 1vw;
+    text-align: center;
+    font-size: 3vh;
+}
+
+#gameList {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: 1fr;
+    grid-column-gap: 0px;
+    grid-row-gap: 0px;
+    width: 97vw;
+    margin-left: 3vw;
+    margin-top: 8vh;
+}
+
+.gameDiv {
+    width: 10vw;
+    margin: 0 1vw;
+}
+
+.gameDiv:hover {
+    cursor: pointer;
+}
+
+.gameImage {
+    width: 10vw;
+    object-fit: cover;
+    height: 19vh;
+    border-radius: 1vh;
+}
+
+.gameName {
+    text-align: center;
+    height: 8vh;
+    display: table-cell;
+    vertical-align: middle;
+    width: 10vw;
+}
+
+.consoleName {
+    width: 97vw;
+    margin-left: 3vw;
+    text-align: center;
+    margin-top: 6vh;
+    margin-bottom: -3vh;
+}
+
+.gameScreen {
+    width: 640px;
+    height: 480px;
+    max-width: 100%;
+    margin-left: 32vw;
+    margin-top: 18vh;
+}
+
+.backButton {
+    width: 8vw;
+    height: 4vh;
+    margin-left: 8vw;
+    margin-top: 4vh;
+    font-size: 4vh;
+    border-radius: 1.5vw;
+    border: 0.2vw solid #ffffff;
+    cursor: pointer;
+    color: #ffffff;
+    padding: 2vh 2vw;
+    text-decoration: none;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    transition: 300ms background, color;
+    z-index: 5;
+    position: absolute;
+    text-shadow: 0.1vh 0.1vh 0.5vh #000;
+    box-shadow: 0.1vh 0.1vh 0.5vh #000;
+}
+
+.backButton:hover {
+    background: white;
+    color: #1d1d1d;
+}
+
+.backButton:hover>.backArrow {
+    color: #1d1d1d;
+}
+
+.backButton:hover>p {
+    color: #1d1d1d;
+    text-shadow: 0vh 0vh 0vh #0000;
+    box-shadow: 0vh 0vh 0vh #0000;
+}
+
+.backButton>p {
+    font-size: 3vh;
+}
+
+.backArrow {
+    height: 9vh;
+    margin-right: 1vw;
+}
+
 @media (max-width: 640px) {
     * {
         margin: 0;
@@ -1278,6 +1414,9 @@ input[type="search"]::-webkit-search-results-decoration {
     }
     .tvIcon {
         top: 36vh;
+    }
+    .gameIcon {
+        top: 46vh;
     }
     .logo {
         width: 5.5vw;

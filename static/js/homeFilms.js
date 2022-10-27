@@ -1,4 +1,6 @@
 var closePopup = document.getElementById("crossPopup")
+
+
 closePopup.addEventListener("click", function() {
     popup = document.getElementById("popup")
     popup.style.display = "none"
@@ -253,33 +255,39 @@ function getFirstMovies() {
         for (var i = 0; i < data.length; i++) {
             movies = document.getElementsByClassName("movies")[0]
             var movie = data[i]
-            var cover = document.createElement("div")
-            cover.className = "cover"
-            cover.style.marginBottom = "2vh"
-            var content = document.createElement("div")
-            content.className = "content"
-            var image = document.createElement("img")
-            image.className = "cover_movie"
-            image.src = movie.cover
-            if (image.src == "https://image.tmdb.org/t/p/originalNone") {
-                image.src = brokenPath
-            }
-            image.title = movie.title
-            image.alt = movie.realTitle
-            cookieValue = getCookie(movie.realTitle)
-            if (cookieValue != undefined) {
-                console.log(movie.realTitle, cookieValue)
-                timePopup = document.createElement("div")
-                timePopup.className = "timePopup"
-                timeP = document.createElement("p")
-                timeP.innerHTML = cookieValue
-                timePopup.appendChild(timeP)
-                cover.appendChild(timePopup)
-            }
+            adult = movie.adult
+            console.log(movie)
+            accountType = accountType
+            console.log(adult, accountType)
+            if ((accountType == "Adult" || accountType == "Admin") || adult == "False") {
+                var cover = document.createElement("div")
+                cover.className = "cover"
+                cover.style.marginBottom = "2vh"
+                var content = document.createElement("div")
+                content.className = "content"
+                var image = document.createElement("img")
+                image.className = "cover_movie"
+                image.src = movie.cover
+                if (image.src == "https://image.tmdb.org/t/p/originalNone") {
+                    image.src = brokenPath
+                }
+                image.title = movie.title
+                image.alt = movie.realTitle
+                cookieValue = getCookie(movie.realTitle)
+                if (cookieValue != undefined) {
+                    console.log(movie.realTitle, cookieValue)
+                    timePopup = document.createElement("div")
+                    timePopup.className = "timePopup"
+                    timeP = document.createElement("p")
+                    timeP.innerHTML = cookieValue
+                    timePopup.appendChild(timeP)
+                    cover.appendChild(timePopup)
+                }
 
-            content.appendChild(image)
-            cover.appendChild(content)
-            movies.appendChild(cover)
+                content.appendChild(image)
+                cover.appendChild(content)
+                movies.appendChild(cover)
+            }
         }
 
         const imgs = document.images
@@ -309,9 +317,20 @@ function getCookie(name) {
     if (parts.length === 2) return parts.pop().split(';').shift();
 }
 
+function getAccountType() {
+    fetch("/getAccountType").then(function(response) {
+        return response.json()
+    }).then(function(data) {
+        console.log(data)
+        accountType = data["accountType"]
+    }).then(function() {
+        getFirstMovies()
+    })
+}
+
 window.onload = function() {
     brokenPathDiv = document.getElementsByClassName("brokenPath")[0]
     brokenPath = brokenPathDiv.getAttribute("id")
     brokenPathDiv.parentNode.removeChild(brokenPathDiv)
-    getFirstMovies()
+    getAccountType()
 }

@@ -1,0 +1,8 @@
+{% extends 'header.html' %}{% block title %}Consoles{% endblock %}{% block content %} {% include 'popup.html' %}
+
+<div class="loaderBackground" id="loaderBackground"></div>
+<img class="spinner" id="spinner" src="{{ url_for('static', filename='img/loader.gif') }}" />
+<div class="consoleList" id="systemList"></div>
+
+
+<script src="{{ url_for('static',filename='js/consoles.js') }}" defer></script>{% endblock %}

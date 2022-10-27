@@ -1,0 +1,1 @@
+You need to put in the console dir your bios file

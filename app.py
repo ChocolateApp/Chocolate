@@ -1,5 +1,6 @@
 from sqlite3 import IntegrityError
-from flask import Flask, url_for, request, render_template, redirect, make_response
+from flask import Flask, url_for, request, render_template, redirect, make_response, send_file
+from markupsafe import Markup
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, login_required, current_user, logout_user
 from flask_sqlalchemy import SQLAlchemy
@@ -8,11 +9,12 @@ from tmdbv3api import TMDb, Movie, TV, Episode, Person
 from tmdbv3api.exceptions import TMDbException
 from videoprops import get_video_properties
 from pathlib import Path
-import requests, os, subprocess, configparser, socket, datetime, subprocess, socket, platform, GPUtil, json, random, time, rpc, sqlalchemy, warnings
 from Levenshtein import distance as lev
 from fuzzywuzzy import fuzz
 from ask_lib import AskResult, ask
+from deep_translator import GoogleTranslator
 from time import mktime
+import requests, os, subprocess, configparser, socket, datetime, subprocess, socket, platform, GPUtil, json, random, time, rpc, sqlalchemy, warnings, re
 
 start_time = mktime(time.localtime())
 
@@ -66,8 +68,9 @@ class Movies(db.Model):
     duration = db.Column(db.String(255))
     cast = db.Column(db.String(255))
     bandeAnnonceUrl = db.Column(db.String(255))
+    adult = db.Column(db.String(255))
 
-    def __init__(self, id, title, realTitle, cover, banner, slug, description, note, date, genre, duration, cast, bandeAnnonceUrl):
+    def __init__(self, id, title, realTitle, cover, banner, slug, description, note, date, genre, duration, cast, bandeAnnonceUrl, adult):
         self.id = id
         self.title = title
         self.realTitle = realTitle
@@ -81,6 +84,7 @@ class Movies(db.Model):
         self.duration = duration
         self.cast = cast
         self.bandeAnnonceUrl = bandeAnnonceUrl
+        self.adult = adult
     
     def __repr__(self) -> str:
         return f"<Movies {self.title}>"
@@ -164,6 +168,33 @@ class Episodes(db.Model):
     def __repr__(self) -> str:
         return f"<Episodes {self.seasonId} {self.episodeNumber}>"
 
+class Games(db.Model):
+    console = db.Column(db.String(255), nullable=False)
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(255), primary_key=True)
+    realTitle = db.Column(db.String(255), primary_key=True)
+    cover = db.Column(db.String(255))
+    description = db.Column(db.String(2550))
+    note = db.Column(db.String(255))
+    date = db.Column(db.String(255))
+    genre = db.Column(db.String(255))
+    slug = db.Column(db.String(255))
+
+    def __init__(self, console, id, title, realTitle, cover, description, note, date, genre, slug):
+        self.console = console
+        self.id = id
+        self.title = title
+        self.realTitle = realTitle
+        self.cover = cover
+        self.description = description
+        self.note = note
+        self.date = date
+        self.genre = genre
+        self.slug = slug
+    
+    def __repr__(self) -> str:
+        return f"<Games {self.title}>"
+
 class Language(db.Model):
     language = db.Column(db.String(255), primary_key=True)
     
@@ -181,25 +212,149 @@ with app.app_context():
 def load_user(id):
     return Users.query.get(int(id))
 
-tmdb = TMDb()
-tmdb.api_key = "cb862a91645ec50312cf636826e5ca1f"
 
 config = configparser.ConfigParser()
 config.read("config.ini")
 if config["ChocolateSettings"]["language"] == "Empty":
-    config["ChocolateSettings"]["language"] = "en-US"
+    config["ChocolateSettings"]["language"] = "EN"
 
-tmdb.language = config["ChocolateSettings"]["language"]
+clientID = config.get("APIKeys", "IGDBID")
+clientSecret = config.get("APIKeys", "IGDBSECRET")
+if clientID == "Empty" or clientSecret == "Empty":
+    print("Follow this tutorial to get your IGDB API Keys: https://api-docs.igdb.com/#account-creation")
+    clientID = input("Please enter your IGDB Client ID: ")
+    clientSecret = input("Please enter your IGDB Client Secret: ")
+    config.set("APIKeys", "IGDBID", clientID)
+    config.set("APIKeys", "IGDBSECRET", clientSecret)
+    with open(f"{currentCWD}/config.ini", "w") as conf:
+        config.write(conf)
+
+tmdb = TMDb()
+apiKeyTMDB = config["APIKeys"]["TMDB"]
+if apiKeyTMDB == "Empty":
+    print("Follow this tutorial to get your TMDB API Key : https://developers.themoviedb.org/3/getting-started/introduction")
+    apiKey = input("Please enter your TMDB API Key: ")
+    config["APIKeys"]["TMDB"] = apiKey
+tmdb.api_key = config["APIKeys"]["TMDB"]
+
+def searchGame(game, console):
+    url = f"https://www.igdb.com/search_autocomplete_all?q={game.replace(' ', '%20')}"
+    return IGDBRequest(url,console)
+
+def IGDBRequest(url, console):
+    customHeaders = {
+        'User-Agent': 'Mozilla/5.0 (X11; UwUntu; Linux x86_64; rv:100.0) Gecko/20100101 Firefox/100.0',
+        'Accept': '*/*',
+        'X-Requested-With': 'XMLHttpRequest',
+        'Origin': url,
+        'DNT': '1',
+        'Sec-Fetch-Dest': 'empty',
+        'Sec-Fetch-Mode': 'cors',
+        'Sec-Fetch-Site': 'same-origin',
+        'Referer': url,
+        'Connection': 'keep-alive',
+        'Pragma': 'no-cache',
+        'Cache-Control': 'no-cache',
+    }
+    response = requests.request("GET", url, headers=customHeaders)
+    
+    if response.status_code == 403:
+        return None
+    elif response.json() != {}:
+        grantType = "client_credentials"
+        getAccessToken = f"https://id.twitch.tv/oauth2/token?client_id={clientID}&client_secret={clientSecret}&grant_type={grantType}"
+        token = requests.request("POST", getAccessToken)
+        token = token.json()
+        token = token["access_token"]
+
+        headers = {
+            "Accept": "application/json",
+            "Authorization": f"Bearer {token}",
+            "Client-ID": clientID
+        }
+
+        games = response.json()["game_suggest"]
+        game = games[0]
+        for i in games:
+            game=i
+            gameId = game["id"]
+            url = f"https://api.igdb.com/v4/games"
+            body = f"fields name, cover.*, summary, total_rating, first_release_date, genres.*, platforms.*; where id = {gameId};"
+            response = requests.request("POST", url, headers=headers, data=body)
+            game = response.json()[0]
+            if "platforms" in game:
+                gamePLatforms = game["platforms"]
+                platforms = [i["abbreviation"] for i in gamePLatforms]
+
+                realConsoleName = {
+                    "GB": "Game Boy",
+                    "GBA": "Game Boy Advance",
+                    "GBC": "Game Boy Color",
+                    "N64": "Nintendo 64",
+                    "NES": "Nintendo Entertainment System",
+                    "NDS": "Nintendo DS",
+                    "SNES": "Super Nintendo Entertainment System",
+                    "Sega Master System": "Sega Master System",
+                    "Sega Mega Drive": "Sega Mega Drive",
+                }
+
+                if realConsoleName[console] not in platforms:
+                    #print(realConsoleName[console], platforms)
+                    continue
+                #print(f"Game found: {game['name']} on {realConsoleName[console]}")
+                if "total_rating" not in game:
+                    game["total_rating"] = "Unknown"
+                if "genres" not in game:
+                    game["genres"] = [{"name": "Unknown"}]
+                if "summary" not in game:
+                    game["summary"] = "Unknown"
+                if "first_release_date" not in game:
+                    game["first_release_date"] = "Unknown"
+                if "cover" not in game:
+                    game["cover"] = {"url": "/static/img/broken.png"}
+
+                #translate all the data
+                game["summary"] = translate(game["summary"])
+                game["genres"][0]["name"] = translate(game["genres"][0]["name"])
+
+
+                genres = []
+                for genre in game["genres"]:
+                    genres.append(genre["name"])
+                genres = ", ".join(genres)
+
+                gameData = {
+                    "title": game["name"],
+                    "cover": game["cover"]["url"].replace("//", "https://"),
+                    "description": game["summary"],
+                    "note": game["total_rating"],
+                    "date": game["first_release_date"],
+                    "genre": genres,
+                    "id": game["id"]
+                }
+                return gameData
+        return None
+
+def translate(string):
+    language = config["ChocolateSettings"]["language"]
+    if language == "EN":
+        return string
+    translated = GoogleTranslator(source='english', target=language.lower()).translate(string)
+    return translated
+
+
+
+tmdb.language = config["ChocolateSettings"]["language"].lower()
 tmdb.debug = True
+
 movie = Movie()
 show = TV()
+
 errorMessage = True
 client_id = "771837466020937728"
 rpc_obj = rpc.DiscordIpcClient.for_platform(client_id)
 searchedFilms = []
 allMoviesNotSorted = []
-allMoviesDict = {}
-
 searchedSeries = []
 simpleDataSeries = {}
 allSeriesNotSorted = []
@@ -215,7 +370,7 @@ with app.app_context():
     languageDB = db.session.query(Language).first()
     exists = db.session.query(Language).first() is not None
     if not exists:
-        newLanguage = Language(language="en-US")
+        newLanguage = Language(language="EN")
         db.session.add(newLanguage)
         db.session.commit()
     languageDB = db.session.query(Language).first()
@@ -468,15 +623,10 @@ def getMovies():
                                 except KeyError as e:
                                     bandeAnnonceUrl = "Unknown"
                                     print(e)
-                    filmData = Movies(movieId, movieTitle, name, movieCoverPath, banniere, originalMovieTitle, description, note, date, json.dumps(movieGenre), str(duration), json.dumps(theCast), bandeAnnonceUrl)
+                    filmData = Movies(movieId, movieTitle, name, movieCoverPath, banniere, originalMovieTitle, description, note, date, json.dumps(movieGenre), str(duration), json.dumps(theCast), bandeAnnonceUrl, str(res["adult"]))
                     movieDict = {"title": filmData.title, "realTitle": filmData.realTitle, "cover": filmData.cover, "banner": filmData.banner, "slug": filmData.slug, "description": filmData.description, "note": filmData.note, "date": filmData.date, "genre": filmData.genre, "duration":str(duration), "cast": filmData.cast, "bandeAnnonceUrl": filmData.bandeAnnonceUrl, "id": filmData.id}
                     db.session.add(filmData)
                     db.session.commit()
-                    allMoviesDict[filmData.title] = movieDict
-                else:
-                    movie = db.session.query(Movies).filter_by(title=movieTitle).first()
-                    movieDict = {"title": movie.title, "realTitle": movie.realTitle, "cover": movie.cover, "banner": movie.banner, "slug": movie.slug, "description": movie.description, "note": movie.note, "date": movie.date, "genre": movie.genre, "duration":str(movie.duration), "cast": movie.cast, "bandeAnnonceUrl": movie.bandeAnnonceUrl, "id": movie.id}
-                    allMoviesDict[movie.title] = movieDict
         elif searchedFilm.endswith("/") == False:
             allMoviesNotSorted.append(searchedFilm)
 
@@ -756,6 +906,7 @@ def getSeries():
                     actorImage = f"/static/img/mediaImages/Actor_{actorName}.png"
                     actorCharacter = actor.character
                     actor.profile_path = str(actorImage)
+                    actorName = actorName.replace("_", " ")
                     thisActor = [str(actorName), str(actorCharacter), str(actorImage), str(actor.id)]
                     newCast.append(thisActor)
                 newCast = json.dumps(newCast)
@@ -821,6 +972,71 @@ def getSeries():
                             except TMDbException as e:
                                 print(f"I didn't find an the episode {episodeIndex} of the season {seasonNumber} of the serie with ID {serieId}",e)
 
+def getGames():
+    try:
+        if config["ChocolateSettings"]["GamesPath"] == "Empty":
+            allGamesPath = str(Path.home() / "Downloads")
+        else:
+            allGamesPath = os.path.normpath(config["ChocolateSettings"]["GamesPath"])
+    except KeyError as e:
+        print(e)
+        allGamesPath = str(Path.home() / "Downloads")
+    if allGamesPath == ".":
+        allGamesPath = str(Path.home() / "Downloads")
+    try:
+        allConsoles = [name for name in os.listdir(allGamesPath) if os.path.isdir(os.path.join(allGamesPath, name)) and name.endswith((".rar", ".zip", ".part")) == False]
+        for console in allConsoles:
+            if os.listdir(f"{allGamesPath}/{console}") == []:
+                allConsoles.remove(console)
+
+    except OSError as e:
+        print("No series found")
+        print(e)
+        return
+    supportedConsoles = ['3DO', 'Amiga', 'Atari 2600', 'Atari 5200', 'Atari 7800', 'Atari Jaguar', 'Atari Lynx', 'GB', 'GBA', 'GBC', 'N64', 'NDS', 'NES', 'SNES', 'Neo Geo Pocket', 'PSX', 'Sega 32X', 'Sega CD', 'Sega Game Gear', 'Sega Master System', 'Sega Mega Drive', 'Sega Saturn', "PS1"]
+    supportedFileTypes = [".bin", ".cue", ".iso", ".adf", ".adz", ".dms", ".fdi", ".ipf", ".hdf", ".lha", ".slave", ".info", ".cue", ".cdd", ".nrg", ".mds", ".chd", ".uae", ".m3u", ".a26", ".a52", ".a78", ".j64", ".lnx", ".gb", ".gba", ".gbc", ".n64", ".nds", ".nes", ".ngp", ".psx", ".sfc", ".smd", ".32x", ".cd", ".gg", ".md", ".sat", ".sms"]
+    snesFileTypes = [".sfc", ".smc"]
+    nesFileTypes = [".nes"]
+    for console in allConsoles:
+        if console not in supportedConsoles:
+            print(f"{console} is not supported or the console name is not correct, here is the list of supported consoles : {','.join(supportedConsoles)} rename the folder to one of these names if it's the correct console")
+            break
+        for file in os.listdir(f"{allGamesPath}/{console}"):
+            with app.app_context():
+                exists = Games.query.filter_by(slug=f"{allGamesPath}/{console}/{file}").first()
+                if file.endswith(tuple(supportedFileTypes)) and exists == None:
+
+                    newFileName = re.sub(r'\([^)]*\)', '', file)
+                    newFileName, extension = os.path.splitext(newFileName)
+                    newFileName = newFileName.rstrip()
+                    newFileName = f"{newFileName}{extension}"
+
+                    while ".." in newFileName:
+                        newFileName = newFileName.replace("..", ".")
+                    try:
+                        os.rename(f"{allGamesPath}/{console}/{file}", f"{allGamesPath}/{console}/{newFileName}")
+                    except FileExistsError:
+                        os.remove(f"{allGamesPath}/{console}/{file}")
+                    file, extension = os.path.splitext(file)
+
+                    gameIGDB = searchGame(file, console)
+                    if gameIGDB != None and gameIGDB != {}:
+                        gameName = gameIGDB["title"]
+                        gameRealTitle = newFileName
+                        gameCover = gameIGDB["cover"]
+                        gameDescription = gameIGDB["description"]
+                        gameNote = gameIGDB["note"]
+                        gameDate = gameIGDB["date"]
+                        gameGenre = gameIGDB["genre"]
+                        gameId = gameIGDB["id"]
+                        gameConsole = console
+                        gameSlug = f"{allGamesPath}/{console}/{newFileName}"
+
+                        game = Games(console=gameConsole, id=gameId, title=gameName, realTitle=gameRealTitle, cover=gameCover, description=gameDescription, note=gameNote, date=gameDate, genre=gameGenre, slug=gameSlug)
+                        db.session.add(game)
+                        db.session.commit()
+                    else:
+                        print(f"I didn't find the game {file} of {console}")
 
 
 def length_video(path: str) -> float:
@@ -1129,7 +1345,7 @@ def settings():
         try:
             f = request.files['profilePicture']
             name, extension = os.path.splitext(f.filename)
-            thiscurrentCWD = currentCWD.replace('\\', '/')
+            thiscurrentCWD = currentCWD.replace("\\", "//")
             f.save(f"{thiscurrentCWD}/static/img/{accountName}{extension}")
             profilePicture = f"/static/img/{accountName}{extension}"
             if extension == "":
@@ -1207,11 +1423,12 @@ def createAccount():
         try:
             f = request.files['profilePicture']
             name, extension = os.path.splitext(f.filename)
-            thiscurrentCWD = currentCWD.replace('\\', '/')
-            f.save(f"{thiscurrentCWD}/static/img/{accountName}{extension}")
+            thiscurrentCWD = currentCWD.replace("\\", "//")
             profilePicture = f"/static/img/{accountName}{extension}"
             if extension == "":
                 profilePicture = "/static/img/defaultUserProfilePic.png"
+            else:
+                f.save(f"{thiscurrentCWD}{profilePicture}")
         except:
             profilePicture = "/static/img/defaultUserProfilePic.png"
 
@@ -1241,7 +1458,7 @@ def profil():
         try:
             f = request.files['profilePicture']
             name, extension = os.path.splitext(f.filename)
-            thiscurrentCWD = currentCWD.replace('\\', '/')
+            thiscurrentCWD = currentCWD.replace("\\", "//")
             profilePicture = f"/static/img/{userName}{extension}"
             if extension == "":
                 profilePicture = "/static/img/defaultUserProfilePic.png"
@@ -1257,10 +1474,16 @@ def profil():
             db.session.commit()
         if userToEdit.profilePicture != profilePicture and profilePicture != "/static/img/defaultUserProfilePic.png":
             f = request.files['profilePicture']
-            f.save(f"{thiscurrentCWD}/static/img/{userName}{extension}")
+            f.save(f"{thiscurrentCWD}{profilePicture}")
             userToEdit.profilePicture = profilePicture
             db.session.commit()
     return render_template("profil.html", user=user)
+
+@app.route("/getAccountType", methods=["GET", "POST"])
+def getAccountType():
+    user = current_user
+    return json.dumps({"accountType": user.accountType})
+
 
 @app.route("/chunkCaptionSerie/<language>/<index>/<episodeId>.vtt", methods=["GET"])
 def chunkCaptionSerie(language, index, episodeId):
@@ -1299,12 +1522,15 @@ def chunkCaptionSerie(language, index, episodeId):
 def saveSettings():
     MoviesPath = request.form["moviesPath"]
     SeriesPath = request.form["seriesPath"]
+    GamesPath = request.form["gamesPath"]
     language = request.form["language"]
     port = request.form["port"]
     if MoviesPath != "":
         config.set("ChocolateSettings", "moviespath", MoviesPath)
     if SeriesPath != "":
         config.set("ChocolateSettings", "seriespath", SeriesPath)
+    if GamesPath != "":
+        config.set("ChocolateSettings", "gamespath", GamesPath)
     if language != "":
         config.set("ChocolateSettings", "language", language)
     if port != "" or port != " ":
@@ -1317,10 +1543,12 @@ def saveSettings():
 
 @app.route("/getAllMovies", methods=["GET"])
 def getAllMovies():
-    global allMoviesDict, searchedFilms
-    searchedFilms = list(allMoviesDict.values())
-    thisSearchedFilms = searchedFilms
-    return json.dumps(thisSearchedFilms, ensure_ascii=False)
+    movies = Movies.query.all()
+    moviesDict = [ movie.__dict__ for movie in movies ]
+    for movie in moviesDict:
+        del movie["_sa_instance_state"]
+
+    return json.dumps(moviesDict, ensure_ascii=False)
 
 
 @app.route("/getAllSeries", methods=["GET"])
@@ -1333,9 +1561,11 @@ def getAllSeries():
 
 @app.route("/getRandomMovie")
 def getRandomMovie():
-    global searchedFilms
-    thisSearchedFilms = searchedFilms
-    randomMovie = random.choice(thisSearchedFilms)
+    movies = Movies.query.all()
+    moviesDict = [ movie.__dict__ for movie in movies ]
+    for movie in moviesDict:
+        del movie["_sa_instance_state"]
+    randomMovie = random.choice(moviesDict)
     return json.dumps(randomMovie, ensure_ascii=False)
 
 
@@ -1354,7 +1584,7 @@ def getRandomSeries():
 
 
 def getSimilarMovies(movieId):
-    global allMoviesDict, searchedFilms
+    global searchedFilms
     similarMoviesPossessed = []
     movie = Movie()
     similarMovies = movie.recommendations(movieId)
@@ -1387,14 +1617,16 @@ def getSimilarSeries(seriesId) -> list:
 
 @app.route("/getMovieData/<title>", methods=["GET", "POST"])
 def getMovieData(title):
-    global allMoviesDict
-    if title in allMoviesDict.keys():
-        data = allMoviesDict[title]
+    exists = db.session.query(Movies).filter_by(title=title).first() is not None
+    if exists:
+        movie = Movies.query.filter_by(title=title).first().__dict__
+        del movie["_sa_instance_state"]
+        data = movie
         MovieId = data["id"]
         data["similarMovies"] = getSimilarMovies(MovieId)
         return json.dumps(data, ensure_ascii=False)
     else:
-        return "Not Found"
+        return json.dumps("Not Found", ensure_ascii=False)
 
 
 @app.route("/getSerieData/<title>", methods=["GET", "POST"])
@@ -1423,9 +1655,12 @@ def getSerieSeasons(id):
 
 @app.route("/getFirstSixMovies")
 def getFirstEightMovies():
-    global searchedFilms
-    thisSearchedFilms = searchedFilms[:6]
-    return json.dumps(thisSearchedFilms, ensure_ascii=False)
+    movies = Movies.query.limit(6).all()
+    moviesDict = [dict(movie.__dict__) for movie in movies]
+    for movie in moviesDict:
+        del movie["_sa_instance_state"]
+    
+    return json.dumps(moviesDict, ensure_ascii=False)
 
 
 @app.route("/getFirstSixSeries")
@@ -1448,9 +1683,11 @@ def home():
 @app.route("/movies")
 @login_required
 def films():
-    global allMoviesDict, searchedFilms
-    searchedFilms = list(allMoviesDict.values())
-    searchedFilmsUp0 = len(searchedFilms) == 0
+    movies = Movies.query.all()
+    moviesDict = [ movie.__dict__ for movie in movies ]
+    for movie in moviesDict:
+        del movie["_sa_instance_state"]
+    searchedFilmsUp0 = len(moviesDict) == 0
     errorMessage = "Verify that the path is correct"
     routeToUse = "/getFirstSixMovies"
 
@@ -1515,9 +1752,11 @@ def getEpisodeData(serieName, seasonId, episodeId):
 @app.route("/movieLibrary")
 @login_required
 def library():
-    global allMoviesDict
-    searchedFilms = list(allMoviesDict.values())
-    searchedFilmsUp0 = len(searchedFilms) == 0
+    movies = Movies.query.all()
+    moviesDict = [ movie.__dict__ for movie in movies ]
+    for movie in moviesDict:
+        del movie["_sa_instance_state"]
+    searchedFilmsUp0 = len(moviesDict) == 0
     errorMessage = "Verify that the path is correct"
     routeToUse = "/getAllMovies"
     return render_template("allFilms.html",
@@ -1536,12 +1775,132 @@ def seriesLibrary():
     routeToUse = "/getAllSeries"
     return render_template("allSeries.html",conditionIfOne=searchedSeriesUp0, errorMessage=errorMessage, routeToUse=routeToUse)
 
+@app.route("/consoles")
+@login_required
+def consoles():
+    return render_template("consoles.html")
+
+@app.route("/getAllConsoles")
+def getAllConsoles():
+    consoles = Games.query.all()
+    consolesDict = [ console.__dict__ for console in consoles ]
+    for console in consolesDict:
+        del console["_sa_instance_state"]
+        #del everything that is not a console
+        for key in list(console.keys()):
+            if key != "console":
+                del console[key]
+    consolesDict = [i for n, i in enumerate(consolesDict) if i not in consolesDict[n + 1:]]
+    consolesDict = [list(i.values())[0] for i in consolesDict]
+    return json.dumps(consolesDict, ensure_ascii=False, default=str)
+
+@app.route("/getConsoleData/<consoleName>")
+def getConsoleData(consoleName):
+    consolesData = {
+        "GB": { "name": "Gameboy", "image": "/static/img/Gameboy.png" },
+        "GBA": { "name": "Gameboy Advance", "image": "/static/img/Gameboy Advance.png" },
+        "GBC": { "name": "Gameboy Color", "image": "/static/img/Gameboy Color.png" },
+        "N64": { "name": "Nintendo 64", "image": "/static/img/N64.png" },
+        "NES": { "name": "Nintendo Entertainment System", "image": "/static/img/NES.png" },
+        "NDS": { "name": "Nintendo DS", "image": "/static/img/Nintendo DS.png" },
+        "SNES": { "name": "Super Nintendo Entertainment System", "image": "/static/img/SNES.png" },
+        "Sega Mega Drive": { "name": "Sega Mega Drive", "image": "/static/img/Sega Mega Drive.png" },
+        "Sega Master System": { "name": "Sega Master System", "image": "/static/img/Sega Master System.png" },
+        "Sega Saturn": { "name": "Sega Saturn", "image": "/static/img/Sega Saturn.png" },
+        "PS1": { "name": "PS1", "image": "/static/img/PS1.png" },
+    }
+    return json.dumps(consolesData[consoleName], ensure_ascii=False, default=str)
+
+consoles = {"Gameboy": "GB", "Gameboy Advance": "GBA", "Gameboy Color": "GBC", "Nintendo 64": "N64", "Nintendo Entertainment System": "NES", "Nintendo DS": "NDS", "Super Nintendo Entertainment System": "SNES", "Sega Mega Drive": "Sega Mega Drive", "Sega Master System": "Sega Master System", "Sega Saturn": "Sega Saturn", "PS1": "PS1"}
+        
+@app.route("/console/<consoleName>")
+@login_required
+def console(consoleName):
+    if consoleName != "undefined":
+        consoleName = consoleName.replace("%20", " ")
+        global consoles
+        games = Games.query.filter_by(console=consoles[consoleName])
+        gamesDict = [ game.__dict__ for game in games ]
+        for game in gamesDict:
+            del game["_sa_instance_state"]
+        searchedGamesUp0 = len(gamesDict) == 0
+        errorMessage = "Verify that the games path is correct"
+        
+        routeToUse = "/getAllGames"
+        return render_template("games.html",
+            conditionIfOne=searchedGamesUp0,
+            errorMessage=errorMessage,
+            routeToUse=routeToUse,
+            consoleName=consoleName
+        )
+    else:
+        return json.dumps({"response": "Not Found"}, ensure_ascii=False, default=str)
+
+@app.route("/getGames/<consoleName>")
+def getGamesFor(consoleName):
+    if consoleName != None:
+        consoleName = consoleName.replace("%20", " ")
+        global consoles
+        games = Games.query.filter_by(console=consoles[consoleName]).all()
+        gamesDict = [ game.__dict__ for game in games ]
+        for game in gamesDict:
+            del game["_sa_instance_state"]
+        return json.dumps(gamesDict, ensure_ascii=False, default=str)
+    else:
+        return json.dumps({"response": "Not Found"}, ensure_ascii=False, default=str)
+
+@app.route("/game/<console>/<gameSlug>")
+@login_required
+def game(console, gameSlug):
+    if console != None:
+        consoleName = console.replace("%20", " ")
+        gameSlug = gameSlug.replace("%20", " ")
+        global consoles
+        game = Games.query.filter_by(console=consoles[consoleName], realTitle=gameSlug).first()
+        game = game.__dict__
+        slug = f"/gameFile/{game['console']}/{game['realTitle']}"
+        bios = f"/bios/{consoleName}"
+        del game["_sa_instance_state"]
+        scripts = {
+            "Gameboy": f'<script type="text/javascript">\nEJS_player = "#game";\nEJS_biosUrl = "";\nEJS_gameUrl = "{slug}";\nEJS_core = "gb";\n</script>',
+            "Gameboy Advance": f'<script type="text/javascript">\nEJS_player = "#game";\nEJS_biosUrl = "";\nEJS_gameUrl = "{slug}";\nEJS_core = "gba";\n</script>',
+            "Gameboy Color": f'<script type="text/javascript">\nEJS_player = "#game";\nEJS_biosUrl = "";\nEJS_gameUrl = "{slug}";\nEJS_core = "gb";\n</script>',
+            "Nintendo 64": f'<script type="text/javascript">\nEJS_player = "#game";\nEJS_gameUrl = "{slug}";\nEJS_core = "n64";\n</script>',
+            "Nintendo Entertainment System": f'<script type="text/javascript">\nEJS_player = "#game";\nEJS_biosUrl = "";\nEJS_gameUrl = "{slug}";\nEJS_core = "nes";\nEJS_lightgun = false;\n</script>',
+            "Nintendo DS": f'<script type="text/javascript">\nEJS_player = "#game";\nEJS_biosUrl = "";\nEJS_gameUrl = "{slug}";\nEJS_core = "nds";\n</script>',
+            "Super Nintendo Entertainment System": f'<script type="text/javascript">\nEJS_player = "#game";\nEJS_biosUrl = "";\nEJS_gameUrl = "{slug}";\nEJS_core = "snes";\nEJS_mouse = false;\nEJS_multitap = false;\n</script>',
+            "Sega Mega Drive": f'<script type="text/javascript">\nEJS_player = "#game";\nEJS_gameUrl = "{slug}";\nEJS_core = "segaMD";\n</script>',
+            "Sega Master System": f'<script type="text/javascript">\nEJS_player = "#game";\nEJS_gameUrl = "{slug}";\nEJS_core = "segaMS";\n</script>',
+            "Sega Saturn": f'<script type="text/javascript">\nEJS_player = "#game";\nEJS_biosUrl = "";\nEJS_gameUrl = "{slug}";\nEJS_core = "segaSaturn";\n</script>',
+            "PS1": f'<script type="text/javascript">\nEJS_player = "#game";\nEJS_biosUrl = "{bios}";\nEJS_gameUrl = "{slug}";\nEJS_core = "psx";\n</script>',
+        }
+        theScript = scripts[consoleName]
+        theScript = Markup(theScript)
+        return render_template("game.html", script=theScript, gameName=game["title"], consoleName=consoleName)
+
+@app.route("/gameFile/<console>/<gameSlug>")
+def gameFile(console, gameSlug):
+    if console != None:
+        consoleName = console.replace("%20", " ")
+        gameSlug = gameSlug.replace("%20", " ")
+        game = Games.query.filter_by(console=consoleName, realTitle=gameSlug).first()
+        game = game.__dict__
+        slug = game["slug"]
+        del game["_sa_instance_state"]
+        return send_file(slug, as_attachment=True)
+
+@app.route("/bios/<console>")
+def bios(console):
+    if console != None:
+        consoleName = console.replace("%20", " ")
+        Bios = [i for i in os.listdir(f"{currentCWD}/static/bios/{consoleName}") if i.endswith(".bin")]
+        Bios = f"{currentCWD}/static/bios/{consoleName}/{Bios[0]}"
+
+        return send_file(Bios, as_attachment=True)
 
 @app.route("/searchInMovies/<search>")
 @login_required
 def searchInAllMovies(search):
-    global searchedFilms
-    bestMatchs = {}
     movies = []
     points = {}
     #I have one or multiple arguments in a list, I want for each arguments, search in 5 columns of my Movies table, and order by most points
@@ -1837,24 +2196,27 @@ def generateAudio(slug):
 @app.route("/actor/<actorName>")
 @login_required
 def actor(actorName):
+    actorName = actorName.replace("_", " ")
     routeToUse = f"/getActorData/{actorName}"
-    return render_template("actor.html", routeToUse=routeToUse)
+    return render_template("actor.html", routeToUse=routeToUse, actorName=actorName)
 
 
 @app.route("/getActorData/<actorName>", methods=["GET", "POST"])
 def getActorData(actorName):
-    global searchedFilms, searchedFilms
     movies = []
     person = Person()
     actorDatas = person.search(actorName)
-    for movie in searchedFilms:
+    moviesDB = Movies.query.all()
+    for movie in moviesDB:
+        movie = movie.__dict__
+        del movie["_sa_instance_state"]
         actors = movie["cast"]
+        actors = json.loads(actors)
+
         for actor in actors:
             if actor[0] == actorName:
-                for movieData in searchedFilms:
-                    if movie["title"] == movieData["title"]:
-                        movies.append(movie)
-                        break
+                movies.append(movie)
+                break
     actorId = actorDatas[0].id
     p = person.details(actorId)
     name = p["name"]
@@ -1938,6 +2300,7 @@ if __name__ == "__main__":
         pass
     getSeries()
     getMovies()
+    getGames()
     print()
     print("\033[?25h", end="")
     activity = {

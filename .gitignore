@@ -7,3 +7,6 @@ config.ini
 static/img/cleanBanner.png
 .vscode/settings.json
 *.pyc
+database.db
+static/bios/*
+!static/bios/readme.txt

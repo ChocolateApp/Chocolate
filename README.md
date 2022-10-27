@@ -63,6 +63,28 @@ This is what you have to do to get started with Chocolate :
 * Precisions : Chocolate will ask you to rename files and directory if it don't understand, you can agree or disagree is proposition
 * It's done
 
+#### For Games :
+* Create a directory
+* Create a directory for each consoles
+* For each directory put games for this console
+* Some consoles need a bios, go to /static/bios/
+  * Create a directory named by the console
+  * Put in the bios file
+* It's done
+
+### List of supported console :
+  * Gameboy
+  * Gameboy Color
+  * Gameboy Advance
+  * Nintendo DS
+  * Nintendo 64
+  * Nintendo Entertainment System
+  * Super Nintendo Entertainment System
+  * Sega Master System
+  * Sega Mega Drive
+  * Sega Saturn
+  * Sony Playstation 1 (need a bios)
+
 ### Start Chocolate
 
 #### For Linux
@@ -133,6 +155,8 @@ This tool was made by Impre-visible, some features needed the help of several vo
 
 Original website design from [Mart](https://www.figma.com/@Martbrady) on [figma](https://www.figma.com/community/file/970595453636409922)<br>
 A special thanks to Mathias08 who made it possible to release v1 of Chocolate and MONSTA CARDO !! who made the animated logo !
+
+The consoles images are in part from [Jude Coram](https://www.judecoram.com/pixel-art-game-consoles/) the rest are made by me.
 
 This tool was made with ❤ and ☕ by Impre-visible.
 
