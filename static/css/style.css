@@ -1344,6 +1344,10 @@ input[type="search"]::-webkit-search-results-decoration {
     margin-right: 1vw;
 }
 
+.ejs--3a16fd9a56aec8059089709cbb16f4 {
+    display: none !important;
+}
+
 @media (max-width: 640px) {
     * {
         margin: 0;

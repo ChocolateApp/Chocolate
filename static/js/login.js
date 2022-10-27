@@ -28,7 +28,6 @@ for (user of allusers) {
     let userImage = user.children[0]
         //fetch user image and check if 404
     fetch(userImage.src).then(function(response) {
-
         if (response.status == 404) {
             userImage.src = "/static/img/defaultUserProfilePic.png"
         }

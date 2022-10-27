@@ -1792,6 +1792,7 @@ def getAllConsoles():
                 del console[key]
     consolesDict = [i for n, i in enumerate(consolesDict) if i not in consolesDict[n + 1:]]
     consolesDict = [list(i.values())[0] for i in consolesDict]
+    consolesDict = sorted(consolesDict)
     return json.dumps(consolesDict, ensure_ascii=False, default=str)
 
 @app.route("/getConsoleData/<consoleName>")
