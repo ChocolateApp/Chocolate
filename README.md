@@ -133,6 +133,7 @@ Don't forget to give the project a star! Thanks again!
 - [ ] Enable or not RPC for Discord
 - [ ] Add Books, PDF, Epub
 - [ ] Add Musics
+- [X] Add Games
 - [ ] Add TV with M3U8
 - [ ] Add a watchtogether system
 - [ ] Translate in multiple languages
