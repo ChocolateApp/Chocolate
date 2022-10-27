@@ -363,7 +363,7 @@ form#searchForm:hover .form_field_search {
 .saveSettings {
     height: 10vh;
     width: 12vw;
-    margin-top: 2vh;
+    margin-top: 0vh;
     margin-bottom: 2vw;
     display: inline-block;
     text-decoration: none;
@@ -376,13 +376,13 @@ form#searchForm:hover .form_field_search {
     padding: 2vh 3vw;
     transition: 300ms;
     background: none;
-    margin-right: 5vw;
+    margin-right: 6vw;
 }
 
 .createAccountButton {
     height: 10vh;
     width: 12vw;
-    margin-right: 4vw;
+    margin-right: 5vw;
     text-decoration: none;
     z-index: 5;
     border-radius: 1.5vw;
@@ -582,6 +582,9 @@ form#searchForm:hover .form_field_search {
 
 .notSorted {
     text-align: center;
+    width: 97vw;
+    margin-left: 3vw;
+    margin-top: 52vh;
 }
 
 .notSorted h1 {
