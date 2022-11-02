@@ -2368,20 +2368,27 @@ def sendDiscordPresence(name, actualDuration, totalDuration):
         try:
             rpc_obj.set_activity(newActivity)
         except:
-            client_id = "771837466020937728"
-            rpc_obj = rpc.DiscordIpcClient.for_platform(client_id)
-            activity = {
-                "state": "Chocolate",  # anything you like
-                "details": "The all-in-one MediaManager",  # anything you like
-                "timestamps": {"start": start_time},
-                "assets": {
-                    "small_text": "Chocolate",  # anything you like
-                    "small_image": "None",  # must match the image key
-                    "large_text": "Chocolate",  # anything you like
-                    "large_image": "largeimage",  # must match the image key
-                },
-            }
-            rpc_obj.set_activity(activity)
+            try:
+                client_id = "771837466020937728"
+                rpc_obj = rpc.DiscordIpcClient.for_platform(client_id)
+                
+                activity = {
+                    "state": "Chocolate",  # anything you like
+                    "details": "The all-in-one MediaManager",  # anything you like
+                    "timestamps": {"start": start_time},
+                    "assets": {
+                        "small_text": "Chocolate",  # anything you like
+                        "small_image": "None",  # must match the image key
+                        "large_text": "Chocolate",  # anything you like
+                        "large_image": "largeimage",  # must match the image key
+                    },
+                }
+                rpc_obj.set_activity(activity)
+            except OSError:
+                enabledRPC == "false"
+                config.set("ChocolateSettings", "enableDiscordRPC", "false")
+                with open(f"{currentCWD}/config.ini", "w") as conf:
+                    config.write(conf)
     return json.dumps(
         f"You sent richPresence Data with this informations : name:{name}, actualDuration:{actualDuration}, totalDuration:{totalDuration}"
     )
