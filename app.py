@@ -219,16 +219,18 @@ config.read("config.ini")
 if config["ChocolateSettings"]["language"] == "Empty":
     config["ChocolateSettings"]["language"] = "EN"
 
-clientID = config.get("APIKeys", "IGDBID")
-clientSecret = config.get("APIKeys", "IGDBSECRET")
-if clientID == "Empty" or clientSecret == "Empty":
-    print("Follow this tutorial to get your IGDB API Keys: https://api-docs.igdb.com/#account-creation")
-    clientID = input("Please enter your IGDB Client ID: ")
-    clientSecret = input("Please enter your IGDB Client Secret: ")
-    config.set("APIKeys", "IGDBID", clientID)
-    config.set("APIKeys", "IGDBSECRET", clientSecret)
-    with open(f"{currentCWD}/config.ini", "w") as conf:
-        config.write(conf)
+#get games path
+if config["ChocolateSettings"]["gamesPath"] != "Empty":
+    clientID = config.get("APIKeys", "IGDBID")
+    clientSecret = config.get("APIKeys", "IGDBSECRET")
+    if clientID == "Empty" or clientSecret == "Empty":
+        print("Follow this tutorial to get your IGDB API Keys: https://api-docs.igdb.com/#account-creation")
+        clientID = input("Please enter your IGDB Client ID: ")
+        clientSecret = input("Please enter your IGDB Client Secret: ")
+        config.set("APIKeys", "IGDBID", clientID)
+        config.set("APIKeys", "IGDBSECRET", clientSecret)
+        with open(f"{currentCWD}/config.ini", "w") as conf:
+            config.write(conf)
 
 tmdb = TMDb()
 apiKeyTMDB = config["APIKeys"]["TMDB"]
