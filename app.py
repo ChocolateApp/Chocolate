@@ -24,10 +24,11 @@ with warnings.catch_warnings():
 app = Flask(__name__)
 CORS(app)
 
-currentCWD = os.getcwd()
-app.config["SQLALCHEMY_DATABASE_URI"] = f'sqlite:///{currentCWD}/database.db'
+dirPath = os.getcwd()
+dirPath = os.path.dirname(__file__)
+app.config["SQLALCHEMY_DATABASE_URI"] = f'sqlite:///{dirPath}/database.db'
 app.config['MAX_CONTENT_LENGTH'] = 4096 * 4096
-app.config['UPLOAD_FOLDER'] = f"{currentCWD}/static/img/"
+app.config['UPLOAD_FOLDER'] = f"{dirPath}/static/img/"
 app.config["SECRET_KEY"] = "ChocolateDBPassword"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
@@ -532,19 +533,19 @@ def getMovies():
                     banniere = f"https://image.tmdb.org/t/p/original{res.backdrop_path}"
                     rewritedName = movieTitle.replace(" ", "_")
                     if not os.path.exists(
-                        f"{currentCWD}/static/img/mediaImages/{rewritedName}_Cover.png"):
-                        with open(f"{currentCWD}/static/img/mediaImages/{rewritedName}_Cover.png", "wb") as f:
+                        f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.png"):
+                        with open(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.png", "wb") as f:
                             f.write(requests.get(movieCoverPath).content)
 
                     if not os.path.exists(
-                        f"{currentCWD}/static/img/mediaImages/{rewritedName}_Banner.png"):
-                        with open(f"{currentCWD}/static/img/mediaImages/{rewritedName}_Banner.png", "wb") as f:
+                        f"{dirPath}/static/img/mediaImages/{rewritedName}_Banner.png"):
+                        with open(f"{dirPath}/static/img/mediaImages/{rewritedName}_Banner.png", "wb") as f:
                             f.write(requests.get(banniere).content)
                     banniere = f"/static/img/mediaImages/{rewritedName}_Banner.png"
                     movieCoverPath = f"/static/img/mediaImages/{rewritedName}_Cover.png"
 
-                    size1 = os.path.getsize(f"{currentCWD}{movieCoverPath}")
-                    size2 = os.path.getsize(f"{currentCWD}{banniere}")
+                    size1 = os.path.getsize(f"{dirPath}{movieCoverPath}")
+                    size2 = os.path.getsize(f"{dirPath}{banniere}")
                     if size1 < 10240:
                         movieCoverPath = "/static/img/broken.png"
                     if size2 < 10240:
@@ -570,9 +571,9 @@ def getMovies():
                             )
                             imagePath = f"https://www.themoviedb.org/t/p/w600_and_h900_bestv2{cast.profile_path}"
                             if not os.path.exists(
-                                f"{currentCWD}/static/img/mediaImages/Actor_{actorName}.png"):
+                                f"{dirPath}/static/img/mediaImages/Actor_{actorName}.png"):
                                 with open(
-                                    f"{currentCWD}/static/img/mediaImages/Actor_{actorName}.png",
+                                    f"{dirPath}/static/img/mediaImages/Actor_{actorName}.png",
                                     "wb",
                                 ) as f:
                                     f.write(requests.get(imagePath).content)
@@ -878,11 +879,11 @@ def getSeries():
                 serieCoverPath = f"https://image.tmdb.org/t/p/original{res.poster_path}"
                 banniere = f"https://image.tmdb.org/t/p/original{res.backdrop_path}"
                 rewritedName = serieTitle.replace(" ", "_")
-                if not os.path.exists(f"{currentCWD}/static/img/mediaImages/{rewritedName}_Cover.png"):
-                    with open(f"{currentCWD}/static/img/mediaImages/{rewritedName}_Cover.png","wb") as f:
+                if not os.path.exists(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.png"):
+                    with open(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.png","wb") as f:
                         f.write(requests.get(serieCoverPath).content)
-                if not os.path.exists(f"{currentCWD}/static/img/mediaImages/{rewritedName}_Banner.png"):
-                    with open(f"{currentCWD}/static/img/mediaImages/{rewritedName}_Banner.png","wb") as f:
+                if not os.path.exists(f"{dirPath}/static/img/mediaImages/{rewritedName}_Banner.png"):
+                    with open(f"{dirPath}/static/img/mediaImages/{rewritedName}_Banner.png","wb") as f:
                         f.write(requests.get(banniere).content)
                 banniere = f"/static/img/mediaImages/{rewritedName}_Banner.png"
                 serieCoverPath = f"/static/img/mediaImages/{rewritedName}_Cover.png"
@@ -924,8 +925,8 @@ def getSeries():
                 for actor in cast:
                     actorName = actor.name.replace(" ", "_").replace("/", "")
                     actorImage = f"https://image.tmdb.org/t/p/original{actor.profile_path}"
-                    if not os.path.exists(f"{currentCWD}/static/img/mediaImages/Actor_{actorName}.png"):
-                        with open(f"{currentCWD}/static/img/mediaImages/Actor_{actorName}.png", "wb") as f:
+                    if not os.path.exists(f"{dirPath}/static/img/mediaImages/Actor_{actorName}.png"):
+                        with open(f"{dirPath}/static/img/mediaImages/Actor_{actorName}.png", "wb") as f:
                             f.write(requests.get(actorImage).content)
                     actorImage = f"/static/img/mediaImages/Actor_{actorName}.png"
                     actorCharacter = actor.character
@@ -946,8 +947,8 @@ def getSeries():
                     seasonName = season.name
                     seasonDescription = season.overview
                     seasonCoverPath = (f"https://image.tmdb.org/t/p/original{season.poster_path}")
-                    if not os.path.exists(f"{currentCWD}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png"):
-                        with open(f"{currentCWD}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png", "wb") as f:
+                    if not os.path.exists(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png"):
+                        with open(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png", "wb") as f:
                             f.write(requests.get(seasonCoverPath).content)
                     seasonCoverPath = f"/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png"
 
@@ -982,8 +983,8 @@ def getSeries():
                                 episodeInfo = showEpisode.details(serieId, seasonNumber, episodeIndex)
                                 coverEpisode = f"https://image.tmdb.org/t/p/original{episodeInfo.still_path}"
                                 rewritedName = originalSerieTitle.replace(" ", "_")
-                                if not os.path.exists(f"{currentCWD}/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.png"):
-                                    with open(f"{currentCWD}/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.png","wb") as f:
+                                if not os.path.exists(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.png"):
+                                    with open(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.png","wb") as f:
                                         f.write(requests.get(coverEpisode).content)
                                 coverEpisode = f"/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.png"
 
@@ -1014,7 +1015,7 @@ def getGames():
                 allConsoles.remove(console)
 
     except OSError as e:
-        print("No series found")
+        print("No games found")
         print(e)
         return
     saidPS1 = False
@@ -1453,8 +1454,8 @@ def settings():
         try:
             f = request.files['profilePicture']
             name, extension = os.path.splitext(f.filename)
-            thiscurrentCWD = currentCWD.replace("\\", "//")
-            f.save(f"{thiscurrentCWD}/static/img/{accountName}{extension}")
+            thisdirPath = dirPath.replace("\\", "//")
+            f.save(f"{thisdirPath}/static/img/{accountName}{extension}")
             profilePicture = f"/static/img/{accountName}{extension}"
             if extension == "":
                 profilePicture = "/static/img/defaultUserProfilePic.png"
@@ -1531,12 +1532,12 @@ def createAccount():
         try:
             f = request.files['profilePicture']
             name, extension = os.path.splitext(f.filename)
-            thiscurrentCWD = currentCWD.replace("\\", "//")
+            thisdirPath = dirPath.replace("\\", "//")
             profilePicture = f"/static/img/{accountName}{extension}"
             if extension == "":
                 profilePicture = "/static/img/defaultUserProfilePic.png"
             else:
-                f.save(f"{thiscurrentCWD}{profilePicture}")
+                f.save(f"{thisdirPath}{profilePicture}")
         except:
             profilePicture = "/static/img/defaultUserProfilePic.png"
 
@@ -1566,7 +1567,7 @@ def profil():
         try:
             f = request.files['profilePicture']
             name, extension = os.path.splitext(f.filename)
-            thiscurrentCWD = currentCWD.replace("\\", "//")
+            thisdirPath = dirPath.replace("\\", "//")
             profilePicture = f"/static/img/{userName}{extension}"
             if extension == "":
                 profilePicture = "/static/img/defaultUserProfilePic.png"
@@ -1582,7 +1583,7 @@ def profil():
             db.session.commit()
         if userToEdit.profilePicture != profilePicture and profilePicture != "/static/img/defaultUserProfilePic.png":
             f = request.files['profilePicture']
-            f.save(f"{thiscurrentCWD}{profilePicture}")
+            f.save(f"{thisdirPath}{profilePicture}")
             userToEdit.profilePicture = profilePicture
             db.session.commit()
     return render_template("profil.html", user=user)
@@ -2016,8 +2017,8 @@ def PS1binFile(gameSlug):
 def bios(console):
     if console != None:
         consoleName = console.replace("%20", " ")
-        Bios = [i for i in os.listdir(f"{currentCWD}/static/bios/{consoleName}") if i.endswith(".bin")]
-        Bios = f"{currentCWD}/static/bios/{consoleName}/{Bios[0]}"
+        Bios = [i for i in os.listdir(f"{dirPath}/static/bios/{consoleName}") if i.endswith(".bin")]
+        Bios = f"{dirPath}/static/bios/{consoleName}/{Bios[0]}"
 
         return send_file(Bios, as_attachment=True)
 
