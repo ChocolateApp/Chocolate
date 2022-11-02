@@ -35,7 +35,7 @@ loginManager = LoginManager()
 loginManager.init_app(app)
 loginManager.login_view = 'login'
 langs_dict = GoogleTranslator().get_supported_languages(as_dict=True)
-print(langs_dict)
+
 class Users(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(255), unique=True)
@@ -357,7 +357,16 @@ show = TV()
 
 errorMessage = True
 client_id = "771837466020937728"
-rpc_obj = rpc.DiscordIpcClient.for_platform(client_id)
+
+enabledRPC = config["ChocolateSettings"]["enableDiscordRPC"]
+if enabledRPC == "true":
+    try:
+        rpc_obj = rpc.DiscordIpcClient.for_platform(client_id)
+    except OSError:
+        enabledRPC == "false"
+        config.set("ChocolateSettings", "enableDiscordRPC", "false")
+        with open(f"{currentCWD}/config.ini", "w") as conf:
+            config.write(conf)
 searchedFilms = []
 allMoviesNotSorted = []
 searchedSeries = []
@@ -1613,6 +1622,7 @@ def saveSettings():
     SeriesPath = request.form["seriesPath"]
     GamesPath = request.form["gamesPath"]
     language = request.form["language"]
+    discordRPC = request.form["discordRPCCheckbox"]
     port = request.form["port"]
     if MoviesPath != "":
         config.set("ChocolateSettings", "moviespath", MoviesPath)
@@ -1624,6 +1634,10 @@ def saveSettings():
         config.set("ChocolateSettings", "language", language)
     if port != "" or port != " ":
         config.set("ChocolateSettings", "port", port)
+    if discordRPC == "on":
+        config.set("ChocolateSettings", "discordrpc", "true")
+    else:
+        config.set("ChocolateSettings", "discordrpc", "false")
     with open(f"{currentCWD}/config.ini", "w") as conf:
         config.write(conf)
     return redirect(url_for("settings"))
@@ -2349,23 +2363,25 @@ def sendDiscordPresence(name, actualDuration, totalDuration):
             "large_image": "largeimage",  # must match the image key
         },
     }
-    try:
-        rpc_obj.set_activity(newActivity)
-    except:
-        client_id = "771837466020937728"
-        rpc_obj = rpc.DiscordIpcClient.for_platform(client_id)
-        activity = {
-            "state": "Chocolate",  # anything you like
-            "details": "The all-in-one MediaManager",  # anything you like
-            "timestamps": {"start": start_time},
-            "assets": {
-                "small_text": "Chocolate",  # anything you like
-                "small_image": "None",  # must match the image key
-                "large_text": "Chocolate",  # anything you like
-                "large_image": "largeimage",  # must match the image key
-            },
-        }
-        rpc_obj.set_activity(activity)
+    enabledRPC = config["ChocolateSettings"]["enableDiscordRPC"]
+    if enabledRPC == "true":
+        try:
+            rpc_obj.set_activity(newActivity)
+        except:
+            client_id = "771837466020937728"
+            rpc_obj = rpc.DiscordIpcClient.for_platform(client_id)
+            activity = {
+                "state": "Chocolate",  # anything you like
+                "details": "The all-in-one MediaManager",  # anything you like
+                "timestamps": {"start": start_time},
+                "assets": {
+                    "small_text": "Chocolate",  # anything you like
+                    "small_image": "None",  # must match the image key
+                    "large_text": "Chocolate",  # anything you like
+                    "large_image": "largeimage",  # must match the image key
+                },
+            }
+            rpc_obj.set_activity(activity)
     return json.dumps(
         f"You sent richPresence Data with this informations : name:{name}, actualDuration:{actualDuration}, totalDuration:{totalDuration}"
     )
@@ -2382,41 +2398,46 @@ def sort_dict_by_key(unsorted_dict):
         
 
 if __name__ == "__main__":
-    activity = {
-        "state": "Loading Chocolate...",  # anything you like
-        "details": "The all-in-one MediaManager",  # anything you like
-        "timestamps": {"start": start_time},
-        "assets": {
-            "small_text": "Chocolate",  # anything you like
-            "small_image": "None",  # must match the image key
-            "large_text": "Chocolate",  # anything you like
-            "large_image": "loader",  # must match the image key
-        },
-    }
-    try:
-        rpc_obj.set_activity(activity)
-    except:
-        pass
+    enabledRPC = config["ChocolateSettings"]["enableDiscordRPC"]
+    if enabledRPC == "true":
+        activity = {
+            "state": "Loading Chocolate...",  # anything you like
+            "details": "The all-in-one MediaManager",  # anything you like
+            "timestamps": {"start": start_time},
+            "assets": {
+                "small_text": "Chocolate",  # anything you like
+                "small_image": "None",  # must match the image key
+                "large_text": "Chocolate",  # anything you like
+                "large_image": "loader",  # must match the image key
+            },
+        }
+        try:
+            rpc_obj.set_activity(activity)
+        except:
+            pass
     getSeries()
     getMovies()
     getGames()
     print()
     print("\033[?25h", end="")
-    activity = {
-        "state": "Chocolate",  # anything you like
-        "details": "The all-in-one MediaManager",  # anything you like
-        "timestamps": {"start": start_time},
-        "assets": {
-            "small_text": "Chocolate",  # anything you like
-            "small_image": "None",  # must match the image key
-            "large_text": "Chocolate",  # anything you like
-            "large_image": "largeimage",  # must match the image key
-        },
-    }
-    try:
-        rpc_obj.set_activity(activity)
-    except:
-        pass
+    
+    enabledRPC = config["ChocolateSettings"]["enableDiscordRPC"]
+    if enabledRPC == "true":
+        activity = {
+            "state": "Chocolate",  # anything you like
+            "details": "The all-in-one MediaManager",  # anything you like
+            "timestamps": {"start": start_time},
+            "assets": {
+                "small_text": "Chocolate",  # anything you like
+                "small_image": "None",  # must match the image key
+                "large_text": "Chocolate",  # anything you like
+                "large_image": "largeimage",  # must match the image key
+            },
+        }
+        try:
+            rpc_obj.set_activity(activity)
+        except:
+            pass
 
     with app.app_context():
         allSeriesDict = {}

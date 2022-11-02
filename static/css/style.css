@@ -24,13 +24,13 @@ li {
     color: #ffffff;
 }
 
-:active,
+ :active,
  :focus,
  :visited {
     text-decoration: none;
 }
 
-::-webkit-scrollbar {
+ ::-webkit-scrollbar {
     display: none;
 }
 
@@ -363,7 +363,7 @@ form#searchForm:hover .form_field_search {
 .saveSettings {
     height: 10vh;
     width: 12vw;
-    margin-top: 0vh;
+    margin-top: 10vh;
     margin-bottom: 2vw;
     display: inline-block;
     text-decoration: none;
@@ -581,10 +581,11 @@ form#searchForm:hover .form_field_search {
 }
 
 .notSorted {
+    position: absolute;
     text-align: center;
     width: 97vw;
     margin-left: 3vw;
-    margin-top: 52vh;
+    margin-top: 65vh;
 }
 
 .notSorted h1 {
@@ -1346,6 +1347,74 @@ input[type="search"]::-webkit-search-results-decoration {
 
 .ejs--3a16fd9a56aec8059089709cbb16f4 {
     display: none !important;
+}
+
+.discordRPC {
+    margin-top: 0.5vh;
+    position: absolute;
+    margin-left: -8.5vw;
+}
+
+.discordRPCButton {
+    margin-top: 2vh;
+    position: absolute;
+}
+
+.switch {
+    display: inline-block;
+    width: 80px;
+    height: 40px;
+    cursor: pointer;
+    position: absolute;
+    margin-left: 18.25vh;
+}
+
+.switch input {
+    display: none;
+}
+
+.slider {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 2px solid #ffffff;
+    border-radius: 20px;
+    background-color: #9494949c;
+}
+
+.slider:before {
+    position: absolute;
+    bottom: 6px;
+    left: 10px;
+    z-index: 999;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: #ecf0f3;
+    content: "";
+    transition: .5s;
+}
+
+.off {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    color: #df2525;
+    font-size: .8125rem;
+}
+
+.on {
+    position: absolute;
+    top: 10px;
+    left: 14px;
+    color: #10e910;
+    font-size: .8125rem;
+}
+
+input:checked+.slider:before {
+    transform: translateX(33px);
 }
 
 @media (max-width: 640px) {
