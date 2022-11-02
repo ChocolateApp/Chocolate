@@ -88,8 +88,7 @@ This is what you have to do to get started with Chocolate :
 ### Start Chocolate
 
 #### For Linux
-* Go where you installed Chocolate
-* execute run.sh
+* execute 'chocolate' in your terminal
 
 #### For Windows
 * Execute app.py
