@@ -215,7 +215,10 @@ def load_user(id):
 
 
 config = configparser.ConfigParser()
-config.read(f"{currentCWD}/config.ini")
+
+#get the directory of the python file
+dir = os.path.dirname(__file__)
+config.read(os.path.join(dir, 'config.ini'))
 if config["ChocolateSettings"]["language"] == "Empty":
     config["ChocolateSettings"]["language"] = "EN"
 
@@ -229,7 +232,7 @@ if config["ChocolateSettings"]["gamesPath"] != "Empty":
         clientSecret = input("Please enter your IGDB Client Secret: ")
         config.set("APIKeys", "IGDBID", clientID)
         config.set("APIKeys", "IGDBSECRET", clientSecret)
-        with open(f"{currentCWD}/config.ini", "w") as conf:
+        with open((os.path.join(dir, 'config.ini'), "w")) as conf:
             config.write(conf)
 
 tmdb = TMDb()
@@ -367,7 +370,7 @@ if enabledRPC == "true":
     except OSError:
         enabledRPC == "false"
         config.set("ChocolateSettings", "enableDiscordRPC", "false")
-        with open(f"{currentCWD}/config.ini", "w") as conf:
+        with open((os.path.join(dir, 'config.ini'), "w")) as conf:
             config.write(conf)
 searchedFilms = []
 allMoviesNotSorted = []
@@ -1645,7 +1648,7 @@ def saveSettings():
         config.set("ChocolateSettings", "discordrpc", "true")
     else:
         config.set("ChocolateSettings", "discordrpc", "false")
-    with open(f"{currentCWD}/config.ini", "w") as conf:
+    with open((os.path.join(dir, 'config.ini'), "w")) as conf:
         config.write(conf)
     return redirect(url_for("settings"))
 
@@ -2394,7 +2397,7 @@ def sendDiscordPresence(name, actualDuration, totalDuration):
             except OSError:
                 enabledRPC == "false"
                 config.set("ChocolateSettings", "enableDiscordRPC", "false")
-                with open(f"{currentCWD}/config.ini", "w") as conf:
+                with open((os.path.join(dir, 'config.ini'), "w")) as conf:
                     config.write(conf)
     return json.dumps(
         f"You sent richPresence Data with this informations : name:{name}, actualDuration:{actualDuration}, totalDuration:{totalDuration}"
