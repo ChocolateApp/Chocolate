@@ -38,7 +38,7 @@ This is what you have to do to get started with Chocolate :
 ### Installation
 
 #### For Linux
-* Go to the [releases](https://github.com/Impre-visible/Chocolate/releases/)
+* Go to the [latest release](https://github.com/Impre-visible/Chocolate/releases/latest)
 * Download the latest installer named `install.sh`
 * Place it where you want
 * Run it
