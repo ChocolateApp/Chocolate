@@ -215,7 +215,7 @@ def load_user(id):
 
 
 config = configparser.ConfigParser()
-config.read("config.ini")
+config.read(f"{currentCWD}/config.ini")
 if config["ChocolateSettings"]["language"] == "Empty":
     config["ChocolateSettings"]["language"] = "EN"
 
@@ -360,7 +360,7 @@ show = TV()
 errorMessage = True
 client_id = "771837466020937728"
 
-enabledRPC = config["ChocolateSettings"]["enableDiscordRPC"]
+enabledRPC = config["ChocolateSettings"]["discordrpc"]
 if enabledRPC == "true":
     try:
         rpc_obj = rpc.DiscordIpcClient.for_platform(client_id)
@@ -448,7 +448,12 @@ def getMovies():
             path = os.path.normpath(config["ChocolateSettings"]["MoviesPath"])
     except KeyError:
         path = str(Path.home() / "Downloads")
-    os.chdir(path)
+    try:
+        os.chdir(path)
+    except OSError as e:
+        print("No movies found")
+        print(e)
+        return
     filmFileList = []
     movies = os.listdir(path)
     for movieFile in movies:
@@ -2365,7 +2370,7 @@ def sendDiscordPresence(name, actualDuration, totalDuration):
             "large_image": "largeimage",  # must match the image key
         },
     }
-    enabledRPC = config["ChocolateSettings"]["enableDiscordRPC"]
+    enabledRPC = config["ChocolateSettings"]["discordrpc"]
     if enabledRPC == "true":
         try:
             rpc_obj.set_activity(newActivity)
@@ -2407,7 +2412,7 @@ def sort_dict_by_key(unsorted_dict):
         
 
 if __name__ == "__main__":
-    enabledRPC = config["ChocolateSettings"]["enableDiscordRPC"]
+    enabledRPC = config["ChocolateSettings"]["discordrpc"]
     if enabledRPC == "true":
         activity = {
             "state": "Loading Chocolate...",  # anything you like
@@ -2430,7 +2435,7 @@ if __name__ == "__main__":
     print()
     print("\033[?25h", end="")
     
-    enabledRPC = config["ChocolateSettings"]["enableDiscordRPC"]
+    enabledRPC = config["ChocolateSettings"]["discordrpc"]
     if enabledRPC == "true":
         activity = {
             "state": "Chocolate",  # anything you like
