@@ -14,7 +14,7 @@ from fuzzywuzzy import fuzz
 from ask_lib import AskResult, ask
 from deep_translator import GoogleTranslator
 from time import mktime
-import requests, os, subprocess, configparser, socket, datetime, subprocess, socket, platform, GPUtil, json, random, time, rpc, sqlalchemy, warnings, re
+import requests, os, subprocess, configparser, socket, datetime, subprocess, socket, platform, GPUtil, json, random, time, rpc, sqlalchemy, warnings, re, zipfile
 
 start_time = mktime(time.localtime())
 
@@ -34,7 +34,8 @@ db = SQLAlchemy(app)
 loginManager = LoginManager()
 loginManager.init_app(app)
 loginManager.login_view = 'login'
-
+langs_dict = GoogleTranslator().get_supported_languages(as_dict=True)
+print(langs_dict)
 class Users(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(255), unique=True)
@@ -274,18 +275,19 @@ def IGDBRequest(url, console):
         }
 
         games = response.json()["game_suggest"]
-        game = games[0]
         for i in games:
             game=i
             gameId = game["id"]
             url = f"https://api.igdb.com/v4/games"
             body = f"fields name, cover.*, summary, total_rating, first_release_date, genres.*, platforms.*; where id = {gameId};"
             response = requests.request("POST", url, headers=headers, data=body)
+            if len(response.json())==0:
+                break
             game = response.json()[0]
             if "platforms" in game:
-                gamePLatforms = game["platforms"]
+                gamePlatforms = game["platforms"]
                 try:
-                    platforms = [i["abbreviation"] for i in gamePLatforms]
+                    platforms = [i["abbreviation"] for i in gamePlatforms]
 
                     realConsoleName = {
                         "GB": "Game Boy",
@@ -297,10 +299,10 @@ def IGDBRequest(url, console):
                         "SNES": "Super Nintendo Entertainment System",
                         "Sega Master System": "Sega Master System",
                         "Sega Mega Drive": "Sega Mega Drive",
+                        "PS1": "PS1"
                     }
 
                     if realConsoleName[console] not in platforms and console not in platforms:
-                        #print(realConsoleName[console], platforms)
                         continue
                     #print(f"Game found: {game['name']} on {realConsoleName[console]}")
                     if "total_rating" not in game:
@@ -312,7 +314,7 @@ def IGDBRequest(url, console):
                     if "first_release_date" not in game:
                         game["first_release_date"] = "Unknown"
                     if "cover" not in game:
-                        game["cover"] = {"url": "/static/img/broken.png"}
+                        game["cover"] = {"url": "//images.igdb.com/igdb/image/upload/t_cover_big/nocover.png"}
 
                     #translate all the data
                     game["summary"] = translate(game["summary"])
@@ -996,18 +998,33 @@ def getGames():
         print("No series found")
         print(e)
         return
+    saidPS1 = False
     supportedConsoles = ['3DO', 'Amiga', 'Atari 2600', 'Atari 5200', 'Atari 7800', 'Atari Jaguar', 'Atari Lynx', 'GB', 'GBA', 'GBC', 'N64', 'NDS', 'NES', 'SNES', 'Neo Geo Pocket', 'PSX', 'Sega 32X', 'Sega CD', 'Sega Game Gear', 'Sega Master System', 'Sega Mega Drive', 'Sega Saturn', "PS1"]
-    supportedFileTypes = [".bin", ".cue", ".iso", ".adf", ".adz", ".dms", ".fdi", ".ipf", ".hdf", ".lha", ".slave", ".info", ".cue", ".cdd", ".nrg", ".mds", ".chd", ".uae", ".m3u", ".a26", ".a52", ".a78", ".j64", ".lnx", ".gb", ".gba", ".gbc", ".n64", ".nds", ".nes", ".ngp", ".psx", ".sfc", ".smd", ".32x", ".cd", ".gg", ".md", ".sat", ".sms"]
+    supportedFileTypes = [".zip", ".adf", ".adz", ".dms", ".fdi", ".ipf", ".hdf", ".lha", ".slave", ".info", ".cdd", ".nrg", ".mds", ".chd", ".uae", ".m3u", ".a26", ".a52", ".a78", ".j64", ".lnx", ".gb", ".gba", ".gbc", ".n64", ".nds", ".nes", ".ngp", ".psx", ".sfc", ".smd", ".32x", ".cd", ".gg", ".md", ".sat", ".sms"]
     for console in allConsoles:
         if console not in supportedConsoles:
             print(f"{console} is not supported or the console name is not correct, here is the list of supported consoles : {','.join(supportedConsoles)} rename the folder to one of these names if it's the correct console")
             break
-        for file in os.listdir(f"{allGamesPath}/{console}"):
+        size = len(allConsoles)
+        gameName, extension = os.path.splitext(console)
+        index = allConsoles.index(console) + 1
+        percentage = index * 100 / size
+
+        loadingFirstPart = ("•" * int(percentage * 0.2))[:-1]
+        loadingFirstPart = f"{loadingFirstPart}➤"
+        loadingSecondPart = "•" * (20 - int(percentage * 0.2))
+        loading = f"{str(int(percentage)).rjust(3)}% | [\33[32m{loadingFirstPart} \33[31m{loadingSecondPart}\33[0m] | {gameName} | {index}/{len(allConsoles)}                                                      "
+        print("\033[?25l", end="")
+        print(loading, end="\r", flush=True)
+
+        allFiles = os.listdir(f"{allGamesPath}/{console}")
+        for file in allFiles:
+
             with app.app_context():
                 exists = Games.query.filter_by(slug=f"{allGamesPath}/{console}/{file}").first()
                 if file.endswith(tuple(supportedFileTypes)) and exists == None:
-
-                    newFileName = re.sub(r'\([^)]*\)', '', file)
+                    #select the string between ()
+                    newFileName = file                    
                     newFileName = re.sub(r'\d{5} - ', '', newFileName)
                     newFileName = re.sub(r'\d{4} - ', '', newFileName)
                     newFileName = re.sub(r'\d{3} - ', '', newFileName)
@@ -1042,6 +1059,73 @@ def getGames():
                         db.session.commit()
                     else:
                         print(f"I didn't find the game {file} of {console}")
+                elif console == "PS1" and file.endswith(".cue") and exists == None:
+                    if saidPS1 == False:
+                        print(f"You need to zip all our .bin files and the .cue file in one .zip file to being able to play it")
+                        saidPS1 = True
+                    #check if user want to zip the files with asklib
+                    value = config["ChocolateSettings"]["compressPS1Games"]
+                    if value.lower() == "true":
+                        #get the index of the file
+                        index = allFiles.index(file)-1
+                        #get all bin files before the cue file
+                        allBins = []
+                        while allFiles[index].endswith(".bin"):
+                            allBins.append(allFiles[index])
+                            index -= 1
+                        #zip all the bin files and the cue file
+                        fileName, extension = os.path.splitext(file)
+                        with zipfile.ZipFile(f"{allGamesPath}/{console}/{fileName}.zip", 'w') as zipObj:
+                            for binFiles in allBins:
+                                zipObj.write(f"{allGamesPath}/{console}/{binFiles}", binFiles)
+                            zipObj.write(f"{allGamesPath}/{console}/{file}", file)
+                        for binFiles in allBins:
+                            os.remove(f"{allGamesPath}/{console}/{binFiles}")
+                        os.remove(f"{allGamesPath}/{console}/{file}")
+                        file = f"{fileName}.zip"
+                        newFileName = file                    
+                        newFileName = re.sub(r'\d{5} - ', '', newFileName)
+                        newFileName = re.sub(r'\d{4} - ', '', newFileName)
+                        newFileName = re.sub(r'\d{3} - ', '', newFileName)
+                        newFileName, extension = os.path.splitext(newFileName)
+                        newFileName = newFileName.rstrip()
+                        newFileName = f"{newFileName}{extension}"
+                        os.rename(f"{allGamesPath}/{console}/{file}", f"{allGamesPath}/{console}/{newFileName}")
+                        file = newFileName
+                        while ".." in newFileName:
+                            newFileName = newFileName.replace("..", ".")
+                        try:
+                            os.rename(f"{allGamesPath}/{console}/{file}", f"{allGamesPath}/{console}/{newFileName}")
+                        except FileExistsError:
+                            os.remove(f"{allGamesPath}/{console}/{file}")
+                        file, extension = os.path.splitext(file)
+
+                        gameIGDB = searchGame(file, console)
+                        if gameIGDB != None and gameIGDB != {}:
+                            gameName = gameIGDB["title"]
+                            gameRealTitle = newFileName
+                            gameCover = gameIGDB["cover"]
+                            gameDescription = gameIGDB["description"]
+                            gameNote = gameIGDB["note"]
+                            gameDate = gameIGDB["date"]
+                            gameGenre = gameIGDB["genre"]
+                            gameId = gameIGDB["id"]
+                            gameConsole = console
+                            gameSlug = f"{allGamesPath}/{console}/{newFileName}"
+                            exists = Games.query.filter_by(slug=gameSlug).first()
+                            if exists == None:
+                                game = Games(console=gameConsole, id=gameId, title=gameName, realTitle=gameRealTitle, cover=gameCover, description=gameDescription, note=gameNote, date=gameDate, genre=gameGenre, slug=gameSlug)
+                                db.session.add(game)
+                                try:
+                                    db.session.commit()
+                                except IntegrityError as e:
+                                    e=e
+                                    db.session.commit()
+                        
+
+
+                elif not file.endswith(".bin") and exists == None:
+                    print(f"{file} is not supported, here's the list of supported files : \n{','.join(supportedFileTypes)}")
 
 
 def length_video(path: str) -> float:
@@ -1864,6 +1948,7 @@ def game(console, gameSlug):
         global consoles
         game = Games.query.filter_by(console=consoles[consoleName], realTitle=gameSlug).first()
         game = game.__dict__
+        gameFileName, gameExtension = os.path.splitext(gameSlug)
         slug = f"/gameFile/{game['console']}/{game['realTitle']}"
         bios = f"/bios/{consoleName}"
         del game["_sa_instance_state"]
@@ -1892,8 +1977,16 @@ def gameFile(console, gameSlug):
         game = Games.query.filter_by(console=consoleName, realTitle=gameSlug).first()
         game = game.__dict__
         slug = game["slug"]
-        del game["_sa_instance_state"]
         return send_file(slug, as_attachment=True)
+
+
+@app.route("/PS1binFile/<gameSlug>")
+def PS1binFile(gameSlug):
+    if gameSlug != None:
+        gameDir = config["ChocolateSettings"]["gamespath"]
+        ps1Dir = f"{gameDir}/PS1"
+        file = f"{ps1Dir}/{gameSlug}"
+        return send_file(file, as_attachment=True)
 
 @app.route("/bios/<console>")
 def bios(console):

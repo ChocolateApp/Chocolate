@@ -83,7 +83,7 @@ This is what you have to do to get started with Chocolate :
   * Sega Master System
   * Sega Mega Drive
   * Sega Saturn
-  * Sony Playstation 1 (need a bios)
+  * Sony Playstation 1 (for .cue and .bin you have to .zip all files) (need a bios)
 
 ### Start Chocolate
 
