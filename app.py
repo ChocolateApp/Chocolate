@@ -104,9 +104,9 @@ class Series(db.Model):
     banniere = db.Column(db.String(255))
     note = db.Column(db.String(255))
     date = db.Column(db.String(255))
-    serieSize = db.Column(db.Integer)
+    serieModifiedTime = db.Column(db.Float)
 
-    def __init__(self, id, name, originalName, genre, duration, description, cast, bandeAnnonceUrl, serieCoverPath, banniere, note, date, serieSize):
+    def __init__(self, id, name, originalName, genre, duration, description, cast, bandeAnnonceUrl, serieCoverPath, banniere, note, date, serieModifiedTime):
         self.id = id
         self.name = name
         self.originalName = originalName
@@ -119,7 +119,7 @@ class Series(db.Model):
         self.banniere = banniere
         self.note = note
         self.date = date
-        self.serieSize = serieSize
+        self.serieModifiedTime = serieModifiedTime
     
     def __repr__(self) -> str:
         return f"<Series {self.name}>"
@@ -135,9 +135,9 @@ class Seasons(db.Model):
     seasonName = db.Column(db.String(255))
     seasonDescription = db.Column(db.Text)
     seasonCoverPath = db.Column(db.String(255))
-    seasonSize = db.Column(db.Integer)
+    modifiedDate = db.Column(db.Float)
 
-    def __init__(self, serie, release, episodesNumber, seasonNumber, seasonId, seasonName, seasonDescription, seasonCoverPath, seasonSize):
+    def __init__(self, serie, release, episodesNumber, seasonNumber, seasonId, seasonName, seasonDescription, seasonCoverPath, modifiedDate):
         self.serie = serie
         self.release = release
         self.episodesNumber = episodesNumber
@@ -146,7 +146,7 @@ class Seasons(db.Model):
         self.seasonName = seasonName
         self.seasonDescription = seasonDescription
         self.seasonCoverPath = seasonCoverPath
-        self.seasonSize = seasonSize
+        self.modifiedDate = modifiedDate
 
     def __repr__(self) -> str:
         return f"<Seasons {self.serie} {self.seasonNumber}>"
@@ -395,7 +395,7 @@ if enabledRPC == "true":
         rpc_obj = rpc.DiscordIpcClient.for_platform(client_id)
     except OSError:
         enabledRPC == "false"
-        config.set("ChocolateSettings", "enableDiscordRPC", "false")
+        config.set("ChocolateSettings", "discordrpc", "false")
         with open(os.path.join(dir, 'config.ini'), "w") as conf:
             config.write(conf)
 searchedFilms = []
@@ -617,7 +617,7 @@ def getMovies():
                             actor = Actors.query.filter_by(actorId=cast.id).first()
                             actor.actorPrograms = f"{actor.actorPrograms} {movieId}"
                             db.session.commit()
-                    theCast = theCast[:5]
+                    theCast = theCast
                     try:
                         date = datetime.datetime.strptime(date, "%Y-%m-%d").strftime(
                             "%d/%m/%Y"
@@ -867,7 +867,7 @@ def getSeries():
             show = TV()
             serieTitle = serie
             originalSerieTitle = serieTitle
-            serieSize = os.path.getsize(allSeriesPath + "/" + serieTitle)
+            serieModifiedTime = os.path.getmtime(f"{allSeriesPath}/{serieTitle}")
             try:
                 search = show.search(serieTitle)
             except TMDbException as e:
@@ -988,10 +988,9 @@ def getSeries():
                         actor.actorPrograms = f"{actor.actorPrograms} {serieId}"
                         db.session.commit()
 
-                newCast = json.dumps(newCast)
-                newCast = newCast[:5]
+                newCast = json.dumps(newCast[:5])
                 genreList = json.dumps(genreList)
-                serieObject = Series(id=serieId, name=name, originalName=originalSerieTitle, genre=genreList, duration=duration, description=description, cast=newCast, bandeAnnonceUrl=bandeAnnonceUrl, serieCoverPath=serieCoverPath, banniere=banniere, note=note, date=date, serieSize=serieSize)
+                serieObject = Series(id=serieId, name=name, originalName=originalSerieTitle, genre=genreList, duration=duration, description=description, cast=newCast, bandeAnnonceUrl=bandeAnnonceUrl, serieCoverPath=serieCoverPath, banniere=banniere, note=note, date=date, serieModifiedTime=serieModifiedTime)
                 db.session.add(serieObject)
                 db.session.commit
 
@@ -1022,12 +1021,12 @@ def getSeries():
                             break
                         #get the size of the season
                         try:
-                            seasonSize = os.path.getsize(f"{allSeriesPath}/{serie}/S{seasonNumber}")
+                            modifiedDate = os.path.getmtime(f"{allSeriesPath}/{serie}/S{seasonNumber}")
                         except FileNotFoundError as e:
                             continue
 
                         if seasonNumber in allSeasons:
-                            thisSeason = Seasons(serie=serieId, release=releaseDate, episodesNumber=episodesNumber, seasonNumber=seasonNumber, seasonId=seasonId, seasonName=seasonName, seasonDescription=seasonDescription, seasonCoverPath=seasonCoverPath, seasonSize=seasonSize)
+                            thisSeason = Seasons(serie=serieId, release=releaseDate, episodesNumber=episodesNumber, seasonNumber=seasonNumber, seasonId=seasonId, seasonName=seasonName, seasonDescription=seasonDescription, seasonCoverPath=seasonCoverPath, modifiedDate=modifiedDate)
                             
                             try:
                                 db.session.add(thisSeason)
@@ -1076,9 +1075,9 @@ def getSeries():
 
             else:
                 theSerie = Series.query.filter_by(id=serieId).first()
-                theSerieSize = theSerie.serieSize
-                if serieSize > theSerieSize:
-                    theSerie.serieSize = serieSize
+                theSerieModifiedTime = theSerie.serieModifiedTime
+                if serieModifiedTime > theSerieModifiedTime:
+                    theSerie.serieModifiedTime = serieModifiedTime
                     db.session.commit()
 
                 for season in seasonsInfo:
@@ -1108,11 +1107,11 @@ def getSeries():
                             break
                         #get the size of the season
                         try:
-                            seasonSize = os.path.getsize(f"{allSeriesPath}/{serie}/S{seasonNumber}")
+                            modifiedDate = os.path.getmtime(f"{allSeriesPath}/{serie}/S{seasonNumber}")
                         except FileNotFoundError as e:
-                            continue
+                            break
                         if seasonNumber in allSeasons:
-                            thisSeason = Seasons(serie=serieId, release=releaseDate, episodesNumber=episodesNumber, seasonNumber=seasonNumber, seasonId=seasonId, seasonName=seasonName, seasonDescription=seasonDescription, seasonCoverPath=seasonCoverPath, seasonSize=seasonSize)
+                            thisSeason = Seasons(serie=serieId, release=releaseDate, episodesNumber=episodesNumber, seasonNumber=seasonNumber, seasonId=seasonId, seasonName=seasonName, seasonDescription=seasonDescription, seasonCoverPath=seasonCoverPath, modifiedDate=modifiedDate)
                             
                             try:
                                 db.session.add(thisSeason)
@@ -1123,10 +1122,10 @@ def getSeries():
                                 db.session.commit()
                     else:
                         thisSeason = Seasons.query.filter_by(seasonId=seasonId).first()
-                        seasonSize = os.path.getsize(f"{allSeriesPath}/{serie}/S{seasonNumber}")
-                        seasonSizeDB = thisSeason.seasonSize
-                        if seasonSize > seasonSizeDB:
-                            thisSeason.seasonSize = seasonSize
+                        modifiedDate = os.path.getmtime(f"{allSeriesPath}/{serie}/S{seasonNumber}")
+                        modifiedDateDB = thisSeason.modifiedDate
+                        if modifiedDate > modifiedDateDB:
+                            thisSeason.modifiedDate = modifiedDate
                             db.session.commit()
 
                             try:
@@ -1206,7 +1205,6 @@ def getGames():
 
         allFiles = os.listdir(f"{allGamesPath}/{console}")
         for file in allFiles:
-
             with app.app_context():
                 exists = Games.query.filter_by(slug=f"{allGamesPath}/{console}/{file}").first()
                 if file.endswith(tuple(supportedFileTypes)) and exists == None:
@@ -1240,7 +1238,7 @@ def getGames():
                         gameId = gameIGDB["id"]
                         gameConsole = console
                         gameSlug = f"{allGamesPath}/{console}/{newFileName}"
-
+        
                         game = Games(console=gameConsole, id=gameId, title=gameName, realTitle=gameRealTitle, cover=gameCover, description=gameDescription, note=gameNote, date=gameDate, genre=gameGenre, slug=gameSlug)
                         db.session.add(game)
                         db.session.commit()
@@ -1309,7 +1307,6 @@ def getGames():
                                     e=e
                                     db.session.commit()
                         
-
 
                 elif not file.endswith(".bin") and exists == None:
                     print(f"{file} is not supported, here's the list of supported files : \n{','.join(supportedFileTypes)}")
@@ -2550,7 +2547,7 @@ def sendDiscordPresence(name, actualDuration, totalDuration):
                 rpc_obj.set_activity(activity)
             except OSError:
                 enabledRPC == "false"
-                config.set("ChocolateSettings", "enableDiscordRPC", "false")
+                config.set("ChocolateSettings", "discordrpc", "false")
                 with open(os.path.join(dir, 'config.ini'), "w") as conf:
                     config.write(conf)
     return json.dumps(
