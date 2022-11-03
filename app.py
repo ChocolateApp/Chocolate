@@ -992,7 +992,7 @@ def getSeries():
                 genreList = json.dumps(genreList)
                 serieObject = Series(id=serieId, name=name, originalName=originalSerieTitle, genre=genreList, duration=duration, description=description, cast=newCast, bandeAnnonceUrl=bandeAnnonceUrl, serieCoverPath=serieCoverPath, banniere=banniere, note=note, date=date, serieModifiedTime=serieModifiedTime)
                 db.session.add(serieObject)
-                db.session.commit
+                db.session.commit()
 
                 for season in seasonsInfo:
                     releaseDate = season.air_date
