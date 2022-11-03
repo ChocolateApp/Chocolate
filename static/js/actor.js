@@ -63,13 +63,12 @@ function setPopup() {
             fetch("/getMovieData/" + movieTitle).then(function(response) {
                 return response.json()
             }).then(function(data) {
-                var movieTitle = data.realTitle
-
-                var movieCast = data.cast
+                var movieTitle = data.title
+                var movieCast = JSON.parse(data.cast)
                 var movieDescription = data.description
                 var movieDuration = data.duration
-                var movieGenre = data.genre
                 var movieNote = data.note
+                var movieGenre = JSON.parse(data.genre)
                 var moviePoster = data.cover
                 var movieUrl = data.slug
                 movieUrl = "/movie/" + movieUrl
@@ -245,7 +244,7 @@ function getActorMovies() {
 
 
         for (i = 0; i < actorMovies.length; i++) {
-            realTitle = actorMovies[i].realTitle
+            realTitle = actorMovies[i].title
             cover = actorMovies[i].cover
             actorMovie = document.createElement("div")
             actorMovie.setAttribute("class", "actorMovie cover")

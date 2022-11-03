@@ -408,9 +408,10 @@ function setPopup() {
                 }
                 castRealName = cast[0]
                 castCharacterName = cast[1]
+                castId = cast[3]
                 castImage.setAttribute("src", castImageUrl)
                 castImage.setAttribute("alt", cast[4])
-                castImage.setAttribute("title", castRealName)
+                castImage.setAttribute("title", castId)
                 castMember.appendChild(castImage)
                 castName = document.createElement("p")
                 castName.className = "castName"
@@ -427,8 +428,8 @@ function setPopup() {
             for (var i = 0; i < castMembers.length; i++) {
                 castMembers[i].addEventListener("click", function() {
                     var castImage = this.children[0]
-                    var castRealName = castImage.getAttribute("alt")
-                    var castUrl = "/actor/" + castRealName
+                    var castId = castImage.getAttribute("title")
+                    var castUrl = "/actor/" + castId
                     window.location.href = castUrl
                 })
             }

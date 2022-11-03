@@ -123,13 +123,14 @@ Don't forget to give the project a star! Thanks again!
 ## TO-DO for Chocolate Server
 
 - [ ] Increase the search system
+- [X] Increase the boot speed
 - [X] Replace JSON by a DB
 - [X] Create a local account system for child and members of the family/friends
-- [ ] Path few bugs like :
-  - [ ] Actors page
+- [X] Path few bugs like :
+  - [X] Actors page
   - [X] Popup of the first and random show
 - [ ] Edit movie metadata directly on the website
-- [ ] Enable or not RPC for Discord
+- [X] Enable or not RPC for Discord
 - [ ] Add Books, PDF, Epub
 - [ ] Add Musics
 - [X] Add Games

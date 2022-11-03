@@ -104,8 +104,9 @@ class Series(db.Model):
     banniere = db.Column(db.String(255))
     note = db.Column(db.String(255))
     date = db.Column(db.String(255))
+    serieSize = db.Column(db.Integer)
 
-    def __init__(self, id, name, originalName, genre, duration, description, cast, bandeAnnonceUrl, serieCoverPath, banniere, note, date):
+    def __init__(self, id, name, originalName, genre, duration, description, cast, bandeAnnonceUrl, serieCoverPath, banniere, note, date, serieSize):
         self.id = id
         self.name = name
         self.originalName = originalName
@@ -118,6 +119,7 @@ class Series(db.Model):
         self.banniere = banniere
         self.note = note
         self.date = date
+        self.serieSize = serieSize
     
     def __repr__(self) -> str:
         return f"<Series {self.name}>"
@@ -133,8 +135,9 @@ class Seasons(db.Model):
     seasonName = db.Column(db.String(255))
     seasonDescription = db.Column(db.Text)
     seasonCoverPath = db.Column(db.String(255))
+    seasonSize = db.Column(db.Integer)
 
-    def __init__(self, serie, release, episodesNumber, seasonNumber, seasonId, seasonName, seasonDescription, seasonCoverPath):
+    def __init__(self, serie, release, episodesNumber, seasonNumber, seasonId, seasonName, seasonDescription, seasonCoverPath, seasonSize):
         self.serie = serie
         self.release = release
         self.episodesNumber = episodesNumber
@@ -143,6 +146,7 @@ class Seasons(db.Model):
         self.seasonName = seasonName
         self.seasonDescription = seasonDescription
         self.seasonCoverPath = seasonCoverPath
+        self.seasonSize = seasonSize
 
     def __repr__(self) -> str:
         return f"<Seasons {self.serie} {self.seasonNumber}>"
@@ -205,6 +209,27 @@ class Language(db.Model):
     
     def __repr__(self) -> str:
         return f"<Language {self.language}>"
+
+class Actors(db.Model):
+    name = db.Column(db.String(255), primary_key=True)
+    actorId = db.Column(db.Integer, primary_key=True)
+    actorImage = db.Column(db.Text)
+    actorDescription = db.Column(db.String(2550))
+    actorBirthDate = db.Column(db.String(255))
+    actorBirthPlace = db.Column(db.String(255))
+    actorPrograms = db.Column(db.Text)
+
+    def __init__(self, name, actorId, actorImage, actorDescription, actorBirthDate, actorBirthPlace, actorPrograms):
+        self.name = name
+        self.actorId = actorId
+        self.actorImage = actorImage
+        self.actorDescription = actorDescription
+        self.actorBirthDate = actorBirthDate
+        self.actorBirthPlace = actorBirthPlace
+        self.actorPrograms = actorPrograms
+    
+    def __repr__(self) -> str:
+        return f"<Actors {self.name}>"
 
 with app.app_context():
   db.create_all()
@@ -561,27 +586,38 @@ def getMovies():
                     casts = details.casts.cast
                     theCast = []
                     for cast in casts:
-                        while len(theCast) < 5:
-                            characterName = cast.character
-                            actorName = (
-                                cast.name.replace(" ", "_")
-                                .replace("/", "")
-                                .replace("\"", "")
-                            )
-                            imagePath = f"https://www.themoviedb.org/t/p/w600_and_h900_bestv2{cast.profile_path}"
-                            if not os.path.exists(
-                                f"{dirPath}/static/img/mediaImages/Actor_{actorName}.png"):
-                                with open(
-                                    f"{dirPath}/static/img/mediaImages/Actor_{actorName}.png",
-                                    "wb",
-                                ) as f:
+                        characterName = cast.character
+                        actorName = (
+                            cast.name.replace(" ", "_")
+                            .replace("/", "")
+                            .replace("\"", "")
+                        )
+                        imagePath = f"https://www.themoviedb.org/t/p/w600_and_h900_bestv2{cast.profile_path}"
+                        if not os.path.exists(
+                            f"{dirPath}/static/img/mediaImages/Actor_{actorName}.png"):
+                            with open(f"{dirPath}/static/img/mediaImages/Actor_{actorName}.png", "wb") as f:
+                                try:
                                     f.write(requests.get(imagePath).content)
-                            imagePath = f"/static/img/mediaImages/Actor_{actorName}.png"
-                            actor = [cast.name, characterName, imagePath]
-                            if actor not in theCast:
-                                theCast.append(actor)
-                            else:
-                                break
+                                    imagePath = f"/static/img/mediaImages/Actor_{actorName}.png"
+                                except:
+                                    continue
+                        actor = [cast.name, characterName, imagePath, cast.id]
+                        if actor not in theCast:
+                            theCast.append(actor)
+                        else:
+                            break
+                        person = Person()
+                        p = person.details(cast.id)
+                        exists = Actors.query.filter_by(actorId=cast.id).first() is not None
+                        if not exists:
+                            actor = Actors(name=cast.name, actorImage=imagePath, actorDescription=p.biography, actorBirthDate=p.birthday, actorBirthPlace=p.place_of_birth, actorPrograms=f"{movieId}", actorId=cast.id)
+                            db.session.add(actor)
+                            db.session.commit()
+                        else:
+                            actor = Actors.query.filter_by(actorId=cast.id).first()
+                            actor.actorPrograms = f"{actor.actorPrograms} {movieId}"
+                            db.session.commit()
+                    theCast = theCast[:5]
                     try:
                         date = datetime.datetime.strptime(date, "%Y-%m-%d").strftime(
                             "%d/%m/%Y"
@@ -827,56 +863,62 @@ def getSeries():
         print("\033[?25l", end="")
         print(loading, end="\r", flush=True)
         with app.app_context():
-            exists = db.session.query(Series).filter_by(originalName=serie).first() is not None
+
+            show = TV()
+            serieTitle = serie
+            originalSerieTitle = serieTitle
+            serieSize = os.path.getsize(allSeriesPath + "/" + serieTitle)
+            try:
+                search = show.search(serieTitle)
+            except TMDbException as e:
+                allSeriesNotSorted.append(serieTitle)
+                break
+
+            if not search:
+                allSeriesNotSorted.append(serieTitle)
+                print(f"{originalSerieTitle} return nothing, try to rename it, the english name return more results.")
+                continue
+
+            askForGoodSerie = config["ChocolateSettings"]["askWhichSerie"]
+            if askForGoodSerie == "false" or len(search)==1:
+                bestMatch = search[0]
+                for i in range(len(search)):
+                    if (
+                        lev(serieTitle, search[i].name) < lev(serieTitle, bestMatch.name)
+                        and bestMatch.name not in allSeriesName
+                    ):
+                        bestMatch = search[i]
+                    elif (
+                        lev(serieTitle, search[i].name) == lev(serieTitle, bestMatch.name)
+                        and bestMatch.name not in allSeriesName
+                    ):
+                        bestMatch = bestMatch
+                    if (
+                        lev(serieTitle, bestMatch.name) == 0
+                        and bestMatch.name not in allSeriesName
+                    ):
+                        break
+            else:
+                print(f"I found {len(search)} series that can be the one you want")
+                for serieSearched in search:
+                    indexOfTheSerie = search.index(serieSearched)
+                    print(f"{serieSearched.name} id:{indexOfTheSerie}")
+                valueSelected = int(input("Which serie is it (id):"))
+                if valueSelected < len(search):
+                    bestMatch = search[valueSelected]
+
+            res = bestMatch
+            serieId = res.id
+            details = show.details(serieId)
+            seasonsInfo = details.seasons
+            name = res.name
+            serieCoverPath = f"https://image.tmdb.org/t/p/original{res.poster_path}"
+            banniere = f"https://image.tmdb.org/t/p/original{res.backdrop_path}"
+            rewritedName = serieTitle.replace(" ", "_")
+
+
+            exists = db.session.query(Series).filter_by(id=serieId).first() is not None
             if not exists:
-                show = TV()
-                serieTitle = serie
-                originalSerieTitle = serieTitle
-
-                try:
-                    search = show.search(serieTitle)
-                except TMDbException as e:
-                    allSeriesNotSorted.append(serieTitle)
-                    break
-
-                if not search:
-                    allSeriesNotSorted.append(serieTitle)
-                    print(f"{originalSerieTitle} return nothing, try to rename it, the english name return more results.")
-                    continue
-
-                askForGoodSerie = config["ChocolateSettings"]["askWhichSerie"]
-                if askForGoodSerie == "false" or len(search)==1:
-                    bestMatch = search[0]
-                    for i in range(len(search)):
-                        if (
-                            lev(serieTitle, search[i].name) < lev(serieTitle, bestMatch.name)
-                            and bestMatch.name not in allSeriesName
-                        ):
-                            bestMatch = search[i]
-                        elif (
-                            lev(serieTitle, search[i].name) == lev(serieTitle, bestMatch.name)
-                            and bestMatch.name not in allSeriesName
-                        ):
-                            bestMatch = bestMatch
-                        if (
-                            lev(serieTitle, bestMatch.name) == 0
-                            and bestMatch.name not in allSeriesName
-                        ):
-                            break
-                else:
-                    print(f"I found {len(search)} series that can be the one you want")
-                    for serieSearched in search:
-                        indexOfTheSerie = search.index(serieSearched)
-                        print(f"{serieSearched.name} id:{indexOfTheSerie}")
-                    valueSelected = int(input("Which serie is it (id):"))
-                    if valueSelected < len(search):
-                        bestMatch = search[valueSelected]
-
-                res = bestMatch
-                name = res.name
-                serieCoverPath = f"https://image.tmdb.org/t/p/original{res.poster_path}"
-                banniere = f"https://image.tmdb.org/t/p/original{res.backdrop_path}"
-                rewritedName = serieTitle.replace(" ", "_")
                 if not os.path.exists(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.png"):
                     with open(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.png","wb") as f:
                         f.write(requests.get(serieCoverPath).content)
@@ -890,6 +932,7 @@ def getSeries():
                 date = res.first_air_date
                 serieId = res.id
                 details = show.details(serieId)
+                seasonsInfo = details.seasons
                 cast = details.credits.cast
                 runTime = details.episode_run_time
                 duration = ""
@@ -918,7 +961,6 @@ def getSeries():
                 genreList = []
                 for genre in serieGenre:
                     genreList.append(str(genre.name))
-                cast = cast[:5]
                 newCast = []
                 for actor in cast:
                     actorName = actor.name.replace(" ", "_").replace("/", "")
@@ -932,68 +974,196 @@ def getSeries():
                     actorName = actorName.replace("_", " ")
                     thisActor = [str(actorName), str(actorCharacter), str(actorImage), str(actor.id)]
                     newCast.append(thisActor)
+
+                    
+                    person = Person()
+                    p = person.details(actor.id)
+                    exists = Actors.query.filter_by(actorId=actor.id).first() is not None
+                    if not exists:
+                        actor = Actors(name=actor.name, actorId=actor.id, actorImage=actorImage, actorDescription=p.biography, actorBirthDate=p.birthday, actorBirthPlace=p.place_of_birth, actorPrograms=f"{serieId}")
+                        db.session.add(actor)
+                        db.session.commit()
+                    else:
+                        actor = Actors.query.filter_by(actorId=actor.id).first()
+                        actor.actorPrograms = f"{actor.actorPrograms} {serieId}"
+                        db.session.commit()
+
                 newCast = json.dumps(newCast)
+                newCast = newCast[:5]
                 genreList = json.dumps(genreList)
-                serieObject = Series(id=serieId, name=name, originalName=originalSerieTitle, genre=genreList, duration=duration, description=description, cast=newCast, bandeAnnonceUrl=bandeAnnonceUrl, serieCoverPath=serieCoverPath, banniere=banniere, note=note, date=date)
+                serieObject = Series(id=serieId, name=name, originalName=originalSerieTitle, genre=genreList, duration=duration, description=description, cast=newCast, bandeAnnonceUrl=bandeAnnonceUrl, serieCoverPath=serieCoverPath, banniere=banniere, note=note, date=date, serieSize=serieSize)
                 db.session.add(serieObject)
                 db.session.commit
+
                 for season in seasonsInfo:
                     releaseDate = season.air_date
                     episodesNumber = season.episode_count
                     seasonNumber = season.season_number
                     seasonId = season.id
                     seasonName = season.name
-                    seasonDescription = season.overview
-                    seasonCoverPath = (f"https://image.tmdb.org/t/p/original{season.poster_path}")
-                    if not os.path.exists(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png"):
-                        with open(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png", "wb") as f:
-                            f.write(requests.get(seasonCoverPath).content)
-                    seasonCoverPath = f"/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png"
-
-                    allSeasonsUglyDict = os.listdir(f"{allSeriesPath}/{serie}")
+                    
                     try:
-                        allSeasons = [int(season.replace("S", "")) for season in allSeasonsUglyDict]
-                    except ValueError as e:
-                        break
-                    if seasonNumber in allSeasons:
-                        thisSeason = Seasons(serie=serieId, release=releaseDate, episodesNumber=episodesNumber, seasonNumber=seasonNumber, seasonId=seasonId, seasonName=seasonName, seasonDescription=seasonDescription, seasonCoverPath=seasonCoverPath)
-                        
+                        exists = Seasons.query.filter_by(seasonId=seasonId).first() is not None
+                    except sqlalchemy.exc.PendingRollbackError as e:
+                        db.session.rollback()
+                        exists = Seasons.query.filter_by(seasonId=seasonId).first() is not None
+                    if not exists:
+                        seasonDescription = season.overview
+                        seasonCoverPath = (f"https://image.tmdb.org/t/p/original{season.poster_path}")
+                        if not os.path.exists(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png"):
+                            with open(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png", "wb") as f:
+                                f.write(requests.get(seasonCoverPath).content)
+                        seasonCoverPath = f"/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png"
+
+                        allSeasonsUglyDict = os.listdir(f"{allSeriesPath}/{serie}")
                         try:
-                            db.session.add(thisSeason)
-                            db.session.commit()
-                        except sqlalchemy.exc.PendingRollbackError as e:
-                            db.session.rollback()
-                            db.session.add(thisSeason)
-                            db.session.commit()
+                            allSeasons = [int(season.replace("S", "")) for season in allSeasonsUglyDict]
+                        except ValueError as e:
+                            break
+                        #get the size of the season
+                        try:
+                            seasonSize = os.path.getsize(f"{allSeriesPath}/{serie}/S{seasonNumber}")
+                        except FileNotFoundError as e:
+                            continue
 
-                        allEpisodes = os.listdir(f"{allSeriesPath}/{serie}/S{seasonNumber}")
-                        for episode in allEpisodes:
-                            slug = f"/{serie}/S{seasonNumber}/{episode}"
-                            episodeName = slug.split("/")[-1]
-                            episodeName, extension = os.path.splitext(episodeName)
+                        if seasonNumber in allSeasons:
+                            thisSeason = Seasons(serie=serieId, release=releaseDate, episodesNumber=episodesNumber, seasonNumber=seasonNumber, seasonId=seasonId, seasonName=seasonName, seasonDescription=seasonDescription, seasonCoverPath=seasonCoverPath, seasonSize=seasonSize)
+                            
+                            try:
+                                db.session.add(thisSeason)
+                                db.session.commit()
+                            except sqlalchemy.exc.PendingRollbackError as e:
+                                db.session.rollback()
+                                db.session.add(thisSeason)
+                                db.session.commit()
+                            
+                            try:
+                                allEpisodes = os.listdir(f"{allSeriesPath}/{serie}/S{seasonNumber}")
+                            except FileNotFoundError as e:
+                                continue
 
-                            try:
-                                episodeIndex = int(episodeName.replace("E", ""))
-                            except:
-                                break
-                            showEpisode = Episode()
-                            try:
-                                episodeInfo = showEpisode.details(serieId, seasonNumber, episodeIndex)
-                                coverEpisode = f"https://image.tmdb.org/t/p/original{episodeInfo.still_path}"
-                                rewritedName = originalSerieTitle.replace(" ", "_")
-                                if not os.path.exists(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.png"):
-                                    with open(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.png","wb") as f:
-                                        f.write(requests.get(coverEpisode).content)
-                                coverEpisode = f"/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.png"
+                            for episode in allEpisodes:
+                                slug = f"/{serie}/S{seasonNumber}/{episode}"
+                                episodeName = slug.split("/")[-1]
+                                episodeName, extension = os.path.splitext(episodeName)
 
                                 try:
-                                    episodeData = Episodes(episodeId=episodeInfo.id, episodeName=episodeName, seasonId=seasonId, episodeNumber=episodeIndex, episodeDescription=episodeInfo.overview, episodeCoverPath=coverEpisode, releaseDate=episodeInfo.air_date, slug=slug)
-                                    db.session.add(episodeData)
-                                    db.session.commit()
+                                    episodeIndex = int(episodeName.replace("E", ""))
                                 except:
-                                    pass
-                            except TMDbException as e:
-                                print(f"I didn't find an the episode {episodeIndex} of the season {seasonNumber} of the serie with ID {serieId}",e)
+                                    break
+                                showEpisode = Episode()
+                                try:
+                                    episodeInfo = showEpisode.details(serieId, seasonNumber, episodeIndex)
+                                    exists = Episodes.query.filter_by(episodeId=episodeInfo.id).first() is not None
+                                    if not exists:
+                                        coverEpisode = f"https://image.tmdb.org/t/p/original{episodeInfo.still_path}"
+                                        rewritedName = originalSerieTitle.replace(" ", "_")
+                                        if not os.path.exists(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.png"):
+                                            with open(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.png","wb") as f:
+                                                f.write(requests.get(coverEpisode).content)
+                                        coverEpisode = f"/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.png"
+
+                                        try:
+                                            episodeData = Episodes(episodeId=episodeInfo.id, episodeName=episodeName, seasonId=seasonId, episodeNumber=episodeIndex, episodeDescription=episodeInfo.overview, episodeCoverPath=coverEpisode, releaseDate=episodeInfo.air_date, slug=slug)
+                                            db.session.add(episodeData)
+                                            db.session.commit()
+                                        except:
+                                            pass
+                                except TMDbException as e:
+                                    print(f"I didn't find an the episode {episodeIndex} of the season {seasonNumber} of the serie with ID {serieId}",e)
+
+                            
+
+            else:
+                theSerie = Series.query.filter_by(id=serieId).first()
+                theSerieSize = theSerie.serieSize
+                if serieSize > theSerieSize:
+                    theSerie.serieSize = serieSize
+                    db.session.commit()
+
+                for season in seasonsInfo:
+                    releaseDate = season.air_date
+                    episodesNumber = season.episode_count
+                    seasonNumber = season.season_number
+                    seasonId = season.id
+                    seasonName = season.name
+                    
+                    try:
+                        exists = Seasons.query.filter_by(seasonId=seasonId).first() is not None
+                    except sqlalchemy.exc.PendingRollbackError as e:
+                        db.session.rollback()
+                        exists = Seasons.query.filter_by(seasonId=seasonId).first() is not None
+                    if not exists:
+                        seasonDescription = season.overview
+                        seasonCoverPath = (f"https://image.tmdb.org/t/p/original{season.poster_path}")
+                        if not os.path.exists(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png"):
+                            with open(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png", "wb") as f:
+                                f.write(requests.get(seasonCoverPath).content)
+                        seasonCoverPath = f"/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png"
+
+                        allSeasonsUglyDict = os.listdir(f"{allSeriesPath}/{serie}")
+                        try:
+                            allSeasons = [int(season.replace("S", "")) for season in allSeasonsUglyDict]
+                        except ValueError as e:
+                            break
+                        #get the size of the season
+                        try:
+                            seasonSize = os.path.getsize(f"{allSeriesPath}/{serie}/S{seasonNumber}")
+                        except FileNotFoundError as e:
+                            continue
+                        if seasonNumber in allSeasons:
+                            thisSeason = Seasons(serie=serieId, release=releaseDate, episodesNumber=episodesNumber, seasonNumber=seasonNumber, seasonId=seasonId, seasonName=seasonName, seasonDescription=seasonDescription, seasonCoverPath=seasonCoverPath, seasonSize=seasonSize)
+                            
+                            try:
+                                db.session.add(thisSeason)
+                                db.session.commit()
+                            except sqlalchemy.exc.PendingRollbackError as e:
+                                db.session.rollback()
+                                db.session.add(thisSeason)
+                                db.session.commit()
+                    else:
+                        thisSeason = Seasons.query.filter_by(seasonId=seasonId).first()
+                        seasonSize = os.path.getsize(f"{allSeriesPath}/{serie}/S{seasonNumber}")
+                        seasonSizeDB = thisSeason.seasonSize
+                        if seasonSize > seasonSizeDB:
+                            thisSeason.seasonSize = seasonSize
+                            db.session.commit()
+
+                            try:
+                                allEpisodes = os.listdir(f"{allSeriesPath}/{serie}/S{seasonNumber}")
+                            except FileNotFoundError as e:
+                                continue
+
+                            for episode in allEpisodes:
+
+                                slug = f"/{serie}/S{seasonNumber}/{episode}"
+                                episodeName = slug.split("/")[-1]
+                                episodeName, extension = os.path.splitext(episodeName)
+
+                                try:
+                                    episodeIndex = int(episodeName.replace("E", ""))
+                                except:
+                                    break
+                                showEpisode = Episode()
+                                try:
+                                    episodeInfo = showEpisode.details(serieId, seasonNumber, episodeIndex)
+                                    exists = Episodes.query.filter_by(episodeId=episodeInfo.id).first() is not None
+                                    if not exists:
+                                        coverEpisode = f"https://image.tmdb.org/t/p/original{episodeInfo.still_path}"
+                                        rewritedName = originalSerieTitle.replace(" ", "_")
+                                        if not os.path.exists(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.png"):
+                                            with open(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.png","wb") as f:
+                                                f.write(requests.get(coverEpisode).content)
+                                        coverEpisode = f"/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.png"
+
+                                        try:
+                                            episodeData = Episodes(episodeId=episodeInfo.id, episodeName=episodeName, seasonId=seasonId, episodeNumber=episodeIndex, episodeDescription=episodeInfo.overview, episodeCoverPath=coverEpisode, releaseDate=episodeInfo.air_date, slug=slug)
+                                            db.session.add(episodeData)
+                                            db.session.commit()
+                                        except:
+                                            pass
+                                except TMDbException as e:
+                                    print(f"I didn't find an the episode {episodeIndex} of the season {seasonNumber} of the serie with ID {serieId}",e)
 
 def getGames():
     try:
@@ -1017,10 +1187,10 @@ def getGames():
         return
     saidPS1 = False
     supportedConsoles = ['3DO', 'Amiga', 'Atari 2600', 'Atari 5200', 'Atari 7800', 'Atari Jaguar', 'Atari Lynx', 'GB', 'GBA', 'GBC', 'N64', 'NDS', 'NES', 'SNES', 'Neo Geo Pocket', 'PSX', 'Sega 32X', 'Sega CD', 'Sega Game Gear', 'Sega Master System', 'Sega Mega Drive', 'Sega Saturn', "PS1"]
-    supportedFileTypes = [".zip", ".adf", ".adz", ".dms", ".fdi", ".ipf", ".hdf", ".lha", ".slave", ".info", ".cdd", ".nrg", ".mds", ".chd", ".uae", ".m3u", ".a26", ".a52", ".a78", ".j64", ".lnx", ".gb", ".gba", ".gbc", ".n64", ".nds", ".nes", ".ngp", ".psx", ".sfc", ".smd", ".32x", ".cd", ".gg", ".md", ".sat", ".sms"]
+    supportedFileTypes = [".zip", ".adf", ".adz", ".dms", ".fdi", ".ipf", ".hdf", ".lha", ".slave", ".info", ".cdd", ".nrg", ".mds", ".chd", ".uae", ".m3u", ".a26", ".a52", ".a78", ".j64", ".lnx", ".gb", ".gba", ".gbc", ".n64", ".nds", ".nes", ".ngp", ".psx", ".sfc", ".smc", ".smd", ".32x", ".cd", ".gg", ".md", ".sat", ".sms"]
     for console in allConsoles:
         if console not in supportedConsoles:
-            print(f"{console} is not supported or the console name is not correct, here is the list of supported consoles : {','.join(supportedConsoles)} rename the folder to one of these names if it's the correct console")
+            print(f"{console} is not supported or the console name is not correct, here is the list of supported consoles : {', '.join(supportedConsoles)} rename the folder to one of these names if it's the correct console")
             break
         size = len(allConsoles)
         gameName, extension = os.path.splitext(console)
@@ -1075,7 +1245,7 @@ def getGames():
                         db.session.add(game)
                         db.session.commit()
                     else:
-                        print(f"I didn't find the game {file} of {console}")
+                        print(f"I didn't find the game {file} at {console}")
                 elif console == "PS1" and file.endswith(".cue") and exists == None:
                     if saidPS1 == False:
                         print(f"You need to zip all our .bin files and the .cue file in one .zip file to being able to play it")
@@ -2313,44 +2483,31 @@ def generateAudio(slug):
     return allAudio
 
 
-@app.route("/actor/<actorName>")
+@app.route("/actor/<actorId>")
 @login_required
-def actor(actorName):
-    actorName = actorName.replace("_", " ")
-    routeToUse = f"/getActorData/{actorName}"
+def actor(actorId):
+    routeToUse = f"/getActorData/{actorId}"
+    actor = Actors.query.filter_by(actorId=actorId).first()
+    actorName = actor.name
     return render_template("actor.html", routeToUse=routeToUse, actorName=actorName)
 
 
-@app.route("/getActorData/<actorName>", methods=["GET", "POST"])
-def getActorData(actorName):
-    movies = []
-    person = Person()
-    actorDatas = person.search(actorName)
-    moviesDB = Movies.query.all()
-    for movie in moviesDB:
-        movie = movie.__dict__
-        del movie["_sa_instance_state"]
-        actors = movie["cast"]
-        actors = json.loads(actors)
-
-        for actor in actors:
-            if actor[0] == actorName:
-                movies.append(movie)
-                break
-    actorId = actorDatas[0].id
-    p = person.details(actorId)
-    name = p["name"]
-    birthday = p["birthday"]
-    birthplace = p["place_of_birth"]
-    actorDescription = p["biography"]
-    rewritedName = name.replace(" ", "_")
+@app.route("/getActorData/<actorId>", methods=["GET", "POST"])
+def getActorData(actorId):
+    moviesData = []
+    actor = Actors.query.filter_by(actorId=actorId).first()
+    movies = actor.actorPrograms.split(" ")
+    for movie in movies:
+        thisMovie = Movies.query.filter_by(id=movie).first().__dict__
+        del thisMovie["_sa_instance_state"]
+        moviesData.append(thisMovie)
     actorData = {
-        "actorName": name,
-        "actorImage": f"/static/img/mediaImages/Actor_{rewritedName}.png",
-        "actorDescription": actorDescription,
-        "actorBirthday": birthday,
-        "actorBirthplace": birthplace,
-        "actorMovies": movies,
+        "actorName": actor.name,
+        "actorImage": actor.actorImage,
+        "actorDescription": actor.actorDescription,
+        "actorBirthday": actor.actorBirthDate,
+        "actorBirthplace": actor.actorBirthPlace,
+        "actorMovies": moviesData,
     }
     return json.dumps(actorData, default=lambda o: o.__dict__, ensure_ascii=False)
 
