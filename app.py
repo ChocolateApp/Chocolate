@@ -456,7 +456,6 @@ def getMovies():
         os.chdir(path)
     except OSError as e:
         print("No movies found")
-        print(e)
         return
     filmFileList = []
     movies = os.listdir(path)
@@ -676,7 +675,6 @@ def getSeries():
         ]
     except OSError as e:
         print("No series found")
-        print(e)
         return
 
     allSeasonsAppelations = ["S"]
@@ -1016,7 +1014,6 @@ def getGames():
 
     except OSError as e:
         print("No games found")
-        print(e)
         return
     saidPS1 = False
     supportedConsoles = ['3DO', 'Amiga', 'Atari 2600', 'Atari 5200', 'Atari 7800', 'Atari Jaguar', 'Atari Lynx', 'GB', 'GBA', 'GBC', 'N64', 'NDS', 'NES', 'SNES', 'Neo Geo Pocket', 'PSX', 'Sega 32X', 'Sega CD', 'Sega Game Gear', 'Sega Master System', 'Sega Mega Drive', 'Sega Saturn', "PS1"]
@@ -1146,7 +1143,6 @@ def getGames():
 
                 elif not file.endswith(".bin") and exists == None:
                     print(f"{file} is not supported, here's the list of supported files : \n{','.join(supportedFileTypes)}")
-
 
 def length_video(path: str) -> float:
     seconds = subprocess.run(

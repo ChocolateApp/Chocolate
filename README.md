@@ -133,9 +133,17 @@ Don't forget to give the project a star! Thanks again!
 - [ ] Add Books, PDF, Epub
 - [ ] Add Musics
 - [X] Add Games
-- [ ] Add TV with M3U8
+- [X] Add shows, tv programs
+- [ ] Add TV with M3U/M3U8 playlist
 - [ ] Add a watchtogether system
 - [ ] Translate in multiple languages
+- [ ] Multiple interface
+- [ ] Statistics
+- [ ] Custom intro
+- [ ] Detect series intro and end and skip them
+- [ ] Add a system to search for subtitles
+- [ ] Send issues directly from the website
+
 
 <!-- CONTACT -->
 ## Contact
