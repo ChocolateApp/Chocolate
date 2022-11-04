@@ -1911,7 +1911,6 @@ def getSeriesData(title):
 
     title = title.replace("%20", " ")
     title = title.replace("_", " ")
-    print(title)
     exists = db.session.query(Series).filter_by(name=title).first() is not None
     if exists:
         serie = Series.query.filter_by(name=title).first().__dict__
