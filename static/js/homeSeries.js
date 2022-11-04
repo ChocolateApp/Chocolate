@@ -68,6 +68,7 @@ function setPopup() {
 
             var image = this.children[0].children[0]
             var serieTitle = image.getAttribute("title");
+            serieTitle = serieTitle.replace("_", " ")
 
             fetch("/getSerieData/" + serieTitle).then(function(response) {
                 return response.json()

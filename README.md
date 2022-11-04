@@ -124,6 +124,7 @@ Don't forget to give the project a star! Thanks again!
 
 - [ ] Increase the search system
 - [X] Increase the boot speed
+- [X] Added the Consoles on the main page
 - [X] Replace JSON by a DB
 - [X] Create a local account system for child and members of the family/friends
 - [X] Path few bugs like :

@@ -1908,19 +1908,24 @@ def getMovieData(title):
 
 @app.route("/getSerieData/<title>", methods=["GET", "POST"])
 def getSeriesData(title):
-    global allSeriesDict
+
     title = title.replace("%20", " ")
-    if title in allSeriesDict:
-        data = allSeriesDict[title]
-        data["seasons"] = getSerieSeasons(data["id"])
-        try:
-            del data["_sa_instance_state"]
-        except:
-            pass
-        data = dict(data)
-        return json.dumps(data, ensure_ascii=False)
-    else:
-        return "Not Found"
+    title = title.replace("_", " ")
+    print(title)
+    exists = db.session.query(Series).filter_by(name=title).first() is not None
+    if exists:
+        serie = Series.query.filter_by(name=title).first().__dict__
+        serie["seasons"] = getSerieSeasons(serie["id"])
+        del serie["_sa_instance_state"]
+        return json.dumps(serie, ensure_ascii=False)
+    exists = db.session.query(Series).filter_by(originalName=title).first() is not None
+    if exists:
+        serie = Series.query.filter_by(originalName=title).first().__dict__
+        serie["seasons"] = getSerieSeasons(serie["id"])
+        del serie["_sa_instance_state"]
+        return json.dumps(serie, ensure_ascii=False)
+
+    return json.dumps("Not Found", ensure_ascii=False)
 
 def getSerieSeasons(id):
     seasons = Seasons.query.filter_by(serie=id).all()

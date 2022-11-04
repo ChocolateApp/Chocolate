@@ -8,5 +8,9 @@
         <img class="serieCardImage" src="{{ url_for('static',filename='img/series.png') }}">
         <p>Séries</p>
     </a>
+    <a class="card gameCard" href="{{ url_for('consoles') }}">
+        <img class="gameCardImage" src="{{ url_for('static',filename='img/games.png') }}">
+        <p>Games</p>
+    </a>
 </div>
 {% endif %} {% endblock %}

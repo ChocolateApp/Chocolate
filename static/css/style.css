@@ -241,7 +241,7 @@ form#searchForm:hover .form_field_search {
 }
 
 .cardsIndex {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     width: 97vw;
     margin-top: 22vh;
     margin-left: 3vw;
@@ -252,11 +252,14 @@ form#searchForm:hover .form_field_search {
 }
 
 .movieCardImage,
-.serieCardImage {
+.serieCardImage,
+.gameCardImage {
     width: 19vw;
     margin-left: 1.5vw;
     border-radius: 2vw;
     margin-top: 5vh;
+    height: 50vh;
+    object-fit: cover;
 }
 
 .movieCard {
@@ -1535,7 +1538,8 @@ input:checked+.slider:before {
         min-height: 16vh;
     }
     .movieCardImage,
-    .serieCardImage {
+    .serieCardImage,
+    .gameCardImage {
         width: 19vw;
         margin-left: 1.5vw;
         border-radius: 2vw;
