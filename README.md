@@ -132,6 +132,7 @@ Don't forget to give the project a star! Thanks again!
   - [X] Popup of the first and random show
 - [ ] Edit movie metadata directly on the website
 - [X] Enable or not RPC for Discord
+- [ ] Make the website a complete OS, with custom right click menu, and custom file explorer
 - [ ] Add Books, PDF, Epub
 - [ ] Add Musics
 - [X] Add Games
@@ -142,9 +143,13 @@ Don't forget to give the project a star! Thanks again!
 - [ ] Multiple interface
 - [ ] Statistics
 - [ ] Custom intro
-- [ ] Detect series intro and end and skip them
+- [ ] Detect series outro and skip them
 - [ ] Add a system to search for subtitles
 - [ ] Send issues directly from the website
+
+# Work in progress
+- [ ] Remove all Flask templates
+- [ ] Detect series intro and skip them
 
 
 <!-- CONTACT -->
