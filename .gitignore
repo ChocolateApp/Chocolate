@@ -10,3 +10,5 @@ static/img/cleanBanner.png
 database.db
 static/bios/*
 !static/bios/readme.txt
+.vscode/tasks.json
+static/img/*

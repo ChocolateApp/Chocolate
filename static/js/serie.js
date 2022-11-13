@@ -26,6 +26,25 @@ window.onload = function() {
     player.controls(true);
 
     var video = document.getElementById("movie_html5_api")
+    let introStart = 0
+    let introEnd = 0
+    href = window.location.href
+    hrefPARTS = href.split("/")
+    episodeID = hrefPARTS[hrefPARTS.length - 1]
+    fetch(`/getThisEpisodeData/${episodeID}`).then(function(response) {
+        return response.json()
+    }).then(function(data) {
+        introStart = data.introStart
+        introEnd = data.introEnd
+    })
+
+    var introSkipButton = document.createElement("button")
+    introSkipButton.id = "introSkipButton"
+    introSkipButton.className = "introSkipButton"
+    introSkipButton.style.display = "none"
+    introSkipButton.innerHTML = "Skip Intro"
+    frontOfTheVideo = document.getElementById("movie")
+    frontOfTheVideo.appendChild(introSkipButton)
     video.addEventListener("timeupdate", function() {
         actualDuration = video.currentTime
         var path = window.location.pathname
@@ -50,13 +69,26 @@ window.onload = function() {
             cookie = `${title}=${durationInHHMMSS}; path=/`
         }
         document.cookie = cookie
-            /*
-            if (durationInHHMMSS != lastPush) {
-                fetch(`/sendDiscordPresence/${title}/${durationInHHMMSS}/${secondDurationInHHMMSS}`)
-                console.log(`/sendDiscordPresence/${title}/${durationInHHMMSS}/${secondDurationInHHMMSS}`)
-                lastPush = durationInHHMMSS
-            }
-            */
+
+        if (actualDuration >= introStart - 4 && actualDuration < introEnd - 2) {
+            console.log(actualDuration, introStart - 4)
+            introSkipButton = document.getElementById("introSkipButton")
+            introSkipButton.style.display = "flex"
+        } else {
+            introSkipButton = document.getElementById("introSkipButton")
+            introSkipButton.style.display = "none"
+        }
+        introSkipButton.addEventListener("click", function() {
+            video.currentTime = introEnd - 2
+        })
+
+        /*
+        if (durationInHHMMSS != lastPush) {
+            fetch(`/sendDiscordPresence/${title}/${durationInHHMMSS}/${secondDurationInHHMMSS}`)
+            console.log(`/sendDiscordPresence/${title}/${durationInHHMMSS}/${secondDurationInHHMMSS}`)
+            lastPush = durationInHHMMSS
+        }
+        */
     })
     var path = window.location.pathname
 
@@ -94,5 +126,4 @@ window.onload = function() {
     var path = window.location.pathname
     var slug = path.split("/")
     slug = slug[2]
-
 };

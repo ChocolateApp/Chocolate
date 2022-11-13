@@ -123,7 +123,7 @@ Don't forget to give the project a star! Thanks again!
 ## TO-DO for Chocolate Server
 - [ ] Upgrade the responsive
 - [ ] Add the mobile ui of the video player
-- [ ] Add multiple quality vidéos
+- [X] Add multiple quality vidéos
 - [ ] Vue systeme by account instead of computer
 - [ ] Add the loading everywhere
 - [ ] Dev a mobile/TV app with chromecasting, and download
@@ -154,6 +154,7 @@ Don't forget to give the project a star! Thanks again!
 # Work in progress
 
 - [ ] Detect series intro and skip them
+- [ ] Create a systeme of library
 
 
 <!-- CONTACT -->
