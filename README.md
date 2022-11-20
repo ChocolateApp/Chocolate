@@ -13,15 +13,6 @@
 
 </div>
 
-## Note of the 20/11/2022
-There's no update from 15 days, don't worry, I'm currently working on the biggest update of Chocolate.<br>
-The new update will rewrite a lot of code, increase a lot of features and add a lot of new features.<br>
-Thanks for supporting Chocolate, I hope you'll like the new update.<br>
-
-If you want more information about the new update, you can go the the rubric [**To-do list**](#to-do-list)<br>
-or you can join the [**Discord server**](https://discord.gg/6m4ZqmNe) and check the #working-on channel.
-
-
 ## About The Project
 Chocolate is an Open Source media manager.<br>
 It allows you to manage your media collection and organize it in a way that is easy to use and easy to search.<br>
