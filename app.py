@@ -959,16 +959,16 @@ def getSeries(libraryName):
 
             res = bestMatch
             serieId = res.id
-            details = show.details(serieId)
-            seasonsInfo = details.seasons
-            name = res.name
-            serieCoverPath = f"https://image.tmdb.org/t/p/original{res.poster_path}"
-            banniere = f"https://image.tmdb.org/t/p/original{res.backdrop_path}"
-            rewritedName = serieTitle.replace(" ", "_")
 
 
             exists = db.session.query(Series).filter_by(id=serieId).first() is not None
             if not exists:
+                details = show.details(serieId)
+                seasonsInfo = details.seasons
+                name = res.name
+                serieCoverPath = f"https://image.tmdb.org/t/p/original{res.poster_path}"
+                banniere = f"https://image.tmdb.org/t/p/original{res.backdrop_path}"
+                rewritedName = serieTitle.replace(" ", "_")
                 if not os.path.exists(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.png"):
                     with open(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.png","wb") as f:
                         f.write(requests.get(serieCoverPath).content)
@@ -1162,6 +1162,8 @@ def getSeries(libraryName):
                 if serieModifiedTime > theSerieModifiedTime:
                     theSerie.serieModifiedTime = serieModifiedTime
                     db.session.commit()
+                details = show.details(serieId)
+                seasonsInfo = details.seasons
 
                 for season in seasonsInfo:
                     releaseDate = season.air_date
