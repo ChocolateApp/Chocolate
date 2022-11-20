@@ -192,6 +192,7 @@ Don't forget to give the project a star! Thanks again!
 - [X] Add multiple quality vidéos
 - [X] Vue systeme by account instead of computer
 - [X] Add the loading everywhere
+- [X] Repair the RPC System (added a button for the github)
 
 
 <!-- CONTACT -->
