@@ -397,6 +397,11 @@ label[for="addLibraryButton"] {
     z-index: 99999999;
 }
 
+.cover:hover .pencilIcon {
+    display: initial !important;
+    animation: showPencil 100ms ease-in-out;
+}
+
 .video-js .vjs-current-time,
 .video-js .vjs-audio-button {
     display: block !important;
@@ -1380,7 +1385,7 @@ input[type="search"]::-webkit-search-results-decoration {
     grid-template-columns: repeat(3, 30vw);
     grid-template-rows: 50vh;
     grid-column-gap: 0px;
-    grid-row-gap: 0px;
+    grid-row-gap: 4vh;
     width: 97vw;
     margin-left: 9.5vw;
     margin-top: 7vh;
@@ -1400,7 +1405,6 @@ input[type="search"]::-webkit-search-results-decoration {
 }
 
 .systemName {
-    margin-right: 1vw;
     text-align: center;
     font-size: 3vh;
 }
