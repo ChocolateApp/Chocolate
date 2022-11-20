@@ -13,6 +13,17 @@
 
 </div>
 
+## Note of the 20/11/2022
+There's no update from 15 days, don't worry, I'm currently working on the biggest update of Chocolate.<br>
+The new update will rewrite a lot of code, increase a lot of features and add a lot of new features.<br>
+Thanks for supporting Chocolate, I hope you'll like the new update.<br>
+
+If you want more information about the new update, you can go the the rubric [**To-do list**](#to-do-list)<br>
+or you can join the [**Discord server**](https://discord.gg/6m4ZqmNe) and check the #working-on channel.
+
+create a regex for discord url
+regex = r"https://d
+
 ## About The Project
 Chocolate is an Open Source media manager.<br>
 It allows you to manage your media collection and organize it in a way that is easy to use and easy to search.<br>
@@ -53,6 +64,7 @@ This is what you have to do to get started with Chocolate :
 #### For Movies :
 * Create a directory
 * Put all your movies in with a proper name, like "Batman Begins.mkv" instead of "Batman.Begins.H264.AAC.XxMOVIESxX.mkv"
+* Create a new library and select the directory you created with the specific type
 * It's done
 
 #### For Shows :
@@ -61,6 +73,25 @@ This is what you have to do to get started with Chocolate :
 * In this directory create directory for each seasons, if possible named them like that : "S1", "S2", "S26"
 * In this seasons directory put all épisodes files, and if possible named them like that : "E1.mkv", "E2.mp4", "E56.avi"
 * Precisions : Chocolate will ask you to rename files and directory if it don't understand, you can agree or disagree is proposition
+```
+📂 Shows
+ ├── 📂 The Office           # Perfect
+ │    ├── 📂 S1
+ │    │    ├── E1.mkv
+ │    │    ├── E2.mkv
+ │    │    └── E3.mkv
+ │    │
+ │    └── 📂 S2
+ │         └── E1.mkv
+ │
+ ├── 📂 The Simpsons        # Don't do that please
+ │    └── 📂 Season 1
+ │         ├── The.Simpsons.EP.One.mkv
+ │         ├── The.Simpsons.EP.Two.mkv
+ │         └── The.Simpsons.EP.Three.mkv
+
+```
+* Create a new library and select the directory you created with the specific type
 * It's done
 
 #### For Games :
@@ -120,28 +151,15 @@ Don't forget to give the project a star! Thanks again!
 4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## TO-DO for Chocolate Server
-- [ ] Upgrade the responsive
+
+## TO-DO for Chocolate Server {#to-do-list}
+- [ ] Use Flask-PWA
+- [ ] Add all audio tracks
 - [ ] Add the mobile ui of the video player
-- [X] Add multiple quality vidéos
-- [ ] Vue systeme by account instead of computer
-- [ ] Add the loading everywhere
 - [ ] Dev a mobile/TV app with chromecasting, and download
-- [ ] Increase the search system
-- [X] Increase the boot speed
-- [X] Added the Consoles on the main page
-- [X] Replace JSON by a DB
-- [X] Converted all images to webp
-- [X] Create a local account system for child and members of the family/friends
-- [X] Path few bugs like :
-  - [X] Actors page
-  - [X] Popup of the first and random show
 - [ ] Edit movie metadata directly on the website
-- [X] Enable or not RPC for Discord
 - [ ] Add Books, PDF, Epub
 - [ ] Add Musics
-- [X] Add Games
-- [X] Add shows, tv programs
 - [ ] Add TV with M3U/M3U8 playlist
 - [ ] Add a watchtogether system
 - [ ] Translate in multiple languages
@@ -150,19 +168,39 @@ Don't forget to give the project a star! Thanks again!
 - [ ] Custom intro
 - [ ] Add a system to search for subtitles
 - [ ] Send issues directly from the website
+- [ ] Order by title, year, release date, note, duration, done, watching, date of add, date of last view
+- [ ] Add watched movies, and series to the watchlist of TMDB
 
-# Work in progress
+### Work in progress
 
 - [ ] Detect series intro and skip them
 - [ ] Create a systeme of library
+- [ ] Increase the search system
+- [ ] Upgrade the responsive
+
+### Tasks Done
+- [X] Increase the boot speed
+- [X] Added the Consoles on the main page
+- [X] Replace JSON by a DB
+- [X] Converted all images to webp
+- [X] Create a local account system for child and members of the family/friends
+- [X] Patch few bugs like :
+  - [X] Actors page
+  - [X] Popup of the first and random show
+- [X] Add Games
+- [X] Add shows, tv programs
+- [X] Enable or not RPC for Discord
+- [X] Add multiple quality vidéos
+- [X] Vue systeme by account instead of computer
+- [X] Add the loading everywhere
 
 
 <!-- CONTACT -->
 ## Contact
 
-Impre'visible#2576 - [@romeo_chevrier](https://twitter.com/romeo_chevrier) - impr.visible@gmail.com
-
-Project Link: [https://github.com/ChocolateApp/Chocolate](https://github.com/ChocolateApp/Chocolate)
+Official Discord Server - [https://discord.gg/6m4ZqmNe](https://discord.gg/6m4ZqmNe)<br>
+Project Link: [https://github.com/ChocolateApp/Chocolate](https://github.com/ChocolateApp/Chocolate)<br>
+Impre'visible#2576 - [@romeo_chevrier](https://twitter.com/romeo_chevrier) - impr.visible@gmail.com<br>
 
 
 <!-- ACKNOWLEDGMENTS -->
