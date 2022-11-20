@@ -5,16 +5,10 @@ function hideLoader() {
     backgroundSpinner.style.display = "none"
 }
 
-function showLoader() {
-    spinner = document.getElementById("spinner")
-    backgroundSpinner = document.getElementById("loaderBackground")
-    spinner.style.visibility = "visible"
-    backgroundSpinner.style.display = "block"
-}
-
 function getAllConsoles() {
-
-    fetch("/getAllConsoles").then(function(response) {
+    var url = window.location.href
+    var library = url.split("/")[4]
+    fetch(`/getAllConsoles/${library}`).then(function(response) {
         return response.json();
     }).then(function(json) {
         var systems = json;
@@ -41,7 +35,7 @@ function getAllConsoles() {
                 systemDiv.appendChild(systemImageDiv);
                 systemDiv.appendChild(systemNameDiv);
                 systemDiv.addEventListener("click", function() {
-                    window.location.href = "/console/" + system.name;
+                    window.location.href = `/console/${library}/${system.name}`;
                 });
                 systemList.appendChild(systemDiv);
             })

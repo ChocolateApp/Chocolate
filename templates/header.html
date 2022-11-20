@@ -36,25 +36,24 @@
 </a>
 <header>
     <div id="goHome" class="logo_svg">
-        <img class="logo" id="logo" src="/static/img/logo.png" </div>
+        <img class="logo" id="logo" src="/static/img/logo.png"></div>
+    <div class="headerIcons">
         <a href="/">
-            <ion-icon class="homeIcon" name="home-outline" role="img" class="md hydrated" aria-label="home outline"></ion-icon>
+            <ion-icon class="icon" name="home-outline" role="img" class="md hydrated" aria-label="home outline"></ion-icon>
         </a>
-        <a href="/movies">
-            <ion-icon class="movieIcon" name="videocam-outline" role="img" class="md hydrated" aria-label="home outline"></ion-icon>
+        {% for library in g.libraries %}
+        <a href="/{{ library.libType }}/{{ library.libName }}">
+            <ion-icon name="{{ library.libImage }}-outline" role="img" class="icon"></ion-icon>
         </a>
-        <a href="/series">
-            <ion-icon class="tvIcon" name="tv-outline" role="img" class="md hydrated" aria-label="home outline"></ion-icon>
-        </a>
-        <a href="/consoles">
-            <ion-icon class="gameIcon" name="game-controller-outline" role="img"></ion-icon>
-        </a>
-        <a href="/logout">
-            <ion-icon class="logoutIcon" name="log-out-outline"></ion-icon>
-        </a>
-        <a href="/profil">
-            <ion-icon class="personIcon" name="person-outline"></ion-icon>
-        </a>
+        {% endfor %}
+    </div>
+
+    <a href="/logout">
+        <ion-icon class="logoutIcon" name="log-out-outline"></ion-icon>
+    </a>
+    <a href="/profil">
+        <ion-icon class="personIcon" name="person-outline"></ion-icon>
+    </a>
 
 </header>
 <div id="goHome" class="logo_svg">

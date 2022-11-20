@@ -173,9 +173,6 @@ Don't forget to give the project a star! Thanks again!
 ### Work in progress
 
 - [ ] Detect series intro and skip them
-- [ ] Create a systeme of library
-- [ ] Increase the search system
-- [ ] Upgrade the responsive
 
 ### Tasks Done
 - [X] Increase the boot speed
@@ -193,6 +190,9 @@ Don't forget to give the project a star! Thanks again!
 - [X] Vue systeme by account instead of computer
 - [X] Add the loading everywhere
 - [X] Repair the RPC System (added a button for the github)
+- [X] Create a systeme of library
+- [X] Increase the search system
+- [X] Upgrade the responsive
 
 
 <!-- CONTACT -->

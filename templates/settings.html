@@ -1,5 +1,50 @@
 {% extends 'header.html' %}{% block title %}Settings{% endblock %} {% block content %}
-
+<div id="popupLibrary" class="popupLibrary popup">
+    <ion-icon name="close-outline" class="crossPopup" id="crossPopup"></ion-icon>
+    <div class="settingsLibrary">
+        <div class="libTypeSelect">
+            <input type="radio" name="libType" id="movie" class="input-hidden" libType="movies" checked>
+            <label for="movie" id="movieLabel">
+                <ion-icon name="videocam-outline" class="selected"></ion-icon>
+                <br>
+                <span>Movie</span>
+            </label>
+            <input type="radio" name="libType" id="tv" class="input-hidden" libType="series">
+            <label for="tv" id="tvLabel">
+                <ion-icon name="tv-outline"></ion-icon>
+                <br>
+                <span>TV Show</span>
+            </label>
+            <input type="radio" name="libType" id="games" class="input-hidden" libType="games">
+            <label for="games" id="gamesLabel">
+                <ion-icon name="game-controller-outline"></ion-icon>
+                <br>
+                <span>Games</span>
+            </label>
+        </div>
+        <div class="libraryName">
+            <label for="libraryName">Name:</label>
+            <input type="text" id="libraryName" placeholder="Library name">
+        </div>
+        <div class="libraryPath">
+            <label for="libraryPath">Path:</label>
+            <input type="text" id="libraryPath" placeholder="Library path">
+        </div>
+        <div class="libraryUsers">
+            <h1>Users:</h1>
+            {% for user in g.users %}
+            <div class="user">
+                <ion-icon name="person-outline"></ion-icon>
+                <span>{{ user.name }}</span>
+                <input type="checkbox" id="settingsCheckbox" class="settingsCheckbox" username="{{ user.name }}">
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="bottomPart">
+        <button class="submitNewLib" onclick="newLib()">Create the library</button>
+    </div>
+</div>
 <form class="createAccount" id="createAccount" method="post" enctype="multipart/form-data">
     <div class="accountCreateFields">
         <div class="nameAccountCreator">
@@ -29,17 +74,11 @@
 </form>
 
 <form class="saveSettingsForm" action="" onsubmit="saveSettings(event)" method="post" id="saveSettingsForm">
-    <div class="moviesPathDiv">
-        <label for="moviesPath">Movies directory path : </label>
-        <input type="text" name="moviesPath" id="moviesPath" class="moviesPath form_field">
-    </div>
-    <div class="seriesPathDiv">
-        <label for="seriesPath">Series directory path : </label>
-        <input type="text" name="seriesPath" id="seriesPath" class="seriesPath form_field">
-    </div>
-    <div class="gamesPathDiv">
-        <label for="gamesPath">Games directory path : </label>
-        <input type="text" name="gamesPath" id="gamesPath" class="gamesPath form_field">
+    <div class="librariesDiv">
+        <label for="addLibraryButton">Create a new library : </label>
+        <button type="button" id="addLibraryButton" onclick="addLibrary()">
+            <ion-icon name="add-circle-outline" name="Create a new library"></ion-icon>
+        </button>
     </div>
     <div class="languageDiv">
         <label for="language">Languages : </label>

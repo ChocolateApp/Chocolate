@@ -69,16 +69,15 @@ function setPopup() {
             popup = document.getElementById("popup")
             popup.style.display = "block"
 
-            document.body.style.overflow = "hidden"
+            document.body.style.overflow = "hidden !important"
 
             var image = this.children[0].children[0]
             var serieTitle = image.getAttribute("title");
-            serieTitle = serieTitle.replace("_", " ")
-            fetch("/getSerieData/" + serieTitle).then(function(response) {
+            let serieId = image.getAttribute("serieid")
+            fetch("/getSerieData/" + serieId).then(function(response) {
                 return response.json()
             }).then(function(data) {
                 var serieTitle = data.originalName
-                console.log(data)
                 var serieCast = data.cast
                 var serieDescription = data.description
                 var serieDuration = data.duration
@@ -87,7 +86,7 @@ function setPopup() {
                 var seriePoster = data.serieCoverPath
                 var serieUrl = data.slug
                 var serieYear = data.date
-                var serieTrailer = data.bandeAnnonce
+                var serieTrailer = data.bandeAnnonceUrl
                 var serieSimilar = data.similarSeries
                 var serieSeasons = data.seasons
                 containerSimilar = document.getElementsByClassName("containerSimilar")[0]
@@ -124,7 +123,6 @@ function setPopup() {
                     }
                 }
                 serieSeasons = Object.values(serieSeasons)
-                console.log(serieSeasons)
                 for (season of serieSeasons) {
                     seasonCover = season.seasonCoverPath
                     seasonDescription = season.seasonDescription
@@ -191,10 +189,9 @@ function setPopup() {
                 durationPopup.innerHTML = `Durée : ${serieDuration}`;
 
                 serieCast = JSON.parse(serieCast)
-                console.log(serieCast)
                 for (var i = 0; i < serieCast.length; i++) {
                     cast = serieCast[i]
-                    console.log(cast)
+                    
                     castMember = document.createElement("div")
                     castMember.className = "castMember"
                     castImage = document.createElement("img")
@@ -206,7 +203,7 @@ function setPopup() {
                     castRealName = cast[0]
                     castCharacterName = cast[1]
                     castImage.setAttribute("src", castImageUrl)
-                    castImage.setAttribute("alt", cast[4])
+                    castImage.setAttribute("alt", cast[3])
                     castImage.setAttribute("title", castRealName)
                     castMember.appendChild(castImage)
                     castName = document.createElement("p")
@@ -225,7 +222,7 @@ function setPopup() {
                     castMembers[i].addEventListener("click", function() {
                         var castImage = this.children[0]
                         var castId = castImage.getAttribute("alt")
-                        var castUrl = "/actor/" + castRealName
+                        var castUrl = "/actor/" + castId
                         window.location.href = castUrl
                     })
                 }
@@ -257,12 +254,12 @@ function setPopup() {
         popup = document.getElementById("popup")
         popup.style.display = "block"
 
-        document.body.style.overflow = "hidden"
+        document.body.style.overflow = "hidden !important"
 
         var imageBanner = document.getElementsByClassName("bannerCover")[0]
-        serieTitle = imageBanner.style.backgroundImage.split("mediaImages/")[1].replace("\")", "").replace("_Banner.png", "").replace("_", " ")
+        serieId = imageBanner.getAttribute("serieId")
 
-        fetch("/getSerieData/" + serieTitle).then(function(response) {
+        fetch("/getSerieData/" + serieId).then(function(response) {
             return response.json()
         }).then(function(data) {
             var serieTitle = data.originalName
@@ -277,8 +274,6 @@ function setPopup() {
             var serieYear = data.date
             var serieTrailer = data.bandeAnnonce
             var serieSimilar = data.similarSeries
-            console.table(data)
-            console.log(serieSimilar)
 
             var serieSeasons = data.seasons
             containerSimilar = document.getElementsByClassName("containerSimilar")[0]
@@ -315,9 +310,7 @@ function setPopup() {
                 }
             }
             serieSeasonsKeys = Object.keys(serieSeasons)
-            console.log(serieSeasonsKeys)
             for (keys of serieSeasonsKeys) {
-                console.log(serieSeasons[keys])
                 season = serieSeasons[keys]
                 seasonCover = season.seasonCoverPath
                 seasonDescription = season.seasonDescription
@@ -397,7 +390,6 @@ function setPopup() {
             serieCast = JSON.parse(serieCast)
             for (var i = 0; i < serieCast.length; i++) {
                 cast = serieCast[i]
-                console.log(cast)
                 castMember = document.createElement("div")
                 castMember.className = "castMember"
                 castImage = document.createElement("img")
@@ -461,7 +453,6 @@ function setPopup() {
 function getFirstSeries() {
     series = document.getElementsByClassName("series")[0]
     routeToUse = series.getAttribute("id")
-    console.log(routeToUse)
     series.id = "series"
 
     fetch(routeToUse).then(function(response) {
@@ -481,8 +472,9 @@ function getFirstSeries() {
                 bannerImage = serie[1]['banniere']
                 cssBigBanner = `background-image: linear-gradient(to bottom, rgb(255 255 255 / 0%), rgb(29 29 29)), url("${bannerImage}");`
                 imageBanner.setAttribute('style', cssBigBanner)
+                imageBanner.setAttribute('serieid', serie[1]['id'])
 
-                titleBanner.innerHTML = serie[0]
+                titleBanner.innerHTML = serie[1]['name']
                 fullDescription = serie[1]['description']
                 if (fullDescription.length > 200) {
                     descriptionBanner.innerHTML = fullDescription.substring(0, 200) + "..."
@@ -515,12 +507,20 @@ function getFirstSeries() {
                 }
                 image.title = serie[0]
                 image.alt = serie[0]
+                image.setAttribute("serieId", serie[1]['id'].toString())
 
                 content.appendChild(image)
                 cover.appendChild(content)
                 series.appendChild(cover)
             }
         }
+
+        if (data.length <= 1) {
+            spinner = document.getElementsByClassName("spinner")[0]
+            backgroundSpinner = document.getElementById("loaderBackground")
+            spinner.style.opacity = "0"
+            backgroundSpinner.style.display = "none"
+        } else {
 
         const imgs = document.images
         const imgsArray = Array.prototype.slice.call(document.images)
@@ -537,8 +537,7 @@ function getFirstSeries() {
                     backgroundSpinner.style.display = "none"
                 }
             })
-        }
-
+        }}
 
         setPopup()
     })
@@ -549,7 +548,7 @@ window.onload = function() {
     brokenPath = brokenPathDiv.getAttribute("id")
     brokenPathDiv.parentNode.removeChild(brokenPathDiv)
     playPopup = document.getElementsByClassName("playPopup")[0]
-    playPopup.style.display = "none"
+    playPopup.style.opacity = "0"
     popupContent = document.getElementsByClassName("popupContent")[0]
     popupContent.style.height = "86vh"
     getFirstSeries()

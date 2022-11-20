@@ -11,7 +11,7 @@
 <form method="POST" action='{{ url_for("login") }}' class="loginForm">
     <ion-icon name="close-outline" class="crossPopup" id="crossPopup"></ion-icon>
     <input style="display: none;" type="text" name="name" id="name" class="nameInputForm" placeholder="Username">
-    <input type="password" name="password" id="password" placeholder="password">
+    <input type="password" name="password" id="password" class="passwordLogin" placeholder="password">
     <input type="submit" value="login" id="submitLogin">
 </form>
 <script src="{{ url_for('static',filename='js/login.js') }}" defer></script>

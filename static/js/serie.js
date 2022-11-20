@@ -12,13 +12,18 @@ window.onload = function() {
             },
         },
         controlBar: {
-           children: [
-              'playToggle',
-              'progressControl',
-              'volumePanel',
-              'qualitySelector',
-              'fullscreenToggle',
-           ],
+            children: [
+               'playToggle',
+               'volumePanel',
+               'currentTimeDisplay',
+               'progressControl',
+               'remainingTimeDisplay',
+               'captionsButton',
+               'audioTrackButton',
+               'qualitySelector',
+               'pictureInPictureToggle',
+               'fullscreenToggle',
+            ],
         },
     }
     var player = videojs('movie', options);

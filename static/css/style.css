@@ -18,10 +18,16 @@ a,
 p,
 input,
 label,
+ion-icon,
+span,
 li {
     font-family: 'Poppins', Arial, Helvetica, sans-serif;
     text-decoration: none;
     color: #ffffff;
+}
+
+input:focus {
+    outline: none;
 }
 
  :active,
@@ -226,9 +232,10 @@ form#searchForm:hover .form_field_search {
     background: #272727;
     backdrop-filter: blur(50px);
     border-radius: 2vw;
-    width: 22vw;
-    min-height: 28vh;
+    width: 13vw;
+    height: 32vh;
     color: #3E72CE;
+    min-width: 13vw;
 }
 
 .card p {
@@ -240,30 +247,20 @@ form#searchForm:hover .form_field_search {
     text-align: center;
 }
 
+.card ion-icon {
+    font-size: 10vh;
+    margin-top: 4vh;
+    margin-bottom: 2vh;
+    width: 100%;
+}
+
 .cardsIndex {
-    grid-template-columns: repeat(3, 1fr);
     width: 97vw;
     margin-top: 22vh;
     margin-left: 3vw;
-    align-content: center;
     display: grid;
-    grid-auto-flow: column;
     justify-items: center;
-}
-
-.movieCardImage,
-.serieCardImage,
-.gameCardImage {
-    width: 19vw;
-    margin-left: 1.5vw;
-    border-radius: 2vw;
-    margin-top: 5vh;
-    height: 50vh;
-    object-fit: cover;
-}
-
-.movieCard {
-    left: calc(50vw - (22vw/2));
+    gap: 5vh 0;
 }
 
 .logo_svg {
@@ -289,36 +286,19 @@ form#searchForm:hover .form_field_search {
     pointer-events: none;
 }
 
-.homeIcon {
-    position: absolute;
+.icon {
     color: white;
     font-size: 3vh;
     width: 3vw;
-    top: 16vh;
 }
 
-.movieIcon {
-    position: absolute;
-    color: white;
-    font-size: 3vh;
-    width: 3vw;
-    top: 32vh;
-}
-
-.tvIcon {
-    position: absolute;
-    color: white;
-    font-size: 3vh;
-    width: 3vw;
-    top: 48vh;
-}
-
-.gameIcon {
-    position: absolute;
-    color: white;
-    font-size: 3vh;
-    width: 3vw;
-    top: 64vh;
+.headerIcons {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    margin-top: 16vh;
+    height: 56vh;
 }
 
 .logoutIcon {
@@ -351,16 +331,180 @@ form#searchForm:hover .form_field_search {
     font-size: 4vh;
 }
 
-.moviesPathDiv,
-.seriesPathDiv,
-.gamesPathDiv,
-.languageDiv,
 .portInput {
     padding: 2vh;
 }
 
 .languageDiv {
     margin-top: 1vh;
+}
+
+.librariesDiv {
+    text-align: center;
+    vertical-align: middle;
+    display: table-cell;
+    width: 27vw;
+}
+
+label[for="addLibraryButton"] {
+    font-size: 2vh;
+    vertical-align: middle;
+}
+
+#addLibraryButton {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 3vh;
+    height: 4vh;
+    vertical-align: middle;
+    cursor: pointer;
+}
+
+#addLibraryButton ion-icon {
+    pointer-events: none;
+}
+
+.tabsLibrary {
+    width: 20vw;
+    height: 100%;
+    background: #000000a8;
+    border-radius: 2vw 0 0 2vw;
+    position: absolute;
+}
+
+.libTabs {
+    height: 56vh;
+    font-size: 4vh;
+    list-style-type: none;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    margin-top: 15vh;
+    width: 16vw;
+    margin-left: 2vw;
+}
+
+.pencilIcon {
+    position: absolute;
+    margin-top: -4vh;
+    font-size: 4vh;
+    color: white;
+    margin-left: 4vw;
+    filter: drop-shadow( 0px 0px 2px rgba(0, 0, 0, 1));
+    display: none;
+    z-index: 99999999;
+}
+
+.video-js .vjs-current-time,
+.video-js .vjs-audio-button {
+    display: block !important;
+}
+
+@keyframes showPencil {
+    0% {
+        transform: scale(0);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.settingsLibrary {
+    height: 86vh;
+    border-radius: 0 2vw 0 0;
+    width: 96vw;
+    background: #0000002e;
+    position: absolute;
+    animation: appearPopup 0.5s ease-in-out;
+}
+
+.bottomPart {
+    position: absolute;
+    margin-top: calc(86vh - 4px);
+    background: #444444;
+    width: 96vw;
+    height: 10vh;
+    border-radius: 0 0 2vw 2vw;
+    border-top: 4px #dadada solid;
+    animation: appearPopup 0.5s ease-in-out;
+}
+
+.submitNewLib {
+    top: 2vh;
+    position: absolute;
+    height: 6vh;
+    right: 2vw;
+    width: 7vw;
+    border-radius: 2vw;
+    border: 0.2vw solid #ffffff;
+    background: none;
+    color: white;
+    cursor: pointer;
+}
+
+.submitNewLib:hover {
+    background: white;
+    color: #1d1d1d;
+}
+
+input[type="radio"] {
+    visibility: hidden;
+    display: none;
+}
+
+.libTypeSelect {
+    display: flex;
+    justify-content: space-around;
+    margin: 0 10vw;
+    margin-top: 18vh;
+    font-size: 2vw;
+}
+
+#libraryName,
+#libraryPath {
+    border: none;
+    padding-left: 0.5vw;
+    font-size: 2vw;
+    height: 7vh;
+    background: rgba(157, 157, 157, 0.25);
+    border-radius: 2vw;
+    filter: drop-shadow(0.1vh 0.1vh 0.5vh #000);
+    color: white;
+}
+
+.libraryName,
+.libraryPath {
+    text-align: center;
+    width: 32vw;
+    margin-top: 12vh;
+    font-size: 2vw;
+    margin-left: 19vw;
+}
+
+.libraryPath {
+    width: 34vw;
+}
+
+.libraryUsers {
+    text-align: center;
+    width: 18vw;
+    margin-top: -27vh;
+    font-size: 2vw;
+    margin-left: 64vw;
+}
+
+.settingsCheckbox {
+    height: 1.25vw;
+    border-radius: 20vw;
+    transform: scale(1.25);
+}
+
+label[for="movie"],
+label[for="tv"],
+label[for="games"] {
+    text-align: center;
 }
 
 .saveSettings {
@@ -405,10 +549,10 @@ form#searchForm:hover .form_field_search {
 }
 
 .saveSettingsForm {
-    margin-top: 0vh;
+    margin-top: 2vh;
     text-align: end;
     position: absolute;
-    left: 31.6vw;
+    left: 35.6vw;
 }
 
 .createAccount {
@@ -473,6 +617,10 @@ form#searchForm:hover .form_field_search {
     margin-left: 2vw;
     z-index: 99999999999999999999;
     animation: appearPopup 0.5s ease-in-out;
+}
+
+.popupLibrary {
+    display: none;
 }
 
 @keyframes appearPopup {
@@ -758,7 +906,8 @@ form#searchForm:hover .form_field_search {
     border: none;
 }
 
-.actorMoviesList {
+.actorMoviesList,
+.actorSeriesList {
     grid-template-rows: 1fr;
     grid-column-gap: 0px;
     grid-row-gap: 0px;
@@ -772,7 +921,8 @@ form#searchForm:hover .form_field_search {
     margin-left: 15vw;
 }
 
-.moviesTitle {
+.moviesTitle,
+.seriesTitle {
     text-align: center;
     margin-left: 38vw;
     background: #272727;
@@ -1104,6 +1254,11 @@ input[type="search"]::-webkit-search-results-decoration {
     text-align: center;
 }
 
+.passwordLogin {
+    margin-left: calc((119vw/4) - 4vw) !important;
+    width: 10vw;
+}
+
 #password {
     border: none;
     padding-left: 0.5vw;
@@ -1116,7 +1271,6 @@ input[type="search"]::-webkit-search-results-decoration {
     margin-bottom: 3vh;
     margin-top: -10vh;
     height: 4vh;
-    width: 20vw;
 }
 
 #password:focus {
@@ -1420,11 +1574,25 @@ input:checked+.slider:before {
     transform: translateX(33px);
 }
 
+.selected {
+    color: #5c3cdd !important;
+}
+
+.tabsLibrary ion-icon {
+    margin-bottom: -1.5vh;
+    height: 3vw;
+}
+
+.active {
+    background: #1d1d1d;
+    border-radius: 2vh;
+    vertical-align: middle;
+}
+
 @media (max-width: 640px) {
     * {
         margin: 0;
         padding: 0;
-        overflow-x: none;
     }
     .timePopup {
         z-index: 99;
@@ -1473,9 +1641,10 @@ input:checked+.slider:before {
     }
     .bannerDescription {
         width: 82vw;
-        height: 9vh;
+        height: 19vh;
         overflow: scroll;
         top: 22vh;
+        line-height: 1.75vh;
     }
     header {
         width: 6vw;
@@ -1506,31 +1675,10 @@ input:checked+.slider:before {
     .settings ion-icon {
         font-size: 3vh;
     }
-    .form_field {
-        border: none;
-        padding-left: 0.5vw;
-        font-size: 0;
-        position: absolute;
-        width: 8vw;
-        height: 3vh;
-        right: 7vw;
-        top: 1vh;
-        background: rgb(157 157 157 / 65%);
-        border-radius: 6vw;
-        z-index: 2;
-        filter: drop-shadow(0.1vh 0.1vh 0.5vh #000);
-        color: white;
-    }
     form#searchForm:hover .form_field {
         transition: width 300ms;
         width: 45vw;
         font-size: 1.5vh;
-    }
-    .search_icon {
-        right: 8.05vw;
-        top: 1vh;
-        font-size: 6vw;
-        height: 3vh;
     }
     .card {
         border-radius: 2vw;
@@ -1579,8 +1727,8 @@ input:checked+.slider:before {
     }
     .crossPopup {
         position: absolute;
-        right: -0.25vw;
-        top: 0.5vh;
+        right: 2.75vw;
+        top: -0.25vh;
         font-size: 3vh;
         cursor: pointer;
         z-index: 1;
@@ -1588,11 +1736,12 @@ input:checked+.slider:before {
     }
     .popupContent {
         width: 98vw;
-        height: 78vh;
+        height: auto !important;
         margin-left: 0vw;
         margin-top: 56vh;
-        overflow-y: scroll;
+        overflow-y: scroll !important;
         overflow-x: hidden;
+        position: relative;
     }
     .descriptionPopup {
         font-size: 1.4vh;
@@ -1635,26 +1784,17 @@ input:checked+.slider:before {
     .containerSimilar,
     .containerSeasons {
         grid-template-rows: 1fr;
-        grid-column-gap: 0px;
-        grid-row-gap: 0px;
-        font-size: 2vh;
-        width: 94vw;
-        margin-top: 2vh;
-        margin-left: -3.5vw;
-        height: 44vh;
-        justify-content: space-evenly;
+        width: 97vw;
+        height: auto !important;
         justify-items: center;
-        align-content: space-evenly;
-        align-items: center;
+        display: grid;
+        margin-top: 2vh;
     }
     .containerSimilar .movie,
     .containerSimilar .serie,
     .containerSeasons .season {
-        width: 12vw;
-        height: 30vh;
-        margin-left: 1.5vw;
-        margin-right: 1.5vw;
-        margin-top: -18vh;
+        height: auto !important;
+        width: auto !important;
     }
     .containerSimilar .movie .movieTitle,
     .containerSimilar .serie .serieTitle,
@@ -1701,6 +1841,7 @@ input:checked+.slider:before {
         margin-left: 0vw;
         z-index: 99999999999999999999;
         animation: appearPopup 0.5s ease-in-out;
+        overflow-x: hidden;
     }
     .cover_episode {
         height: 54vw;
@@ -1743,8 +1884,11 @@ input:checked+.slider:before {
         position: absolute;
         text-shadow: 0.1vh 0.1vh 0.5vh #000;
         box-shadow: 0.1vh 0.1vh 0.5vh #000;
-        margin-top: 57vh;
+        margin-top: 53vh;
         margin-left: 23vw;
+    }
+    .coverEpisodes {
+        margin-bottom: 0;
     }
     .buttonsShow a {
         border-radius: 1.5vw;
@@ -1771,16 +1915,195 @@ input:checked+.slider:before {
     }
     .buttonsShow {
         position: absolute;
-        top: 42vh;
+        top: 62vh;
     }
     .video-js[tabindex="-1"] {
         width: 94vw !important;
         height: 31vh !important;
-        top: 9.15vh;
+        top: 28.5vh;
         left: 6vw;
     }
     .bannerCover {
         width: 100vw;
-        height: 27vh;
+        height: 50vh;
+    }
+    .cardsIndex {
+        width: 94vw;
+        margin-top: 22vh;
+        margin-left: 6vw;
+        display: grid;
+        justify-items: center;
+        gap: 5vh 0;
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+    .card {
+        border-radius: 2vw;
+        width: 42vw;
+        min-height: 16vh;
+    }
+    .form_field_search {
+        width: 8vw;
+        height: 8vw;
+        right: 9vw;
+        top: 0.75vh;
+        border-radius: 9vw;
+    }
+    .form_field_create_account {
+        width: 32vw;
+    }
+    .search_icon {
+        right: 10vw;
+        top: 1vh;
+        font-size: 6vw;
+        height: 3vh;
+    }
+    .trailerVideo {
+        --videoWidth: 40vw;
+        width: auto !important;
+        height: calc((var(--videoWidth) / 16)* 9);
+        margin-left: 12vw;
+        margin-top: 4vh;
+        border: none;
+    }
+    .nameAccountCreator,
+    .passwordAccountCreator,
+    .profileAccountCreator,
+    .typeAccountCreator {
+        width: 94vw;
+        text-align: center;
+        margin-left: -11vw;
+    }
+    #profilePicture {
+        width: 32vw
+    }
+    .createAccountButton {
+        width: 40vw;
+        margin-right: -8vw;
+    }
+    .librariesDiv {
+        width: 93vw;
+        left: 0;
+    }
+    .saveSettingsForm {
+        margin-top: 2vh;
+        text-align: center;
+        position: absolute;
+        left: 6vw;
+        width: 94vw;
+    }
+    .discordRPCButton {
+        position: initial;
+    }
+    .switch {
+        display: inline-block;
+        width: 80px;
+        height: 40px;
+        cursor: pointer;
+        position: relative;
+        margin-left: 1.25vh;
+        vertical-align: middle;
+    }
+    .form_field {
+        border: none;
+        padding-left: 0.5vw;
+        font-size: 0;
+        width: 32vw;
+        height: 3vh;
+        right: 7vw;
+        top: 1vh;
+        background: rgb(157 157 157 / 65%);
+        border-radius: 6vw;
+        z-index: 2;
+        filter: drop-shadow(0.1vh 0.1vh 0.5vh #000);
+        color: white;
+    }
+    label[for="port"],
+    label[for="language"] {
+        vertical-align: bottom;
+    }
+    .saveSettings {
+        width: 40vw;
+    }
+    .libTypeSelect {
+        display: flex;
+        justify-content: space-around;
+        margin: 0 0vw;
+        margin-top: 18vh;
+        font-size: 6vw;
+    }
+    .libraryName,
+    .libraryPath {
+        font-size: 6vw;
+        margin-left: 6vw;
+    }
+    #libraryName,
+    #libraryPath {
+        font-size: 4vw;
+    }
+    .libraryUsers {
+        text-align: center;
+        width: 41vw;
+        margin-top: -23.5vh;
+        font-size: 5vw;
+        margin-left: 51vw;
+    }
+    .settingsCheckbox {
+        transform: scale(1);
+    }
+    .submitNewLib {
+        width: 34vw;
+    }
+    .profileDiv {
+        width: 50vw;
+        margin-top: 12vh;
+        margin-left: calc(47vw / 2);
+    }
+    .profileDiv>img {
+        border-radius: 1vh;
+        height: 17vh;
+        width: auto;
+        margin-left: 10vw;
+    }
+    .profileUsername {
+        top: 30vh;
+        position: absolute;
+        left: calc((70vw / 2) + 2vw);
+    }
+    .profilePassword {
+        top: 47vh;
+        position: absolute;
+        left: calc((70vw / 2) + 2vw) !important;
+    }
+    .profileSubmitChanges {
+        left: calc((77vw / 2) + 2vw);
+        margin: 0;
+        top: 44vh;
+    }
+    .video-js .vjs-control {
+        width: 3em !important;
+    }
+    .moviePopup {
+        width: 80vw;
+        left: 15vw;
+        height: 20vh;
+    }
+    .moviePopup a {
+        padding: 0 5vw 0 5vw;
+    }
+    #buttonNo {
+        left: 52vw;
+    }
+    #buttonYes {
+        left: 6vw;
+    }
+    .bannerSeasonCover {
+        width: 100vw;
+        height: 59vh;
+        object-fit: contain;
+        background-size: cover;
+        background-position: center;
+    }
+    .episodes {
+        margin-top: 50vh;
     }
 }

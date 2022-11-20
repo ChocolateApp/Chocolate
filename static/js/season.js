@@ -143,10 +143,9 @@ function getSeasonData() {
                 episodeId = episode["episodeId"]
 
                 let serieURL = `/serie/${episodeId}`
-
-                imageBanner.setAttribute("alt", episode.episodeName)
-                imageBanner.setAttribute("title", episode.episodeName)
-                imageBanner.setAttribute("src", episode.episodeCoverPath)
+                
+                cssBigBanner = `background-image: linear-gradient(to bottom, rgb(255 255 255 / 0%), rgb(29 29 29)), url("${episode.episodeCoverPath}")`
+                imageBanner.setAttribute('style', cssBigBanner)
 
                 titleBanner.innerHTML = "EP 1 - " + episode.episodeName
                 description = episode.episodeDescription
