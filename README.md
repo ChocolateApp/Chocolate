@@ -21,8 +21,6 @@ Thanks for supporting Chocolate, I hope you'll like the new update.<br>
 If you want more information about the new update, you can go the the rubric [**To-do list**](#to-do-list)<br>
 or you can join the [**Discord server**](https://discord.gg/6m4ZqmNe) and check the #working-on channel.
 
-create a regex for discord url
-regex = r"https://d
 
 ## About The Project
 Chocolate is an Open Source media manager.<br>
