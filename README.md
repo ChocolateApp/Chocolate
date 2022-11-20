@@ -151,6 +151,7 @@ Don't forget to give the project a star! Thanks again!
 
 
 ## TO-DO for Chocolate Server {#to-do-list}
+- [ ] Create a plugin system
 - [ ] Use Flask-PWA
 - [ ] Add all audio tracks
 - [ ] Add the mobile ui of the video player
