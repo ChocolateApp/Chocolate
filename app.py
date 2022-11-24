@@ -2182,6 +2182,7 @@ def createLib():
 @app.route("/getAllSeries/<library>", methods=["GET"])
 def getAllSeries(library):
     series = Series.query.filter_by(libraryName=library).all()
+    series = [ serie.__dict__ for serie in series ]
     user = current_user
     userType = user.accountType
     if userType in ["Kid", "Teen"]:
@@ -2859,6 +2860,10 @@ def scanIntro():
     os.system("python intro.py")
     return redirect(url_for("settings"))
 
+@app.route("/isChocolate", methods=["GET", "POST"])
+def isChocolate():
+    return json.dumps({"isChocolate": True})
+
 
 def sort_dict_by_key(unsorted_dict):
 
@@ -2920,4 +2925,4 @@ if __name__ == "__main__":
         for u in db.session.query(Series).all():
             allSeriesDict[u.name] = u.__dict__
 
-    app.run(host="0.0.0.0", port=serverPort, use_reloader=False, debug=True)
+    app.run(host="0.0.0.0", port=serverPort)
