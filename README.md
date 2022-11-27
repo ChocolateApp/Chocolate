@@ -142,6 +142,7 @@ Don't forget to give the project a star! Thanks again!
 
 
 ## TO-DO for Chocolate Server {#to-do-list}
+- [ ] A docker image **URGENT**
 - [ ] Create a plugin system
 - [ ] Use Flask-PWA
 - [ ] Add all audio tracks
