@@ -141,7 +141,7 @@ Don't forget to give the project a star! Thanks again!
 5. Open a Pull Request
 
 
-## TO-DO for Chocolate Server {#to-do-list}
+## TO-DO for Chocolate Server
 - [ ] A docker image **URGENT**
 - [ ] Create a plugin system
 - [ ] Use Flask-PWA
