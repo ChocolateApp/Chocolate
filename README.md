@@ -189,7 +189,7 @@ Don't forget to give the project a star! Thanks again!
 <!-- CONTACT -->
 ## Contact
 
-Official Discord Server - [https://discord.gg/6m4ZqmNe](https://discord.gg/6m4ZqmNe)<br>
+Official Discord Server - [https://discord.gg/qbWdzuPhZ4](https://discord.gg/qbWdzuPhZ4)<br>
 Project Link: [https://github.com/ChocolateApp/Chocolate](https://github.com/ChocolateApp/Chocolate)<br>
 Impre'visible#2576 - [@romeo_chevrier](https://twitter.com/romeo_chevrier) - impr.visible@gmail.com<br>
 
