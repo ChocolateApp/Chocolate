@@ -160,6 +160,7 @@ Don't forget to give the project a star! Thanks again!
 - [ ] Send issues directly from the website
 - [ ] Order by title, year, release date, note, duration, done, watching, date of add, date of last view
 - [ ] Add watched movies, and series to the watchlist of TMDB
+- [ ] Add website UI to link with Radarr, Sonarr, Lidarr...
 
 ### Work in progress
 
