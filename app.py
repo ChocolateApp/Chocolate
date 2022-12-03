@@ -2769,7 +2769,7 @@ def mainMovie(movieID):
     videoProperties = get_video_properties(video_path)
     height = int(videoProperties["height"])
     width = int(videoProperties["width"])
-    m3u8File = f"""#EXTM3U\n\n{generateAudioMovie(movieID)}\n\n"""
+    m3u8File = f"""#EXTM3U\n\n"""
     qualities = [144, 240, 360, 480, 720, 1080]
     for quality in qualities:
         newWidth = int(quality)
@@ -2807,7 +2807,7 @@ def mainSerie(episodeID):
     videoProperties = get_video_properties(episodePath)
     height = int(videoProperties["height"])
     width = int(videoProperties["width"])
-    m3u8File = f"""#EXTM3U\n\n{generateAudioSerie(episodeID)}\n\n"""
+    m3u8File = f"""#EXTM3U\n\n"""
     qualities = [144, 240, 360, 480, 720, 1080]
     for quality in qualities:
         newWidth = int(quality)
