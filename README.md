@@ -46,7 +46,11 @@ This is what you have to do to get started with Chocolate :
 
 #### For Windows
 * No installer available actually
-* So download the source code and install the dependencies
+* So download the source code and install the dependencies (requirements.txt and ffmpeg)
+
+#### For QNAP
+* Go here: [https://www.myqnap.org/product/chocolate81/](https://www.myqnap.org/product/chocolate81/)
+* Enjoy !
 
 ### Files organizations
 
@@ -144,14 +148,9 @@ Don't forget to give the project a star! Thanks again!
 ## TO-DO for Chocolate Server
 - [ ] A docker image **URGENT**
 - [ ] Create a plugin system
-- [ ] Use Flask-PWA
-- [ ] Add all audio tracks
 - [ ] Add the mobile ui of the video player
-- [ ] Dev a mobile/TV app with chromecasting, and download
-- [ ] Edit movie metadata directly on the website
 - [ ] Add Books, PDF, Epub
 - [ ] Add Musics
-- [ ] Add TV with M3U/M3U8 playlist
 - [ ] Add a watchtogether system
 - [ ] Translate in multiple languages
 - [ ] Multiple interface
@@ -165,6 +164,10 @@ Don't forget to give the project a star! Thanks again!
 ### Work in progress
 
 - [ ] Detect series intro and skip them
+- [ ] Dev a mobile/TV app with chromecasting, and download
+- [ ] Use Flask-PWA
+- [ ] Add all audio tracks
+- [ ] Add TV with M3U/M3U8 playlist
 
 ### Tasks Done
 - [X] Increase the boot speed
@@ -185,6 +188,7 @@ Don't forget to give the project a star! Thanks again!
 - [X] Create a systeme of library
 - [X] Increase the search system
 - [X] Upgrade the responsive
+- [X] Edit movie metadata directly on the website
 
 
 <!-- CONTACT -->

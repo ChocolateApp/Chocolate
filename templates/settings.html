@@ -3,15 +3,15 @@
     <ion-icon name="close-outline" class="crossPopup" id="crossPopup"></ion-icon>
     <div class="settingsLibrary">
         <div class="libTypeSelect">
-            <input type="radio" name="libType" id="movie" class="input-hidden" libType="movies" checked>
-            <label for="movie" id="movieLabel">
-                <ion-icon name="videocam-outline" class="selected"></ion-icon>
+            <input type="radio" name="libType" id="movies" class="input-hidden" libType="movies" checked>
+            <label for="movies" id="movieLabel">
+                <ion-icon name="film-outline" class="selected"></ion-icon>
                 <br>
                 <span>Movie</span>
             </label>
-            <input type="radio" name="libType" id="tv" class="input-hidden" libType="series">
-            <label for="tv" id="tvLabel">
-                <ion-icon name="tv-outline"></ion-icon>
+            <input type="radio" name="libType" id="series" class="input-hidden" libType="series">
+            <label for="series" id="seriesLabel">
+                <ion-icon name="videocam-outline"></ion-icon>
                 <br>
                 <span>TV Show</span>
             </label>
@@ -20,6 +20,12 @@
                 <ion-icon name="game-controller-outline"></ion-icon>
                 <br>
                 <span>Games</span>
+            </label>
+            <input type="radio" name="libType" id="tv" class="input-hidden" libType="tv">
+            <label for="tv" id="tvLabel">
+                <ion-icon name="tv-outline"></ion-icon>
+                <br>
+                <span>TV Channels</span>
             </label>
         </div>
         <div class="libraryName">
@@ -187,15 +193,17 @@
         <label for="port">Server port : </label>
         <input type="number" name="port" id="port" class="port form_field">
     </div>
-    <div class="discordRPCButton">
-        <label for="discordRPC">Enable Discord RPC : </label>
-
-        <label name="discordRPC" class="switch">
-            <input type="checkbox" name="discordRPCCheckbox" id="discordRPCCheckbox">
-            <span class="slider"></span>
-            <span class="on">ON</span>
-            <span class="off">OFF</span>
-          </label>
+    <div class="tmdbKeyDiv">
+        <label for="tmdbKey">TMDB API key : </label>
+        <input type="text" name="tmdbKey" id="tmdbKey" class="tmdbKey form_field">
+    </div>
+    <div class="igdbIDDiv">
+        <label for="igdbKey">IGDB ID key : </label>
+        <input type="text" name="igdbID" id="igdbID" class="igdbKey form_field">
+    </div>
+    <div class="igdbSecretDiv">
+        <label for="igdbSecret">IGDB Secret key : </label>
+        <input type="text" name="igdbSecret" id="igdbSecret" class="igdbSecret form_field">
     </div>
     <input id="register" type="submit" value="Save settings" class="saveSettings">
 </form>
@@ -210,5 +218,5 @@
     </ul>
 </div>
 {% endif %}
-<script src="{{ url_for('static',filename='js/settings.js') }}"></script>
+<script src="{{ url_for('static',filename='js/settings.js') }}" type="text/javascript"></script>
 {% endblock %}

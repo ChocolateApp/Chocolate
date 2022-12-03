@@ -331,7 +331,11 @@ form#searchForm:hover .form_field_search {
     font-size: 4vh;
 }
 
-.portInput {
+.portInput,
+.languageDiv,
+.tmdbKeyDiv,
+.igdbSecretDiv,
+.igdbIDDiv {
     padding: 2vh;
 }
 
@@ -403,8 +407,55 @@ label[for="addLibraryButton"] {
 }
 
 .video-js .vjs-current-time,
-.video-js .vjs-audio-button {
+.video-js .vjs-audio-button,
+.video-js .vjs-captions-button,
+.video-js.vjs-http-source-selector {
     display: block !important;
+}
+
+.js-focus-visible .vjs-menu li.vjs-selected:hover,
+.vjs-menu li.vjs-selected,
+.vjs-menu li.vjs-selected:focus,
+.vjs-menu li.vjs-selected:hover {
+    background-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+.video-js .vjs-captions-button .vjs-icon-placeholder:before,
+.video-js:lang(en) .vjs-subs-caps-button .vjs-icon-placeholder:before,
+.video-js:lang(fr-CA) .vjs-subs-caps-button .vjs-icon-placeholder:before,
+.vjs-icon-captions:before {
+    content: "\f10c" !important;
+}
+
+.vjs-icon-cog:before {
+    font-size: 1.8em;
+}
+
+.vjs-quality-selector .vjs-menu-button {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%
+}
+
+.vjs-quality-selector .vjs-icon-placeholder {
+    font-family: 'Poppins', sans-serif;
+}
+
+.vjs-quality-changing .vjs-big-play-button {
+    display: none
+}
+
+.vjs-quality-changing .vjs-control-bar {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: flex;
+    visibility: visible;
+    opacity: 1
+}
+
+.vjs-quality-selector .vjs-icon-placeholder::before {
+    content: '' !important;
 }
 
 @keyframes showPencil {
@@ -482,14 +533,10 @@ input[type="radio"] {
 .libraryName,
 .libraryPath {
     text-align: center;
-    width: 32vw;
+    width: 44vw;
     margin-top: 12vh;
     font-size: 2vw;
-    margin-left: 19vw;
-}
-
-.libraryPath {
-    width: 34vw;
+    margin-left: 10vw;
 }
 
 .libraryUsers {
@@ -506,7 +553,8 @@ input[type="radio"] {
     transform: scale(1.25);
 }
 
-label[for="movie"],
+label[for="movies"],
+label[for="series"],
 label[for="tv"],
 label[for="games"] {
     text-align: center;
@@ -1242,10 +1290,14 @@ input[type="search"]::-webkit-search-results-decoration {
     display: inline-grid;
     grid-template-rows: 1fr;
     grid-row-gap: 0px;
-    width: 97vw;
+    width: 94vw;
     margin-top: 14vw;
     justify-items: center;
     align-items: center;
+}
+
+.allUsers>div {
+    cursor: pointer;
 }
 
 .allUsers>div>img {
@@ -1255,7 +1307,6 @@ input[type="search"]::-webkit-search-results-decoration {
 }
 
 .allUsers>div>h1 {
-    width: 13vw;
     text-align: center;
 }
 
@@ -1593,6 +1644,101 @@ input:checked+.slider:before {
     vertical-align: middle;
 }
 
+.selectMovieText,
+.selectMovieSecondText {
+    text-align: center;
+}
+
+.selectMovieText {
+    margin-top: 6vh;
+}
+
+.editMovieDiv {
+    display: inline-grid;
+    grid-template-rows: 2fr;
+    width: 94vw;
+    margin-left: 3vw;
+    justify-items: center;
+    align-items: center;
+    grid-template-columns: repeat(4, 1fr);
+    row-gap: 1vh;
+    margin-top: 6vh;
+}
+
+.movieFinded,
+.customMovieDIV {
+    user-select: none;
+    font-size: 0.7vh;
+    width: 15vw;
+    display: grid;
+    justify-content: center;
+    text-align: center;
+    background: rgb(39 39 39 / 0.62);
+    padding: 1vw;
+    border-radius: 1vw;
+    row-gap: 2vh;
+    height: 48vh;
+    transition: 300ms ease-in-out;
+}
+
+.movieFinded:hover {
+    cursor: pointer;
+    transform: scale(1.025);
+    transition: 300ms ease-in-out;
+}
+
+.movieFinded>img {
+    object-fit: cover;
+    height: 44vh;
+    width: 15vw;
+    border-radius: 1vw;
+}
+
+label[for="movieID"] {
+    font-size: 3vh;
+    height: 4vh;
+}
+
+.customeIDExplication {
+    font-size: 2vh;
+    height: 9vh;
+}
+
+#movieID {
+    border: none;
+    padding-left: 0.5vw;
+    font-size: 2vh;
+    height: 4vh;
+    background: rgba(157, 157, 157, 0.25);
+    border-radius: 2vw;
+    z-index: 2;
+    filter: drop-shadow(0.1vh 0.1vh 0.5vh #000);
+    color: #ffffff;
+    width: 15vw;
+}
+
+#customMovieButton {
+    border-radius: 1.5vw;
+    border: 0.2vw solid #ffffff;
+    cursor: pointer;
+    color: #ffffff;
+    font-size: 1.4vh;
+    padding: 3vh 4vw;
+    text-decoration: none;
+    font-weight: 700;
+    align-items: center;
+    transition: 300ms background, color;
+    z-index: 5;
+    text-shadow: 0.1vh 0.1vh 0.5vh #000;
+    box-shadow: 0.1vh 0.1vh 0.5vh #000;
+    background: none;
+}
+
+#customMovieButton:hover {
+    background: white;
+    color: #1d1d1d;
+}
+
 @media (max-width: 640px) {
     * {
         margin: 0;
@@ -1657,18 +1803,6 @@ input:checked+.slider:before {
         font-size: 2vh !important;
         width: 6vw !important;
         left: 0px !important;
-    }
-    .homeIcon {
-        top: 16vh;
-    }
-    .movieIcon {
-        top: 26vh;
-    }
-    .tvIcon {
-        top: 36vh;
-    }
-    .gameIcon {
-        top: 46vh;
     }
     .logo {
         width: 5.5vw;
@@ -2109,5 +2243,23 @@ input:checked+.slider:before {
     }
     .episodes {
         margin-top: 50vh;
+    }
+    form#searchForm:hover .form_field_search {
+        transition: width 300ms;
+        width: 60vw;
+        font-size: 2vh;
+    }
+    .user {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .passwordLogin {
+        margin-left: 0 !important;
+        width: 60vw;
+    }
+    #submitLogin {
+        padding: 3vh 16vw;
+        margin-left: 10vw;
     }
 }

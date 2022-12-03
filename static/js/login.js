@@ -9,7 +9,11 @@ crossPopup.addEventListener("click", function() {
 });
 allUsersDiv = document.getElementsByClassName("allUsers")[0]
 lenAllUsers = allUsersDiv.children.length
-allUsersDiv.style.gridTemplateColumns = `repeat(${lenAllUsers}, 1fr)`
+if (lenAllUsers < 4){ 
+    allUsersDiv.style.gridTemplateColumns = `repeat(${lenAllUsers}, 1fr)`
+} else {
+    allUsersDiv.style.gridTemplateColumns = `repeat(4, 1fr)`
+}
 for (user of allusers) {
     user.addEventListener("click", function() {
         document.getElementsByClassName("nameInputForm")[0].value = this.id

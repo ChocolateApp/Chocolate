@@ -54,8 +54,8 @@ function getCookie(name) {
     if (parts.length === 2) return parts.pop().split(';').shift();
 }
 
-function editMovie(id) {
-    window.location.href = "/editMovie/" + id
+function editMovie(title, library) {
+    window.location.href = `/editMovie/${title}/${library}`
 }
 
 function setPopup() {
@@ -229,8 +229,8 @@ function getFirstMovies() {
     fetch("/whoami").then(function(response) {
         return response.json()
     }).then(function(data) {
-        console.log(data)
-        username = data
+        username = data.name
+        accountType = data.accountType
     }).then(function() {
         fetch(routeToUse).then(function(response) {
             return response.json()
@@ -259,7 +259,7 @@ function getFirstMovies() {
                     vues = movie.vues
                     //vues is a string representing an array convert it to an array
                     vues = createObjectFromString(vues)
-                    if (vues[username] !== undefined){
+                    if (vues[username] !== undefined && vues[username] !== 0) {
                         timeCode = vues[username]
                         //convert the seconds to a timecode hh:mm:ss
                         timeCode = new Date(timeCode * 1000).toISOString().substr(11, 8)
@@ -270,24 +270,26 @@ function getFirstMovies() {
                         timePopup.appendChild(timeP)
                         cover.appendChild(timePopup)
                     }
-
-                    pencilIcon = document.createElement("ion-icon")
-                    pencilIcon.setAttribute("name", "pencil-outline")
-                    pencilIcon.setAttribute("class", "md hydrated pencilIcon")
-                    pencilIcon.setAttribute("title", "Edit metadata")
-                    pencilIcon.setAttribute("alt", "Edit metadata")
-                    pencilIcon.setAttribute("id", movie.realTitle)
-                    pencilIcon.setAttribute("aria-label", "pencil outline")
-                    pencilIcon.setAttribute("role", "img")
-
-                    pencilIcon.addEventListener("click", function() {
-                        editMovie(movie.id)
-                    })
-
                     content.appendChild(image)
                     cover.appendChild(content)
-                    cover.appendChild(pencilIcon)
+                    if (accountType == "Admin") {
+                        pencilIcon = document.createElement("ion-icon")
+                        pencilIcon.setAttribute("name", "pencil-outline")
+                        pencilIcon.setAttribute("class", "md hydrated pencilIcon")
+                        pencilIcon.setAttribute("title", "Edit metadata")
+                        pencilIcon.setAttribute("alt", "Edit metadata")
+                        pencilIcon.setAttribute("id", movie.realTitle)
+                        pencilIcon.setAttribute("aria-label", "pencil outline")
+                        pencilIcon.setAttribute("role", "img")
+                        let theMovieName = movie.title
+                        let library = movie.libraryName
+                        pencilIcon.addEventListener("click", function() {
+                            editMovie(theMovieName, library)
+                        })
+                        cover.appendChild(pencilIcon)
+                    }
                     movies.appendChild(cover)
+
                 } else {
                     bigBanner = document.getElementsByClassName("bigBanner")[0]
                     imageBanner = document.getElementsByClassName("bannerCover")[0]
@@ -344,6 +346,21 @@ function getFirstMovies() {
                     }
                 })
             }}
+
+            if (data.length == 1) {
+                let bigBackground = document.getElementsByClassName("bannerCover")[0]
+                bigBackground.style.height = "100vh"
+
+                let bannerGenre = document.getElementsByClassName("bannerGenre")[0]
+                let bannerTitle = document.getElementsByClassName("bannerTitle")[0]
+                let bannerDescription = document.getElementsByClassName("bannerDescription")[0]
+                let watchNow = document.getElementsByClassName("watchNowA")[0]
+
+                bannerGenre.style.top = "46vh"
+                bannerTitle.style.top = "47.5vh"
+                bannerDescription.style.top = "55vh"
+                watchNow.style.top = "65vh"
+            }
 
             setPopup()
         })

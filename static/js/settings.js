@@ -9,8 +9,6 @@ function saveSettings(event) {
     document.cookie = "language=" + language + "; path=/";
     port = document.getElementById("port").value
     document.cookie = "port=" + port + "; path=/";
-    checkbox = document.getElementsByName("discordRPCCheckbox")[0]
-    document.cookie = "discordRPCCheckbox=" + checkbox.value + "; path=/";
 
     form = document.getElementById("saveSettingsForm")
     form.action = "/saveSettings"
@@ -83,15 +81,29 @@ for (var i = 0; i < allRadios.length; i++) {
         var id = this.id;
         var theLabel = document.querySelector('label[for="' + id + '"]');
         var theIonIcon = theLabel.querySelector('ion-icon');
-            theIonIcon.classList.add('selected');
-            otherRadios = document.getElementsByName('libType');
-            for (var j = 0; j < otherRadios.length; j++) {
-                var otherId = otherRadios[j].id;
-                if (otherId !== id) {
-                    var otherLabel = document.querySelector('label[for="' + otherId + '"]');
-                    var otherIonIcon = otherLabel.querySelector('ion-icon');
-                    otherIonIcon.classList.remove('selected');
+        theIonIcon.classList.add('selected');
+        otherRadios = document.getElementsByName('libType');
+        for (var j = 0; j < otherRadios.length; j++) {
+            var otherId = otherRadios[j].id;
+            if (otherId !== id) {
+                var otherLabel = document.querySelector('label[for="' + otherId + '"]');
+                var otherIonIcon = otherLabel.querySelector('ion-icon');
+                otherIonIcon.classList.remove('selected');
             }}
+            
+            if (id == "tv") {
+                pathLabel = document.querySelector('#popupLibrary > div.settingsLibrary > div.libraryPath > label')
+                pathLabel.innerHTML = "M3U Path:"
+
+                libraryPathInput = document.querySelector('#popupLibrary > div.settingsLibrary > div.libraryPath > input')
+                libraryPathInput.placeholder = "M3U Path"
+            } else {
+                pathLabel = document.querySelector('#popupLibrary > div.settingsLibrary > div.libraryPath > label')
+                pathLabel.innerHTML = "Path:"
+
+                libraryPathInput = document.querySelector('#popupLibrary > div.settingsLibrary > div.libraryPath > input')
+                libraryPathInput.placeholder = "Library path"
+            }
     });
 }
 

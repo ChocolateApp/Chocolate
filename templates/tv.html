@@ -6,12 +6,9 @@
 </div>
 <div id='playerWrapper'>
     <video id="movie" class="video-js" controls preload="auto">
-        <source src="{{ movieUrl }}" type="application/x-mpegURL" label="Source">
-        {% for caption in allCaptions %}
-            <track kind="captions" src="{{ caption['url'] }}" srclang="{{ caption['languageCode'] }}" label="{{ caption['name'] }}">
-        {% endfor %}
+        <source src="{{ firstChannelLink }}" type="application/x-mpegURL" label="Source">
     </video>
-    <script src="{{ url_for('static',filename='js/movie.js') }}" defer></script>
+    <script src="{{ url_for('static',filename='js/tv.js') }}" defer type="text/javascript"></script>
 </div>
 
 {% endblock %}
