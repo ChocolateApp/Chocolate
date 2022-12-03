@@ -29,7 +29,6 @@ protobuf==4.21.9
 pyOpenSSL==22.1.0
 pypresence==4.2.0
 python_Levenshtein==0.20.8
-pywin32==303
 SQLAlchemy==1.4.41
 tmdbv3api==1.7.7
 toml==0.10.2
