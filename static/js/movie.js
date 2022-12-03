@@ -9,14 +9,6 @@ window.onload = function() {
     var path = window.location.pathname
     movieID = window.location.href.split("/")[4]
 
-    if (navigator.userAgent.match(/Android/i) || navigator.userAgent.match(/webOS/i) || navigator.userAgent.match(/iPhone/i) || navigator.userAgent.match(/iPad/i) || navigator.userAgent.match(/iPod/i) || navigator.userAgent.match(/BlackBerry/i) || navigator.userAgent.match(/Windows Phone/i)) {
-        //remove the first 2 sources
-        document.getElementById("movie").removeChild(document.getElementById("movie").firstChild);
-        document.getElementById("movie").removeChild(document.getElementById("movie").firstChild);
-        document.getElementById("movie").removeChild(document.getElementById("movie").firstChild);
-        document.getElementById("movie").removeChild(document.getElementById("movie").firstChild);
-    }
-
 
     options = {
         controls: true,
@@ -27,9 +19,6 @@ window.onload = function() {
                 overrideNative: !videojs.browser.IS_SAFARI,
             },
         },
-        'html5': {
-            nativeTextTracks: false
-        },
         controlBar: {
             children: [
                'playToggle',
@@ -38,7 +27,6 @@ window.onload = function() {
                'progressControl',
                'remainingTimeDisplay',
                'captionsButton',
-               'audioTrackButton',
                'pictureInPictureToggle',
                'fullscreenToggle',
             ],
@@ -51,7 +39,7 @@ window.onload = function() {
     
     player.hlsQualitySelector({
         displayCurrentQuality: true,
-        placementIndex : 7
+        placementIndex : 6
     });
     player.chromecast();
     player.controls(true);
@@ -101,7 +89,6 @@ window.onload = function() {
                     popup.style.display = "none"
                     document.body.style.overflow = "auto"
                     video = document.getElementById("movie_html5_api")
-                    video.play()
                     video.currentTime = timeCode
 
                 })
@@ -111,7 +98,6 @@ window.onload = function() {
                     popup.style.display = "none"
                     document.body.style.overflow = "auto"
                     video = document.getElementById("movie_html5_api")
-                    video.play()
                 })
             }
         })

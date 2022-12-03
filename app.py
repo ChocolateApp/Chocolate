@@ -1427,8 +1427,7 @@ def create_m3u8(movieId):
         """
 
     file += """
-#EXT-X-ENDLIST"
-    """
+#EXT-X-ENDLIST"""
 
     response = make_response(file)
     response.headers.set("Content-Type", "application/x-mpegURL")
@@ -1450,8 +1449,7 @@ def create_m3u8_quality(quality, movieID):
     path = theLibrary.libFolder
     video_path = f"{path}/{slug}"
     duration = length_video(video_path)
-    file = f"""
-#EXTM3U
+    file = f"""#EXTM3U
 
 #EXT-X-VERSION:4
 #EXT-X-TARGETDURATION:{CHUNK_LENGTH}
@@ -1465,8 +1463,7 @@ def create_m3u8_quality(quality, movieID):
         """
 
     file += """
-#EXT-X-ENDLIST"
-    """
+#EXT-X-ENDLIST"""
 
     response = make_response(file)
     response.headers.set("Content-Type", "application/x-mpegURL")
@@ -1506,8 +1503,7 @@ def create_serie_m3u8(episodeId):
         """
 
     file += """
-#EXT-X-ENDLIST"
-    """
+#EXT-X-ENDLIST"""
 
     response = make_response(file)
     response.headers.set("Content-Type", "application/x-mpegURL")
@@ -1545,8 +1541,7 @@ def create_serie_m3u8_quality(quality, episodeId):
         """
 
     file += """
-#EXT-X-ENDLIST"
-    """
+#EXT-X-ENDLIST"""
 
     response = make_response(file)
     response.headers.set("Content-Type", "application/x-mpegURL")
@@ -1770,6 +1765,10 @@ def get_chunk_quality(quality, movieID, idx=0):
         "libx264",
         "-vf",
         f"scale={newHeight}:{newWidth}",
+        "-c:a",
+        "aac",
+        "-b:a",
+        "128k",
         "-ac",
         "2",
         "-preset",
@@ -1883,7 +1882,7 @@ def login():
             theresAnAdmin = True
         allUsersDict.append(userDict)
     
-    if len(allUsersDict)==0 or theresAnAdmin:
+    if len(allUsersDict)==0 or not theresAnAdmin:
         return redirect(url_for("createAccount"))
     if request.method == "POST":
         accountName = request.form["name"]
@@ -2776,11 +2775,10 @@ def mainMovie(movieID):
         newHeight = int(float(width) / float(height) * newWidth)
         if (newHeight % 2) != 0:
             newHeight += 1
-        m3u8Line = f"""#EXT-X-STREAM-INF:BANDWIDTH={newWidth*newWidth*1000},RESOLUTION={newHeight}x{newWidth},AUDIO=\"audio\"\n/video/{quality}/{movieID}\n"""
+        m3u8Line = f"""#EXT-X-STREAM-INF:BANDWIDTH={newWidth*newWidth*1000},RESOLUTION={newHeight}x{newWidth}\n/video/{quality}/{movieID}\n"""
         m3u8File += m3u8Line
-    lastLine = f"#EXT-X-STREAM-INF:BANDWIDTH={width*height*1000},RESOLUTION={height}x{width},AUDIO=\"audio\"\n/video/{movieID}"
+    lastLine = f"#EXT-X-STREAM-INF:BANDWIDTH={width*height*1000},RESOLUTION={height}x{width}\n/video/{movieID}"
     m3u8File += lastLine
-
     response = make_response(m3u8File)
 
     response.headers.set("Content-Type", "application/x-mpegURL")
@@ -2814,9 +2812,9 @@ def mainSerie(episodeID):
         newHeight = int(float(width) / float(height) * newWidth)
         if (newHeight % 2) != 0:
             newHeight += 1
-        m3u8Line = f"""#EXT-X-STREAM-INF:BANDWIDTH={newWidth*newWidth*1000},RESOLUTION={newHeight}x{newWidth},AUDIO=\"audio\"\n/videoSerie/{quality}/{episodeID}\n"""
+        m3u8Line = f"""#EXT-X-STREAM-INF:BANDWIDTH={newWidth*newWidth*1000},RESOLUTION={newHeight}x{newWidth}\n/videoSerie/{quality}/{episodeID}\n"""
         m3u8File += m3u8Line
-    lastLine = f"#EXT-X-STREAM-INF:BANDWIDTH={width*height*1000},RESOLUTION={height}x{width},AUDIO=\"audio\"\n/videoSerie/{episodeID}"
+    lastLine = f"#EXT-X-STREAM-INF:BANDWIDTH={width*height*1000},RESOLUTION={height}x{width}\n/videoSerie/{episodeID}"
     m3u8File += lastLine
 
     response = make_response(m3u8File)
@@ -3071,8 +3069,7 @@ def audioMovie(trackId, movieId):
         """
 
     file += """
-#EXT-X-ENDLIST"
-    """
+#EXT-X-ENDLIST"""
 
     response = make_response(file)
     response.headers.set("Content-Type", "application/x-mpegURL")
@@ -3112,8 +3109,7 @@ def audioSeries(trackId, episodeId):
         """
 
     file += """
-#EXT-X-ENDLIST"
-    """
+#EXT-X-ENDLIST"""
 
     response = make_response(file)
     response.headers.set("Content-Type", "application/x-mpegURL")
