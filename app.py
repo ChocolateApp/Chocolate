@@ -1876,11 +1876,14 @@ def settings():
 def login():
     allUsers = Users.query.filter().all()
     allUsersDict = []
+    theresAnAdmin = False
     for user in allUsers:
         userDict = {"name": user.name, "profilePicture": user.profilePicture, "accountType": user.accountType}
+        if user.accountType == "Admin":
+            theresAnAdmin = True
         allUsersDict.append(userDict)
     
-    if len(allUsersDict)==0:
+    if len(allUsersDict)==0 or theresAnAdmin:
         return redirect(url_for("createAccount"))
     if request.method == "POST":
         accountName = request.form["name"]
