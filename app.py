@@ -562,8 +562,8 @@ def getMovies(libraryName):
                         print(f"Movie {movieTitle} not found")
                         allMoviesNotSorted.append(originalMovieTitle)
                         continue
+                    bestMatch = search[0]
                     if config["ChocolateSettings"]["askwhichmovie"] == "false" or len(search)==1:
-                        bestMatch = search[0]
                         for i in range(len(search)):
                             if (lev(movieTitle, search[i].title) < lev(movieTitle, bestMatch.title)
                                 and bestMatch.title not in filmFileList):
@@ -861,8 +861,8 @@ def getSeries(libraryName):
                 continue
 
             askForGoodSerie = config["ChocolateSettings"]["askWhichSerie"]
+            bestMatch = search[0]
             if askForGoodSerie == "false" or len(search)==1:
-                bestMatch = search[0]
                 for i in range(len(search)):
                     if (
                         lev(serieTitle, search[i].name) < lev(serieTitle, bestMatch.name)
