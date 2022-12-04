@@ -163,6 +163,7 @@ Don't forget to give the project a star! Thanks again!
 - [ ] Add watched movies, and series to the watchlist of TMDB
 - [ ] Add movies, series, games without restarting the server
 - [ ] Add website UI to link with Radarr, Sonarr, Lidarr...
+- [ ] Use the GPU to encode videos if possible
 
 ### Work in progress
 
