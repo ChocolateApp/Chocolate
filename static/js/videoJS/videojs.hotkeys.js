@@ -1,0 +1,39 @@
+;(function(root,factory){if(typeof window!=='undefined'&&window.videojs){factory(window.videojs);}else if(typeof define==='function'&&define.amd){define('videojs-hotkeys',['video.js'],function(module){return factory(module.default||module);});}else if(typeof module!=='undefined'&&module.exports){module.exports=factory(require('video.js'));}}(this,function(videojs){"use strict";if(typeof window!=='undefined'){window['videojs_hotkeys']={version:"0.2.27"};}
+var hotkeys=function(options){var player=this;var pEl=player.el();var doc=document;var def_options={volumeStep:0.1,seekStep:5,enableMute:true,enableVolumeScroll:true,enableHoverScroll:false,enableFullscreen:true,enableNumbers:true,enableJogStyle:false,alwaysCaptureHotkeys:false,captureDocumentHotkeys:false,documentHotkeysFocusElementFilter:function(){return false},enableModifiersForNumbers:true,enableInactiveFocus:true,skipInitialFocus:false,playPauseKey:playPauseKey,rewindKey:rewindKey,forwardKey:forwardKey,volumeUpKey:volumeUpKey,volumeDownKey:volumeDownKey,muteKey:muteKey,fullscreenKey:fullscreenKey,customKeys:{}};var cPlay=1,cRewind=2,cForward=3,cVolumeUp=4,cVolumeDown=5,cMute=6,cFullscreen=7;var mergeOptions=videojs.mergeOptions||videojs.util.mergeOptions;options=mergeOptions(def_options,options||{});var volumeStep=options.volumeStep,seekStep=options.seekStep,enableMute=options.enableMute,enableVolumeScroll=options.enableVolumeScroll,enableHoverScroll=options.enableHoverScroll,enableFull=options.enableFullscreen,enableNumbers=options.enableNumbers,enableJogStyle=options.enableJogStyle,alwaysCaptureHotkeys=options.alwaysCaptureHotkeys,captureDocumentHotkeys=options.captureDocumentHotkeys,documentHotkeysFocusElementFilter=options.documentHotkeysFocusElementFilter,enableModifiersForNumbers=options.enableModifiersForNumbers,enableInactiveFocus=options.enableInactiveFocus,skipInitialFocus=options.skipInitialFocus;var videojsVer=videojs.VERSION;if(!pEl.hasAttribute('tabIndex')){pEl.setAttribute('tabIndex','-1');}
+pEl.style.outline="none";if(alwaysCaptureHotkeys||!player.autoplay()){if(!skipInitialFocus){player.one('play',function(){pEl.focus();});}}
+if(enableInactiveFocus){player.on('userinactive',function(){var cancelFocusingPlayer=function(){clearTimeout(focusingPlayerTimeout);};var focusingPlayerTimeout=setTimeout(function(){player.off('useractive',cancelFocusingPlayer);var activeElement=doc.activeElement;var controlBar=pEl.querySelector('.vjs-control-bar');if(activeElement&&activeElement.parentElement==controlBar){pEl.focus();}},10);player.one('useractive',cancelFocusingPlayer);});}
+player.on('play',function(){var ifblocker=pEl.querySelector('.iframeblocker');if(ifblocker&&ifblocker.style.display===''){ifblocker.style.display="block";ifblocker.style.bottom="39px";}});var keyDown=function keyDown(event){var ewhich=event.which,wasPlaying,seekTime;var ePreventDefault=event.preventDefault.bind(event);var duration=player.duration();if(player.controls()){var activeEl=doc.activeElement;if(alwaysCaptureHotkeys||(captureDocumentHotkeys&&documentHotkeysFocusElementFilter(activeEl))||activeEl==pEl||activeEl==pEl.querySelector('.vjs-tech')||activeEl==pEl.querySelector('.vjs-control-bar')||activeEl==pEl.querySelector('.iframeblocker')){switch(checkKeys(event,player)){case cPlay:ePreventDefault();if(alwaysCaptureHotkeys||captureDocumentHotkeys){event.stopPropagation();}
+if(player.paused()){silencePromise(player.play());}else{player.pause();}
+break;case cRewind:wasPlaying=!player.paused();ePreventDefault();if(wasPlaying){player.pause();}
+seekTime=player.currentTime()-seekStepD(event);if(seekTime<=0){seekTime=0;}
+player.currentTime(seekTime);if(wasPlaying){silencePromise(player.play());}
+break;case cForward:wasPlaying=!player.paused();ePreventDefault();if(wasPlaying){player.pause();}
+seekTime=player.currentTime()+seekStepD(event);if(seekTime>=duration){seekTime=wasPlaying?duration-.001:duration;}
+player.currentTime(seekTime);if(wasPlaying){silencePromise(player.play());}
+break;case cVolumeDown:ePreventDefault();if(!enableJogStyle){player.volume(player.volume()-volumeStep);}else{seekTime=player.currentTime()-1;if(player.currentTime()<=1){seekTime=0;}
+player.currentTime(seekTime);}
+break;case cVolumeUp:ePreventDefault();if(!enableJogStyle){player.volume(player.volume()+volumeStep);}else{seekTime=player.currentTime()+1;if(seekTime>=duration){seekTime=duration;}
+player.currentTime(seekTime);}
+break;case cMute:if(enableMute){player.muted(!player.muted());}
+break;case cFullscreen:if(enableFull){if(player.isFullscreen()){player.exitFullscreen();}else{player.requestFullscreen();}}
+break;default:if((ewhich>47&&ewhich<59)||(ewhich>95&&ewhich<106)){if(enableModifiersForNumbers||!(event.metaKey||event.ctrlKey||event.altKey)){if(enableNumbers){var sub=48;if(ewhich>95){sub=96;}
+var number=ewhich-sub;ePreventDefault();player.currentTime(player.duration()*number*0.1);}}}
+for(var customKey in options.customKeys){var customHotkey=options.customKeys[customKey];if(customHotkey&&customHotkey.key&&customHotkey.handler){if(customHotkey.key(event)){ePreventDefault();customHotkey.handler(player,options,event);}}}}}}};var doubleClick=function doubleClick(event){if(videojsVer!=null&&videojsVer<="7.1.0"){if(player.controls()){var activeEl=event.relatedTarget||event.toElement||doc.activeElement;if(activeEl==pEl||activeEl==pEl.querySelector('.vjs-tech')||activeEl==pEl.querySelector('.iframeblocker')){if(enableFull){if(player.isFullscreen()){player.exitFullscreen();}else{player.requestFullscreen();}}}}}};var volumeHover=false;var volumeSelector=pEl.querySelector('.vjs-volume-menu-button')||pEl.querySelector('.vjs-volume-panel');if(volumeSelector!=null){volumeSelector.onmouseover=function(){volumeHover=true;};volumeSelector.onmouseout=function(){volumeHover=false;};}
+var mouseScroll=function mouseScroll(event){if(enableHoverScroll){var activeEl=0;}else{var activeEl=doc.activeElement;}
+if(player.controls()){if(alwaysCaptureHotkeys||activeEl==pEl||activeEl==pEl.querySelector('.vjs-tech')||activeEl==pEl.querySelector('.iframeblocker')||activeEl==pEl.querySelector('.vjs-control-bar')||volumeHover){if(enableVolumeScroll){event=window.event||event;var delta=Math.max(-1,Math.min(1,(event.wheelDelta||-event.detail)));event.preventDefault();if(delta==1){player.volume(player.volume()+volumeStep);}else if(delta==-1){player.volume(player.volume()-volumeStep);}}}}};var checkKeys=function checkKeys(e,player){if(options.playPauseKey(e,player)){return cPlay;}
+if(options.rewindKey(e,player)){return cRewind;}
+if(options.forwardKey(e,player)){return cForward;}
+if(options.volumeUpKey(e,player)){return cVolumeUp;}
+if(options.volumeDownKey(e,player)){return cVolumeDown;}
+if(options.muteKey(e,player)){return cMute;}
+if(options.fullscreenKey(e,player)){return cFullscreen;}};function playPauseKey(e){return(e.which===32||e.which===179);}
+function rewindKey(e){return(e.which===37||e.which===177);}
+function forwardKey(e){return(e.which===39||e.which===176);}
+function volumeUpKey(e){return(e.which===38);}
+function volumeDownKey(e){return(e.which===40);}
+function muteKey(e){return(e.which===77);}
+function fullscreenKey(e){return(e.which===70);}
+function seekStepD(e){return(typeof seekStep==="function"?seekStep(e):seekStep);}
+function silencePromise(value){if(value!=null&&typeof value.then==='function'){value.then(null,function(e){});}}
+player.on('keydown',keyDown);player.on('dblclick',doubleClick);player.on('mousewheel',mouseScroll);player.on("DOMMouseScroll",mouseScroll);if(captureDocumentHotkeys){document.addEventListener('keydown',function(event){keyDown(event)});}
+return this;};var registerPlugin=videojs.registerPlugin||videojs.plugin;registerPlugin('hotkeys',hotkeys);}));

@@ -154,12 +154,14 @@ Don't forget to give the project a star! Thanks again!
 - [ ] Add a watchtogether system
 - [ ] Translate in multiple languages
 - [ ] Multiple interface
+- [ ] Allow custom css
 - [ ] Statistics
 - [ ] Custom intro
 - [ ] Add a system to search for subtitles
 - [ ] Send issues directly from the website
 - [ ] Order by title, year, release date, note, duration, done, watching, date of add, date of last view
 - [ ] Add watched movies, and series to the watchlist of TMDB
+- [ ] Add movies, series, games without restarting the server
 - [ ] Add website UI to link with Radarr, Sonarr, Lidarr...
 
 ### Work in progress

@@ -458,6 +458,39 @@ label[for="addLibraryButton"] {
     content: '' !important;
 }
 
+.vjs-menu-button-popup .vjs-menu .vjs-menu-content {
+    max-height: 20em !important;
+}
+
+.vjs-chromecast-button {
+    display: block !important;
+}
+
+.vjs-chromecast-button .vjs-icon-placeholder {
+    width: 1.8em !important;
+    height: 1.8em !important;
+}
+
+.vjs-airplay-button .vjs-icon-placeholder {
+    background: url(https://uptobox.com/assets/css/images/ic_airplay_white_24px.svg) center center no-repeat;
+    background-size: contain;
+    display: inline-block;
+    width: 15px;
+    height: 15px
+}
+
+.vjs-airplay-button:hover {
+    cursor: pointer
+}
+
+.vjs-airplay-button:hover .vjs-icon-placeholder {
+    background-image: url(https://uptobox.com/assets/css/images/ic_airplay_white_24px.svg)
+}
+
+.vjs-button>.vjs-icon-placeholder {
+    display: inline-block !important;
+}
+
 @keyframes showPencil {
     0% {
         transform: scale(0);

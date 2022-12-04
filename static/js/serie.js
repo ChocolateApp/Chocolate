@@ -26,20 +26,11 @@ window.onload = function() {
         },
     }
     var player = videojs('movie', options);
-    player.chromecast();
-    player.controls(true);
-
-    //get the number of tracks if it's superior to 1, display the audio track button
-    let tracks = player.audioTracks()
-    console.log(tracks)
-    if (tracks.length > 1) {
-        player.controlBar.addChild('audioTrackButton')
-    }
-
     player.hlsQualitySelector({
         displayCurrentQuality: true,
-        placementIndex: 7,
+        placementIndex: 7
     });
+    player.chromecast();
 
     var video = document.getElementById("movie_html5_api")
     let introStart = 0

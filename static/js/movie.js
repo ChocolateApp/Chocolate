@@ -2,8 +2,28 @@ const createObjectFromString = (str) => {
 	return eval(`(function () { return ${str}; })()`);
 }
 
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = cookies[i].trim();
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function getElementByXpath(path) {
+    return document.evaluate(path, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+  }
+
 window.onload = function() {
-    let lastPush = ""
+    let lastPush = 0
     let options;
 
     var path = window.location.pathname
@@ -27,38 +47,57 @@ window.onload = function() {
                'progressControl',
                'remainingTimeDisplay',
                'captionsButton',
+               'audioTrackButton',
+               'chromecastButton',
+               'airPlayButton',
                'pictureInPictureToggle',
                'fullscreenToggle',
             ],
-        },
-        
+        }, 
     }
 
     //add the quality selector
     var player = videojs('movie', options);
-    
     player.hlsQualitySelector({
         displayCurrentQuality: true,
-        placementIndex : 6
+        placementIndex : 7
     });
-    player.chromecast();
-    player.controls(true);
+
+    value = {false: "is not", true: "is"}
+
+    console.log(`User ${value[videojs.browser.IS_IOS]} on IOS\nUser ${value[videojs.browser.IS_SAFARI]} on Safari\nUser ${value[videojs.browser.IS_ANDROID]} on Android\nUser ${value[videojs.browser.IS_CHROME]} on Chrome`)
+
+    if (videojs.browser.IS_IOS || videojs.browser.IS_SAFARI) {
+        player.airPlay();
+        let airPlayButton = getElementByXpath("//*[@id='movie']/div[4]/button[3]")
+        airPlayButton.classList.remove("vjs-hidden")
+    } else {
+        player.chromecast();
+        let chromecastButton = getElementByXpath("//*[@id='movie']/div[4]/button[2]")
+        chromecastButton.classList.remove("vjs-hidden")
+    }
+    
 
     var video = document.getElementById("movie_html5_api")
     video.addEventListener("timeupdate", function() {
         let href = window.location.href
         movieID = href.split("/")[4]
-        fetch(`/setVuesTimeCode/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            //set the form
-            body: JSON.stringify({
-                movieID: movieID,
-                timeCode: video.currentTime
+        let currentTime = video.currentTime
+        currentTime = parseInt(currentTime)
+        if (currentTime == lastPush+1) {
+            fetch(`/setVuesTimeCode/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                //set the form
+                body: JSON.stringify({
+                    movieID: movieID,
+                    timeCode: currentTime
+                })
             })
-        })
+            lastPush = currentTime
+        }
     })
 
 
@@ -90,7 +129,7 @@ window.onload = function() {
                     document.body.style.overflow = "auto"
                     video = document.getElementById("movie_html5_api")
                     video.currentTime = timeCode
-
+                    lastPush = timeCode
                 })
 
                 buttonNo = document.getElementById("buttonNo")

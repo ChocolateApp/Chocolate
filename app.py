@@ -14,7 +14,6 @@ from deep_translator import GoogleTranslator
 from time import mktime
 from PIL import Image
 from pypresence import Presence
-import langcodes as lc
 import requests, os, subprocess, configparser, socket, datetime, subprocess, socket, platform, GPUtil, json, time, sqlalchemy, warnings, re, zipfile, ast, git
 
 start_time = mktime(time.localtime())
@@ -2771,12 +2770,13 @@ def mainMovie(movieID):
     m3u8File = f"""#EXTM3U\n\n"""
     qualities = [144, 240, 360, 480, 720, 1080]
     for quality in qualities:
-        newWidth = int(quality)
-        newHeight = int(float(width) / float(height) * newWidth)
-        if (newHeight % 2) != 0:
-            newHeight += 1
-        m3u8Line = f"""#EXT-X-STREAM-INF:BANDWIDTH={newWidth*newWidth*1000},RESOLUTION={newHeight}x{newWidth}\n/video/{quality}/{movieID}\n"""
-        m3u8File += m3u8Line
+        if quality < height:
+            newWidth = int(quality)
+            newHeight = int(float(width) / float(height) * newWidth)
+            if (newHeight % 2) != 0:
+                newHeight += 1
+            m3u8Line = f"""#EXT-X-STREAM-INF:BANDWIDTH={newWidth*newWidth*1000},RESOLUTION={newHeight}x{newWidth}\n/video/{quality}/{movieID}\n"""
+            m3u8File += m3u8Line
     lastLine = f"#EXT-X-STREAM-INF:BANDWIDTH={width*height*1000},RESOLUTION={height}x{width}\n/video/{movieID}"
     m3u8File += lastLine
     response = make_response(m3u8File)
@@ -2808,12 +2808,13 @@ def mainSerie(episodeID):
     m3u8File = f"""#EXTM3U\n\n"""
     qualities = [144, 240, 360, 480, 720, 1080]
     for quality in qualities:
-        newWidth = int(quality)
-        newHeight = int(float(width) / float(height) * newWidth)
-        if (newHeight % 2) != 0:
-            newHeight += 1
-        m3u8Line = f"""#EXT-X-STREAM-INF:BANDWIDTH={newWidth*newWidth*1000},RESOLUTION={newHeight}x{newWidth}\n/videoSerie/{quality}/{episodeID}\n"""
-        m3u8File += m3u8Line
+        if quality < height:
+            newWidth = int(quality)
+            newHeight = int(float(width) / float(height) * newWidth)
+            if (newHeight % 2) != 0:
+                newHeight += 1
+            m3u8Line = f"""#EXT-X-STREAM-INF:BANDWIDTH={newWidth*newWidth*1000},RESOLUTION={newHeight}x{newWidth}\n/videoSerie/{quality}/{episodeID}\n"""
+            m3u8File += m3u8Line
     lastLine = f"#EXT-X-STREAM-INF:BANDWIDTH={width*height*1000},RESOLUTION={height}x{width}\n/videoSerie/{episodeID}"
     m3u8File += lastLine
 
@@ -2944,12 +2945,18 @@ def generateCaptionMovie(movieID):
         line = line.rstrip()
         language = line.split(",")[1]
         index = line.split(",")[0]
-        title = line.split(",")[2]
         try:
-            titleName = title.split(" : ")[0]
-            subtitleType = title.split(" : ")[1]
+            title = line.split(",")[2]
+
+            try:
+                titleName = title.split(" : ")[0]
+                subtitleType = title.split(" : ")[1]
+            except:
+                titleName = title
+                subtitleType = "Unknown"
+
         except:
-            titleName = title
+            titleName = language
             subtitleType = "Unknown"
         if subtitleType.lower() != "pgs":
             allCaptions.append(
