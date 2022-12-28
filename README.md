@@ -22,11 +22,10 @@ It's a free software.<br>
 
 Chocolate is actually made with this technologies:
 
-* ![HTML5](https://ziadoua.github.io/m3-Markdown-Badges/badges/HTML/html1.svg)
-* ![CSS3](https://ziadoua.github.io/m3-Markdown-Badges/badges/CSS/css1.svg)
-* ![Python](https://ziadoua.github.io/m3-Markdown-Badges/badges/Python/python1.svg)
-* ![Flask](https://ziadoua.github.io/m3-Markdown-Badges/badges/Flask/flask1.svg
-) 
+* <img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/HTML/html1.svg" alt="HTML5" style="display: flex; align-items: center;">
+* <img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/CSS/css1.svg" alt="CSS3" style="display: flex; align-items: center;">
+* <img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/Python/python1.svg" alt="Python" style="display: flex; align-items: center;">
+* <img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/Flask/flask1.svg" alt="Flask" style="display: flex; align-items: center;">
 
 
 <!-- GETTING STARTED -->
@@ -325,12 +324,9 @@ This tool was made with ❤ and ☕ by Impre-visible.
 <!-- LICENSE -->
 ## License
 
-Shield: [![CC BY-SA 4.0][cc-by-sa-shield]][cc-by-sa]
-
-This work is licensed under a [Creative Commons Attribution-ShareAlike 4.0 International License][cc-by-sa].
-[![CC BY-SA 4.0][cc-by-sa-image]][cc-by-sa]
-
-[cc-by-sa]: http://creativecommons.org/licenses/by-sa/4.0/
-[cc-by-sa-image]: https://licensebuttons.net/l/by-sa/4.0/88x31.png
-[cc-by-sa-shield]: https://ziadoua.github.io/m3-Markdown-Badges/badges/LicenceCCBYSA/licenceccbysa1.svg
-
+<div style="display: flex; align-items: center;">
+  <span>This work is licensed under a </span>
+  <a href="http://creativecommons.org/licenses/by-sa/4.0/" style="margin-left:5px;display: flex; align-items: center;">
+    <img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/LicenceCCBYSA/licenceccbysa1.svg" alt="Creative Commons Attribution-ShareAlike 4.0 International License">
+  </a>
+</div>
