@@ -22,10 +22,11 @@ It's a free software.<br>
 
 Chocolate is actually made with this technologies:
 
-* ![HTML5](https://img.shields.io/badge/html5-%23E34F26.svg?style=for-the-badge&logo=html5&logoColor=white)
-* ![CSS3](https://img.shields.io/badge/css3-%231572B6.svg?style=for-the-badge&logo=css3&logoColor=white)
-* ![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
-* ![Flask](https://img.shields.io/badge/flask-%23000.svg?style=for-the-badge&logo=flask&logoColor=white) 
+* ![HTML5](https://ziadoua.github.io/m3-Markdown-Badges/badges/HTML/html1.svg)
+* ![CSS3](https://ziadoua.github.io/m3-Markdown-Badges/badges/CSS/css1.svg)
+* ![Python](https://ziadoua.github.io/m3-Markdown-Badges/badges/Python/python1.svg)
+* ![Flask](https://ziadoua.github.io/m3-Markdown-Badges/badges/Flask/flask1.svg
+) 
 
 
 <!-- GETTING STARTED -->
@@ -146,6 +147,7 @@ Don't forget to give the project a star! Thanks again!
 
 
 ## TO-DO for Chocolate Server
+- [ ] Add a download button
 - [ ] A docker image **URGENT**
 - [ ] Create a plugin system
 - [ ] Add the mobile ui of the video player
@@ -157,14 +159,15 @@ Don't forget to give the project a star! Thanks again!
 - [ ] Allow custom css
 - [ ] Statistics
 - [ ] Custom intro
-- [ ] Add a system to search for subtitles
+- [ ] Add a system to search for subtitles (By using OpenSubtitles API [here](https://opensubtitles.stoplight.io/docs/opensubtitles-api/b1eb44d4c8502-open-subtitles-api) )
 - [ ] Send issues directly from the website
 - [ ] Order by title, year, release date, note, duration, done, watching, date of add, date of last view
-- [ ] Add watched movies, and series to the watchlist of TMDB
+- [ ] Add watched movies, and series to TRAKT
 - [ ] Add movies, series, games without restarting the server
 - [ ] Add website UI to link with Radarr, Sonarr, Lidarr...
 - [ ] Add support to trakt
 - [ ] Use the GPU to encode videos if possible
+- [ ] Change season with the buttons
 
 ### Work in progress
 
@@ -195,6 +198,106 @@ Don't forget to give the project a star! Thanks again!
 - [X] Upgrade the responsive
 - [X] Edit movie metadata directly on the website
 
+<!--LANGUAGES TO TRANSLATE -->
+## Languages to translate
+
+- [X] AF: Afrikaans
+- [X] SQ: Albanian
+- [X] AM: Amharic
+- [X] AR: Arabic
+- [X] HY: Armenian
+- [X] AZ: Azerbaijani
+- [X] EU: Basque
+- [X] BE: Belarusian
+- [X] BN: Bengali
+- [X] BS: Bosnian
+- [X] BG: Bulgarian
+- [X] CA: Catalan
+- [ ] NY: Chichewa
+- [X] CO: Corsican
+- [X] HR: Croatian
+- [ ] CS: Czech
+- [ ] DA: Danish
+- [ ] NL: Dutch
+- [X] EN: English
+- [ ] EO: Esperanto
+- [ ] ET: Estonian
+- [ ] FI: Finnish
+- [X] FR: French
+- [ ] FY: Frisian
+- [ ] GL: Galician
+- [ ] KA: Georgian
+- [X] DE: German
+- [ ] EL: Greek
+- [ ] GU: Gujarati
+- [ ] HT: Haitian Creole
+- [ ] HA: Hausa
+- [ ] HE: Hebrew
+- [ ] HI: Hindi
+- [ ] HU: Hungarian
+- [ ] IS: Icelandic
+- [ ] IG: Igbo
+- [ ] ID: Indonesian
+- [ ] GA: Irish
+- [X] IT: Italian
+- [ ] JA: Japanese
+- [ ] JV: Javanese
+- [ ] KN: Kannada
+- [ ] KK: Kazakh
+- [ ] KM: Khmer
+- [ ] KO: Korean
+- [ ] KU: Kurdish (Kurmanji)
+- [ ] LO: Lao
+- [ ] LA: Latin
+- [ ] LV: Latvian
+- [ ] LT: Lithuanian
+- [ ] LB: Luxembourgish
+- [ ] MK: Macedonian
+- [ ] MG: Malagasy
+- [ ] MS: Malay
+- [ ] ML: Malayalam
+- [ ] MT: Maltese
+- [ ] ZH: Mandarin
+- [ ] MI: Maori
+- [ ] MR: Marathi
+- [ ] MN: Mongolian
+- [ ] NE: Nepali
+- [ ] NO: Norwegian
+- [ ] PS: Pashto
+- [ ] FA: Persian
+- [ ] PL: Polish
+- [ ] PT: Portuguese
+- [ ] PA: Punjabi
+- [ ] RO: Romanian
+- [ ] RU: Russian
+- [ ] SM: Samoan
+- [ ] GD: Scots Gaelic
+- [ ] SR: Serbian
+- [ ] SN: Shona
+- [ ] SD: Sindhi
+- [ ] SK: Slovak
+- [ ] SL: Slovenian
+- [ ] SO: Somali
+- [X] ES: Spanish
+- [ ] SU: Sundanese
+- [ ] SW: Swahili
+- [ ] SV: Swedish
+- [ ] TG: Tajik
+- [ ] TA: Tamil
+- [ ] TT: Tatar
+- [ ] TE: Telugu
+- [ ] TH: Thai
+- [ ] TR: Turkish
+- [ ] TK: Turkmen
+- [ ] UK: Ukrainian
+- [ ] UR: Urdu
+- [ ] UZ: Uzbek
+- [ ] VI: Vietnamese
+- [ ] CY: Welsh
+- [ ] XH: Xhosa
+- [ ] YI: Yiddish
+- [ ] YO: Yoruba
+- [ ] ZU: Zuluv
 
 <!-- CONTACT -->
 ## Contact
@@ -224,11 +327,10 @@ This tool was made with ❤ and ☕ by Impre-visible.
 
 Shield: [![CC BY-SA 4.0][cc-by-sa-shield]][cc-by-sa]
 
-This work is licensed under a
-[Creative Commons Attribution-ShareAlike 4.0 International License][cc-by-sa].
-
+This work is licensed under a [Creative Commons Attribution-ShareAlike 4.0 International License][cc-by-sa].
 [![CC BY-SA 4.0][cc-by-sa-image]][cc-by-sa]
 
 [cc-by-sa]: http://creativecommons.org/licenses/by-sa/4.0/
 [cc-by-sa-image]: https://licensebuttons.net/l/by-sa/4.0/88x31.png
-[cc-by-sa-shield]: https://img.shields.io/badge/License-CC%20BY--SA%204.0-lightgrey.svg
+[cc-by-sa-shield]: https://ziadoua.github.io/m3-Markdown-Badges/badges/LicenceCCBYSA/licenceccbysa1.svg
+
