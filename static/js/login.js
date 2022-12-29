@@ -9,10 +9,10 @@ crossPopup.addEventListener("click", function() {
 });
 allUsersDiv = document.getElementsByClassName("allUsers")[0]
 lenAllUsers = allUsersDiv.children.length
-if (lenAllUsers < 4){ 
-    allUsersDiv.style.gridTemplateColumns = `repeat(${lenAllUsers}, 1fr)`
+if (lenAllUsers < 3){ 
+    allUsersDiv.classList.add(`${"a"*lenAllUsers}Users`)
 } else {
-    allUsersDiv.style.gridTemplateColumns = `repeat(4, 1fr)`
+    allUsersDiv.classList.add(`maxUsers`)
 }
 for (user of allusers) {
     user.addEventListener("click", function() {

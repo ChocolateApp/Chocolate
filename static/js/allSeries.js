@@ -519,6 +519,7 @@ function getFirstSeries() {
             spinner = document.getElementsByClassName("spinner")[0]
             backgroundSpinner = document.getElementById("loaderBackground")
             spinner.style.opacity = "0"
+            spinner.style.display = "none"
             backgroundSpinner.style.display = "none"
         } else {
 
@@ -534,6 +535,7 @@ function getFirstSeries() {
                     spinner = document.getElementsByClassName("spinner")[0]
                     backgroundSpinner = document.getElementById("loaderBackground")
                     spinner.style.opacity = "0"
+                    spinner.style.display = "none"
                     backgroundSpinner.style.display = "none"
                 }
             })
@@ -548,7 +550,7 @@ window.onload = function() {
     brokenPath = brokenPathDiv.getAttribute("id")
     brokenPathDiv.parentNode.removeChild(brokenPathDiv)
     playPopup = document.getElementsByClassName("playPopup")[0]
-    playPopup.style.opacity = "0"
+    playPopup.style.visibility = "hidden"
     popupContent = document.getElementsByClassName("popupContent")[0]
     popupContent.style.height = "86vh"
     getFirstSeries()

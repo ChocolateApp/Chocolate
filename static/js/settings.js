@@ -33,18 +33,9 @@ function addLibrary(){
 }
 
 window.onload = function() {
-    languageCookie = getCookie("language")
-    document.getElementById("language").value = languageCookie
     portCookie = getCookie("port")
     if (portCookie !== undefined) {
         document.getElementById("port").value = portCookie
-    }
-    discordCookie = getCookie("discordRPCCheckbox")
-    if (discordCookie !== undefined) {
-        document.getElementById("discordRPCCheckbox").value = discordCookie
-}
-    if (discordCookie == "on") {
-        document.getElementsByClassName("slider")[0].click()
     }
     typeInputList = document.getElementById("type")
     typeInputList.addEventListener("change", function() {
@@ -56,17 +47,16 @@ window.onload = function() {
             passwordAccountCreator.style.display = "block"
         }
     })
-    checkbox = document.getElementsByName("discordRPCCheckbox")[0].value = 'off'
 
-    slider = document.getElementsByClassName("slider")[0]
-    slider.addEventListener("click", function() {
-        checkbox = document.getElementsByName("discordRPCCheckbox")[0]
-        if (checkbox.value == "on") {
-            checkbox.value = "off"
-        } else {
-            checkbox.value = "on"
-        }
-    })
+    let allowDownloadDiv = document.getElementById("allowDownloadsDiv")
+    let allowDownloadCheckbox = document.getElementById("allowDownloadsCheckbox")
+    allowDownloadValue = allowDownloadDiv.getAttribute("data-value")
+    if (allowDownloadValue == "true") {
+        allowDownloadCheckbox.checked = true
+    } else {
+        allowDownloadCheckbox.checked = false
+    }
+
     setLibraryMenu()
 }
 
@@ -135,11 +125,9 @@ function newLib(){
     const libName = document.getElementById("libraryName").value
     const libPath = document.getElementById("libraryPath").value
     const libUsers = document.getElementsByClassName("settingsCheckbox")
-    console.log(libUsers)
     let defaultUsers = ""
     for (let i = 0; i < libUsers.length; i++) {
         if (libUsers[i].checked) {
-            console.log(libUsers[i].getAttribute("username"))
             defaultUsers += ","+libUsers[i].getAttribute("username")
         }
     }

@@ -380,6 +380,39 @@ function setPopup() {
             }
         })
     })
+    let moviesTitleH2 = document.getElementsByClassName("moviesTitle")[0]
+    let seriesTitleH2 = document.getElementsByClassName("seriesTitle")[0]
+    let actorMovieDiv = document.getElementsByClassName("actorMoviesList")[0]
+    let actorSerieDiv = document.getElementsByClassName("actorSeriesList")[0]
+
+    let numberOfMovies = actorMovieDiv.children.length
+    let numberOfSeries = actorSerieDiv.children.length
+
+    if (numberOfSeries == 0) {
+        seriesTitleH2.style.display = "none"
+        actorSerieDiv.style.display = "none"
+    } else if (numberOfSeries <= 3) {
+        seriesTitleH2.style.display = "block"
+        actorSerieDiv.style.gridTemplateColumns = "repeat(" + numberOfSeries + ", 1fr)"
+        actorSerieDiv.style.display = "grid"
+    } else {
+        seriesTitleH2.style.display = "block"
+        actorSerieDiv.style.gridTemplateColumns = "repeat(3, 1fr)"
+        actorSerieDiv.style.display = "grid"
+    }
+    
+    if (numberOfMovies == 0) {
+        moviesTitleH2.style.display = "none"
+        actorMovieDiv.style.display = "none"
+    } else if (numberOfMovies <= 3) {
+        moviesTitleH2.style.display = "block"
+        actorMovieDiv.style.gridTemplateColumns = "repeat(" + numberOfMovies + ", 1fr)"
+        actorMovieDiv.style.display = "grid"
+    } else {
+        moviesTitleH2.style.display = "block"
+        actorMovieDiv.style.gridTemplateColumns = "repeat(3, 1fr)"
+        actorMovieDiv.style.display = "grid"
+    }
 }
 
 function getActorMovies() {
@@ -402,7 +435,6 @@ function getActorMovies() {
         actorNameTitle.innerHTML = actorName
 
         actorMovieDiv = document.getElementsByClassName("actorMoviesList")[0]
-        moviesTitleH2 = document.getElementsByClassName("moviesTitle")[0]
         actorSerieDiv = document.getElementsByClassName("actorSeriesList")[0]
         seriesTitleH2 = document.getElementsByClassName("seriesTitle")[0]
 
@@ -453,23 +485,6 @@ function getActorMovies() {
             actorMovieDiv.appendChild(actorMovieContent)
         }
 
-        if (actorMovies.length === 1) {
-            actorMovieDiv.style.gridTemplateColumns = "repeat(1, 1fr)"
-            actorMovieDiv.style.display = "inline-grid"
-            moviesTitleH2.style.display = "block"
-        } else if (actorMovies.length === 2) {
-            actorMovieDiv.style.gridTemplateColumns = "repeat(2, 1fr)"
-            actorMovieDiv.style.display = "inline-grid"
-            moviesTitleH2.style.display = "block"
-        } else if (actorMovies.length >= 3) {
-            actorMovieDiv.style.gridTemplateColumns = "repeat(3, 1fr)"
-            actorMovieDiv.style.display = "inline-grid"
-            moviesTitleH2.style.display = "block"
-        } else {
-            moviesTitleH2.style.display = "none"
-            actorMovieDiv.style.display = "none"
-        }
-
         for (i = 0; i < actorSeries.length; i++) {
             realTitle = actorSeries[i].name
             cover = actorSeries[i].serieCoverPath
@@ -495,19 +510,6 @@ function getActorMovies() {
             actorSerie.appendChild(actorSerieTitle)
             actorSerieContent.appendChild(actorSerie)
             actorSerieDiv.appendChild(actorSerieContent)
-        }
-
-        if (actorSeries.length < 3) {
-            actorSerieDiv.style.gridTemplateColumns = `repeat(${actorSeries.length}, 1fr)`
-            actorSerieDiv.style.display = "inline-grid"
-            seriesTitleH2.style.display = "block"
-        } else if (actorSeries.length >= 3) {
-            actorSerieDiv.style.gridTemplateColumns = "repeat(3, 1fr)"
-            actorSerieDiv.style.display = "inline-grid"
-            seriesTitleH2.style.display = "block"
-        } else {
-            seriesTitleH2.style.display = "none"
-            actorSerieDiv.style.display = "none"
         }
 
         setPopup()

@@ -1,9 +1,4 @@
 {% extends 'header.html' %}{% block title %}{{ title }}{% endblock %}{% block content %}
-<div id="popup" class="moviePopup" style="display: none;">
-    <h1>Do you want to continue where you leaved ?</h1>
-    <a id="buttonYes">Yes</a>
-    <a id="buttonNo">No</a>
-</div>
 <div id='playerWrapper'>
     <video id="movie" class="video-js" controls preload="auto">
         <source src="{{ firstChannelLink }}" type="application/x-mpegURL" label="Source">

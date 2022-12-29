@@ -1,31 +1,31 @@
-var closePopup = document.getElementById("crossPopup")
+let closePopup = document.getElementById("crossPopup")
 closePopup.addEventListener("click", function() {
     popup = document.getElementById("popup")
     popup.style.display = "none"
 
     document.body.style.overflow = "auto"
 
-    var imagePopup = document.getElementsByClassName("coverPopup")[0]
+    let imagePopup = document.getElementsByClassName("coverPopup")[0]
     imagePopup.setAttribute("src", "");
     imagePopup.setAttribute("alt", "");
     imagePopup.setAttribute("title", "");
 
-    var titlePopup = document.getElementsByClassName("titlePopup")[0]
+    let titlePopup = document.getElementsByClassName("titlePopup")[0]
     titlePopup.innerHTML = "";
 
-    var descriptionPopup = document.getElementsByClassName("descriptionPopup")[0]
+    let descriptionPopup = document.getElementsByClassName("descriptionPopup")[0]
     descriptionPopup.innerHTML = "";
 
-    var notePopup = document.getElementsByClassName("notePopup")[0]
+    let notePopup = document.getElementsByClassName("notePopup")[0]
     notePopup.innerHTML = "";
 
-    var yearPopup = document.getElementsByClassName("yearPopup")[0]
+    let yearPopup = document.getElementsByClassName("yearPopup")[0]
     yearPopup.innerHTML = "";
 
-    var genrePopup = document.getElementsByClassName("genrePopup")[0]
+    let genrePopup = document.getElementsByClassName("genrePopup")[0]
     genrePopup.innerHTML = "";
 
-    var durationPopup = document.getElementsByClassName("durationPopup")[0]
+    let durationPopup = document.getElementsByClassName("durationPopup")[0]
     durationPopup.innerHTML = "";
 
     castPopup = document.getElementById("castPopup")
@@ -39,13 +39,15 @@ closePopup.addEventListener("click", function() {
     while (childs.length > 0) {
         childs[0].remove()
     }
-    var similar = document.getElementsByClassName("containerSimilar")[0]
+    let similar = document.getElementsByClassName("containerSimilar")[0]
     similar.style.gridTemplateColumns = "repeat(0, 1fr)"
 
-    var trailerVideo = document.getElementById("trailerVideo")
+    let trailerVideo = document.getElementById("trailerVideo")
     trailerVideo.setAttribute("src", "")
     trailerVideo.remove()
 
+    let downloadMovie = document.getElementById("downloadMovieButton")
+    downloadMovie.setAttribute("href", "")
 })
 
 function getCookie(name) {
@@ -60,34 +62,32 @@ function editMovie(title, library) {
 
 function setPopup() {
     contents = document.getElementsByClassName("content")
+    canDownloadDiv = document.getElementById("canDownloadDiv")
+    canDownload = canDownloadDiv.getAttribute("data-candownload") == "True"
     Array.from(contents).forEach(function(content) {
+        let image = content.children[2]
+        let movieId = image.getAttribute("data-id")
         content.addEventListener("click", function() {
             popup = document.getElementById("popup")
             popup.style.display = "block"
 
             document.body.style.overflow = "hidden !important"
-
-            image = content.children[0]
-            movieTitle = image.title;
-            movieId = image.getAttribute("data-id")
-
             fetch("/getMovieData/" + movieId).then(function(response) {
                 return response.json()
             }).then(function(data) {
-                var movieTitle = data.realTitle
-                var movieCast = JSON.parse(data.cast)
-                var movieDescription = data.description
-                var movieDuration = data.duration
-                var movieGenre = JSON.parse(data.genre)
-                var movieNote = data.note
-                var moviePoster = data.cover
-                var movieUrl = data.slug
-                var movieID = data.id
+                let movieTitle = data.realTitle
+                let movieCast = JSON.parse(data.cast)
+                let movieDescription = data.description
+                let movieDuration = data.duration
+                let movieGenre = JSON.parse(data.genre)
+                let movieNote = data.note
+                let moviePoster = data.cover
+                let movieUrl = data.slug
+                let movieID = data.id
                 movieUrl = "/movie/" + movieID
-                var movieYear = data.date
-                var movieTrailer = data.bandeAnnonceUrl
-                console.log(movieTrailer)
-                var movieSimilar = data.similarMovies
+                let movieYear = data.date
+                let movieTrailer = data.bandeAnnonceUrl
+                let movieSimilar = data.similarMovies
                 containerSimilar = document.getElementsByClassName("containerSimilar")[0]
 
                 if (movieSimilar.length === 0) {
@@ -97,20 +97,20 @@ function setPopup() {
                     containerSimilar.style.display = "inline-grid"
                 }
 
-                for (var i = 0; i < movieSimilar.length; i++) {
+                for (let i = 0; i < movieSimilar.length; i++) {
                     if (i < 4) {
-                        var movie = movieSimilar[i]
+                        let movie = movieSimilar[i]
                         imageUrl = movie.cover
                         movieName = movie.realTitle
-                        var similar = document.getElementsByClassName("containerSimilar")[0]
-                        var movie = document.createElement("div")
+                        let similar = document.getElementsByClassName("containerSimilar")[0]
+                        movie = document.createElement("div")
                         movie.setAttribute("class", "movie")
-                        var image = document.createElement("img")
+                        let image = document.createElement("img")
                         image.setAttribute("class", "movieImage")
                         image.setAttribute("src", imageUrl)
                         image.setAttribute("alt", movieName)
                         image.setAttribute("title", movieName)
-                        var title = document.createElement("p")
+                        let title = document.createElement("p")
                         title.setAttribute("class", "movieTitle")
                         title.innerHTML = movieName
 
@@ -120,13 +120,13 @@ function setPopup() {
                     }
                 }
 
-                var childs = document.getElementsByClassName("movie")
-                var childsLength = childs.length
-                var similar = document.getElementsByClassName("containerSimilar")[0]
+                let childs = document.getElementsByClassName("movie")
+                let childsLength = childs.length
+                let similar = document.getElementsByClassName("containerSimilar")[0]
                 similar.style.gridTemplateColumns = "repeat(" + childsLength + ", 1fr)"
 
 
-                var imagePopup = document.getElementsByClassName("coverPopup")[0]
+                let imagePopup = document.getElementsByClassName("coverPopup")[0]
                 imagePopup.setAttribute("src", moviePoster);
                 if (imagePopup.src == "https://image.tmdb.org/t/p/originalNone") {
                     imagePopup.src = brokenPath
@@ -134,22 +134,22 @@ function setPopup() {
                 imagePopup.setAttribute("alt", movieTitle);
                 imagePopup.setAttribute("title", movieTitle);
 
-                var titlePopup = document.getElementsByClassName("titlePopup")[0]
+                let titlePopup = document.getElementsByClassName("titlePopup")[0]
                 titlePopup.innerHTML = movieTitle;
 
-                var descriptionPopup = document.getElementsByClassName("descriptionPopup")[0]
+                let descriptionPopup = document.getElementsByClassName("descriptionPopup")[0]
                 descriptionPopup.innerHTML = movieDescription;
 
-                var notePopup = document.getElementsByClassName("notePopup")[0]
+                let notePopup = document.getElementsByClassName("notePopup")[0]
                 notePopup.innerHTML = `Note : ${movieNote}/10`;
 
-                var yearPopup = document.getElementsByClassName("yearPopup")[0]
+                let yearPopup = document.getElementsByClassName("yearPopup")[0]
                 yearPopup.innerHTML = `Date : ${movieYear}`;
 
-                var genrePopup = document.getElementsByClassName("genrePopup")[0]
-                var genreList = movieGenre
-                var genreString = ""
-                for (var i = 0; i < genreList.length; i++) {
+                let genrePopup = document.getElementsByClassName("genrePopup")[0]
+                let genreList = movieGenre
+                let genreString = ""
+                for (let i = 0; i < genreList.length; i++) {
                     genreString += genreList[i]
                     if (i != genreList.length - 1) {
                         genreString += ", "
@@ -157,9 +157,9 @@ function setPopup() {
                 }
                 genrePopup.innerHTML = `Genre : ${genreString}`;
 
-                var durationPopup = document.getElementsByClassName("durationPopup")[0]
+                let durationPopup = document.getElementsByClassName("durationPopup")[0]
                 durationPopup.innerHTML = `Durée : ${movieDuration}`;
-                for (var i = 0; i < movieCast.length; i++) {
+                for (let i = 0; i < movieCast.length; i++) {
                     castMember = document.createElement("div")
                     castMember.className = "castMember"
                     castImage = document.createElement("img")
@@ -184,16 +184,16 @@ function setPopup() {
                 }
 
                 castMembers = document.getElementsByClassName("castMember")
-                for (var i = 0; i < castMembers.length; i++) {
+                for (let i = 0; i < castMembers.length; i++) {
                     castMembers[i].addEventListener("click", function() {
-                        var castImage = this.children[0]
-                        var castId = castImage.getAttribute("alt")
-                        var castUrl = "/actor/" + castId
+                        let castImage = this.children[0]
+                        let castId = castImage.getAttribute("alt")
+                        let castUrl = "/actor/" + castId
                         window.location.href = castUrl
                     })
                 }
 
-                var trailer = document.getElementsByClassName("containerTrailer")[0]
+                let trailer = document.getElementsByClassName("containerTrailer")[0]
                 if (movieTrailer == "") {
                     trailer.style.display = "none"
                 } else {
@@ -209,7 +209,13 @@ function setPopup() {
                     trailer.appendChild(trailerVideo)
                 }
 
-                var playButton = document.getElementsByClassName("playPopup")[0]
+                if (canDownload === true) {
+                    downloadButton = document.getElementById("downloadMovieButton")
+                    downloadButton.setAttribute("class", "downloadMovieButton")
+                    downloadButton.href= "/downloadMovie/" + movieId
+                }
+
+                let playButton = document.getElementsByClassName("playPopup")[0]
                 playButton.setAttribute("href", movieUrl);
             })
         })
@@ -220,6 +226,41 @@ const createObjectFromString = (str) => {
 	return eval(`(function () { return ${str}; })()`);
 }
 
+function svgEl(name, attrs) {
+    const el = document.createElementNS("http://www.w3.org/2000/svg", name)
+    for ( const [ k, v ] of Object.entries(attrs) ){
+        el.setAttribute(k, v);
+    }
+    return el
+}
+
+function removeLoader(data){
+    if (data.length <= 1) {
+        spinner = document.getElementsByClassName("spinner")[0]
+        backgroundSpinner = document.getElementById("loaderBackground")
+        spinner.style.opacity = "0"
+        spinner.style.display = "none"
+        backgroundSpinner.style.display = "none"
+    } else {
+
+    const imgs = document.images
+    const imgsArray = Array.prototype.slice.call(document.images)
+
+    for (img of imgsArray) {
+        const acutalIndex = imgsArray.indexOf(img)
+        img = imgs.item(acutalIndex)
+        img.addEventListener("load", function() {
+            const imagesLenght = imgs.length - 1
+            if (acutalIndex == imagesLenght) {
+                spinner = document.getElementsByClassName("spinner")[0]
+                backgroundSpinner = document.getElementById("loaderBackground")
+                spinner.style.opacity = "0"
+                spinner.style.display = "none"
+                backgroundSpinner.style.display = "none"
+            }
+        })
+    }}
+}
 
 function getFirstMovies() {
     movies = document.getElementsByClassName("movies")[0]
@@ -235,18 +276,18 @@ function getFirstMovies() {
         fetch(routeToUse).then(function(response) {
             return response.json()
         }).then(function(data) {
-            for (var i = 0; i < data.length; i++) {
+            for (let i = 0; i < data.length; i++) {
                 data[i]
                 if (i > 0) {
                     movies = document.getElementsByClassName("movies")[0]
-                    var movie = data[i]
+                    let movie = data[i]
                     let movieID = movie.id
-                    var cover = document.createElement("div")
+                    let cover = document.createElement("div")
                     cover.className = "cover"
                     cover.style.marginBottom = "2vh"
-                    var content = document.createElement("div")
+                    let content = document.createElement("div")
                     content.className = "content"
-                    var image = document.createElement("img")
+                    let image = document.createElement("img")
                     image.className = "cover_movie"
                     image.src = movie.cover
                     if (image.src == "https://image.tmdb.org/t/p/originalNone") {
@@ -257,19 +298,58 @@ function getFirstMovies() {
                     image.setAttribute("data-id", movieID)
 
                     vues = movie.vues
-                    //vues is a string representing an array convert it to an array
+                    duration = movie.duration
+                    note = Math.round(movie.note * 10)
+                    //create a circle to display the note
+                    let noteCircleFront = document.createElement("div")
+                    noteCircleFront.className = "noteCircleFront"
+                    noteCircleFront.innerHTML = ` ${note}%`
+                    
+                    
+                    //if note is 0, noteColor is red, if note is 100, noteColor is green
+                    if (note < 50) {
+                        hue = note * 1.2; // Teinte allant de 0 à 60
+                      } else {
+                        hue = (note - 50) * 1.2 + 60; // Teinte allant de 60 à 120
+                      }
+
+                    let noteColor = `hsl(${hue}deg, 100%, 50%)`
+                                        
+                    noteSVG = svgEl("svg",    {viewBox: "0 0 110 110", style: `--dash: ${1-note/100}; --color: ${noteColor}`, class: "noteSVG"});
+                    circleSVG = svgEl("circle", {cx: "55", cy: "55", r: "50", fill: "transparent" });
+                    circleSVGBackground = svgEl("circle", {cx: "55", cy: "55", r: "50", fill: "grey" });
+                    textSVG = svgEl("text",   {x:  "55", y:  "57", "dominant-baseline": "middle", "text-anchor": "middle"});
+                    noteSVG.appendChild(circleSVGBackground)
+                    noteSVG.appendChild(circleSVG)
+                    noteSVG.appendChild(textSVG)
+                    content.appendChild(noteSVG)
+                    textSVG.textContent = note+"%"
+                    
+
+                    
+
                     vues = createObjectFromString(vues)
-                    if (vues[username] !== undefined && vues[username] !== 0) {
-                        timeCode = vues[username]
-                        //convert the seconds to a timecode hh:mm:ss
-                        timeCode = new Date(timeCode * 1000).toISOString().substr(11, 8)
-                        timePopup = document.createElement("div")
-                        timePopup.className = "timePopup"
-                        timeP = document.createElement("p")
-                        timeP.innerHTML = timeCode
-                        timePopup.appendChild(timeP)
-                        cover.appendChild(timePopup)
+                    timeCode = vues[username]
+                    let timeLineBackground = document.createElement("div")
+                    timeLineBackground.className = "timeLineBackground"
+                    let timeLine = document.createElement("div")
+                    timeLine.className = "timeLine"
+                    let watchedTime = vues[username]
+                    let movieDuration = movie.duration
+                    //it's a timecode, convert it to seconds
+                    movieDuration = movieDuration.split(":")
+                    movieDuration = parseInt(movieDuration[0]) * 3600 + parseInt(movieDuration[1]) * 60 + parseInt(movieDuration[2])
+                    if ((watchedTime / movieDuration) * 100 <= 100) {
+                        timeLine.style.width = `${(watchedTime / movieDuration) * 100}%`
+                    } else if ((watchedTime / movieDuration) * 100 > 100) {
+                        timeLine.style.width = "100%"
+                    } else {
+                        timeLine.style.width = "0%"
                     }
+                    timeLineBackground.appendChild(timeLine)
+                    content.appendChild(timeLineBackground)
+                
+                    
                     content.appendChild(image)
                     cover.appendChild(content)
                     if (accountType == "Admin") {
@@ -297,14 +377,20 @@ function getFirstMovies() {
                     titleBanner = document.getElementsByClassName("bannerTitle")[0]
                     descriptionBanner = document.getElementsByClassName("bannerDescription")[0]
                     watchNow = document.getElementsByClassName("watchNowA")[0]
-
                     movie = data[i]
-                    var id = movie.id
+                    let id = movie.id
                     slug = "/movie/" + id
                     bannerImage = movie.banner
-                    cssBigBanner = `background-image: linear-gradient(to bottom, rgb(255 255 255 / 0%), rgb(29 29 29)), url("${bannerImage}")`
+                    cssBigBanner = `background-image: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(24, 24, 24, 0.85) 77.08%, #1D1D1D 100%), linear-gradient(95.97deg, #000000 0%, rgba(0, 0, 0, 0.25) 100%, #000000 100%), url("${bannerImage}")`
                     imageBanner.setAttribute('style', cssBigBanner)
-
+                    let downloadNowA = document.getElementById("downloadNowA")
+                    canDownloadDiv = document.getElementById("canDownloadDiv")
+                    canDownload = canDownloadDiv.getAttribute("data-candownload") == "True"
+                    if (canDownload) {
+                        downloadNowA.setAttribute("href", "/downloadMovie/" + id)
+                    } else {
+                        downloadNowA.remove()
+                    }
 
                     titleBanner.innerHTML = movie.realTitle
                     description = movie.description
@@ -323,29 +409,7 @@ function getFirstMovies() {
                 }
             }
 
-            if (data.length <= 1) {
-                spinner = document.getElementsByClassName("spinner")[0]
-                backgroundSpinner = document.getElementById("loaderBackground")
-                spinner.style.opacity = "0"
-                backgroundSpinner.style.display = "none"
-            } else {
-
-            const imgs = document.images
-            const imgsArray = Array.prototype.slice.call(document.images)
-
-            for (img of imgsArray) {
-                const acutalIndex = imgsArray.indexOf(img)
-                img = imgs.item(acutalIndex)
-                img.addEventListener("load", function() {
-                    const imagesLenght = imgs.length - 1
-                    if (acutalIndex == imagesLenght) {
-                        spinner = document.getElementsByClassName("spinner")[0]
-                        backgroundSpinner = document.getElementById("loaderBackground")
-                        spinner.style.opacity = "0"
-                        backgroundSpinner.style.display = "none"
-                    }
-                })
-            }}
+            removeLoader(data)
 
             if (data.length == 1) {
                 let bigBackground = document.getElementsByClassName("bannerCover")[0]

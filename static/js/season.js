@@ -1,56 +1,3 @@
-var closePopup = document.getElementById("crossPopup")
-closePopup.addEventListener("click", function() {
-    popup = document.getElementById("popup")
-    popup.style.display = "none"
-
-    document.body.style.overflow = "auto"
-
-    var imagePopup = document.getElementsByClassName("coverPopup")[0]
-    imagePopup.setAttribute("src", "");
-    imagePopup.setAttribute("alt", "");
-    imagePopup.setAttribute("title", "");
-
-    var titlePopup = document.getElementsByClassName("titlePopup")[0]
-    titlePopup.innerHTML = "";
-
-    var descriptionPopup = document.getElementsByClassName("descriptionPopup")[0]
-    descriptionPopup.innerHTML = "";
-
-    var notePopup = document.getElementsByClassName("notePopup")[0]
-    notePopup.innerHTML = "";
-
-    var yearPopup = document.getElementsByClassName("yearPopup")[0]
-    yearPopup.innerHTML = "";
-
-    var genrePopup = document.getElementsByClassName("genrePopup")[0]
-    genrePopup.innerHTML = "";
-
-    var durationPopup = document.getElementsByClassName("durationPopup")[0]
-    durationPopup.innerHTML = "";
-
-    castPopup = document.getElementById("castPopup")
-    castDivs = document.getElementsByClassName("castMember")
-    image = document.getElementsByClassName("castImage")[0]
-    while (castDivs.length > 0) {
-        image.setAttribute("src", "")
-        castPopup.removeChild(castDivs[0])
-    }
-    childs = document.getElementsByClassName("season")
-    while (childs.length > 0) {
-        childs[0].remove()
-    }
-    var similar = document.getElementsByClassName("containerSimilar")[0]
-    similar.style.gridTemplateColumns = "repeat(0, 1fr)"
-    containerSeasons = document.getElementsByClassName("containerSeasons")[0]
-    while (containerSeasons.firstChild) {
-        containerSeasons.removeChild(containerSeasons.firstChild)
-    }
-
-    var trailerVideo = document.getElementById("trailerVideo")
-    trailerVideo.setAttribute("src", "")
-    trailerVideo.remove()
-})
-
 function getSeasonData() {
     url = window.location.href
     urlArray = url.split("/")
@@ -64,24 +11,27 @@ function getSeasonData() {
     ndd = urlArray[2]
     baseURI = `${https}//${ndd}`
     finalURI = `${baseURI}/getSeasonData/${id}`
-    console.log(ndd, baseURI, finalURI)
     fetch(finalURI).then(function(response) {
         return response.json()
     }).then(function(data) {
         episodes = data["episodes"]
         episodes = Object.entries(episodes)
-        for (var i = 0; i < episodes.length; i++) {
+        canDownloadDiv = document.getElementById("canDownloadDiv")
+        canDownload = canDownloadDiv.getAttribute("data-candownload") == "True"
+        let watchNowLanguage = document.getElementById("watchNowLanguage")
+        watchNowLanguage = watchNowLanguage.getAttribute("data-value")
+        for (let i = 0; i < episodes.length; i++) {
             if (i != 0) {
                 episodesDiv = document.getElementsByClassName("episodes")[0]
-                var episode = episodes[i][1]
+                let episode = episodes[i][1]
                 episodeNumber = episode["episodeNumber"]
-                var cover = document.createElement("div")
+                let cover = document.createElement("div")
                 cover.className = "coverEpisodes"
-                var content = document.createElement("div")
+                let content = document.createElement("div")
                 content.className = "contentEpisodes"
-                var image = document.createElement("img")
+                let image = document.createElement("img")
                 image.className = "cover_episode"
-                var title = document.createElement("div")
+                let title = document.createElement("div")
                 title.className = "title"
                 title.innerHTML = episode["episodeName"]
 
@@ -100,7 +50,6 @@ function getSeasonData() {
 
                 cookieValue = getCookie(image.title)
                 if (cookieValue != undefined) {
-                    console.log(image.title, cookieValue)
                     timePopup = document.createElement("div")
                     timePopup.className = "timePopupSeason"
                     timeP = document.createElement("p")
@@ -117,6 +66,8 @@ function getSeasonData() {
                 watchNowButton = document.createElement("a")
                 watchNowButton.className = "watchNowSeason md hydrated"
 
+                
+
                 ionIcon = document.createElement("ion-icon")
                 ionIcon.className = "watchNow"
                 ionIcon.setAttribute("name", "play")
@@ -125,22 +76,47 @@ function getSeasonData() {
                 let serieURL = `/serie/${episodeId}`
                 watchNowButton.href = serieURL
                 watchNowButton.appendChild(ionIcon)
-                watchNowButton.innerHTML = watchNowButton.innerHTML + "Watch Now"
+                watchNowButton.innerHTML += watchNowLanguage
+                let episodeButtons = document.createElement("div")
+                episodeButtons.className = "episodeButtons"
+                episodeButtons.appendChild(watchNowButton)
+                if (canDownload) {
+                    downloadNowButton = document.createElement("a")
+                    downloadNowIcon = document.createElement("ion-icon")
+                    downloadNowIcon.setAttribute("name", "download-outline")
+                    downloadNowIcon.setAttribute("role", "img")
+                    downloadNowIcon.setAttribute("aria-label", "download outline")
+                    downloadNowIcon.setAttribute("class", "md hydrated")
+                    downloadNowButton.appendChild(downloadNowIcon)
+                    downloadNowButton.className = "downloadNowSeason"
+                    downloadNowButton.href = `/downloadEpisode/${episodeId}`
+                    downloadNowButton.innerHTML += canDownloadDiv.getAttribute("data-value")
+                    episodeButtons.appendChild(downloadNowButton)
+                }
+                episodeText.appendChild(episodeButtons)
                 content.appendChild(image)
                 content.appendChild(episodeText)
-                content.appendChild(watchNowButton)
                 cover.appendChild(content)
                 episodesDiv.appendChild(cover)
                 indexOfEpisode += 1
             } else {
+                let episode = episodes[i][1]
+                episodeId = episode["episodeId"]
                 bigBanner = document.getElementsByClassName("bigBanner")[0]
                 imageBanner = document.getElementsByClassName("bannerSeasonCover")[0]
                 titleBanner = document.getElementsByClassName("bannerTitle")[0]
                 descriptionBanner = document.getElementsByClassName("bannerDescription")[0]
                 watchNow = document.getElementsByClassName("watchNowA")[0]
 
-                var episode = episodes[i][1]
-                episodeId = episode["episodeId"]
+                let downloadNowA = document.getElementById("downloadNowA")
+                canDownloadDiv = document.getElementById("canDownloadDiv")
+                canDownload = canDownloadDiv.getAttribute("data-candownload") == "True"
+                if (canDownload) {
+                    downloadNowA.setAttribute("href", "/downloadEpisode/" + episodeId)
+                } else {
+                    downloadNowA.remove()
+                }
+
 
                 let serieURL = `/serie/${episodeId}`
                 

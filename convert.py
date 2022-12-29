@@ -1,27 +1,48 @@
-import os
-from videoprops import get_video_properties, get_audio_properties
-import configparser
+import os, subprocess
 
-config = configparser.ConfigParser()
-config.read('config.ini')
+# Définissez le chemin du dossier contenant les fichiers vidéos à réduire
+# par exemple :
+#folder_path = "C:\\Videos\\"
+folder_path = r"E:\\Séries\\The Mentalist"
 
-path = config["ChocolateSettings"]["MoviesPath"]
-movies = os.listdir(path)
-MoviesToConvert = []
-newExtension = "mkv"
-for movie in movies:
-    try:
-        movieVideoStats = get_video_properties(f"{path}\\{movie}")
-        movieAudioStats = get_audio_properties(f"{path}\\{movie}")
-        if os.path.isfile(f"{path}\\{movie}"):
-            if movieAudioStats['codec_name'] != "aac":
-                MoviesToConvert.append(movie)
-    except Exception as e:
-        pass
-print(f"{len(MoviesToConvert)} films à convertir, environ {len(MoviesToConvert)*0.33} heures de conversions")
+# Itérez sur tous les dossiers dans le dossier
+allSeasons = [ f for f in os.listdir(folder_path) if os.path.isdir(os.path.join(folder_path,f)) ]
+print(folder_path)
+print(allSeasons)
+for seasons in allSeasons:
+    allEpisodes = [ f for f in os.listdir(os.path.join(folder_path,seasons)) if os.path.isfile(os.path.join(folder_path,seasons,f)) ]
+    print(allEpisodes)
+    for filename in allEpisodes:
+        # Vérifiez que le fichier est une vidéo en utilisant son extension de fichier
+        if (filename.endswith(".mp4") or filename.endswith(".mkv") or filename.endswith(".avi")):
+            # Construisez le chemin complet du fichier vidéo en utilisant le chemin du dossier et le nom de fichier
+            filepath = f"{folder_path}\\{seasons}\\{filename}"
+            newFilepath, file_extension = os.path.splitext(filepath)
+            newFilepath += f"_compressed.{file_extension}"
 
-for j in MoviesToConvert:
-    original_file_title = j.split('.')[0]
-    movieAudioStats = get_audio_properties(f"{path}\\{j}")
-    command = f'ffmpeg -y -vsync 0 -i "{path}\\{j}" -c:v copy -c:a aac -crf 22 -pix_fmt yuv420p -b:v 5M  "{path}\\Web_{original_file_title}.{newExtension}"'
-    os.system(command)
+            # Utilisez ffmpeg pour réduire la taille du fichier vidéo en utilisant un taux de bits constant
+            command = [
+                "ffmpeg",
+                "-i",
+                filepath,
+                "-c",
+                "copy",
+                "-c:v",
+                "h264_nvenc",
+                "-qp",
+                "0",
+                "-c:a",
+                "copy",
+                "-y",
+                "-vsync",
+                "0",
+                "-crf",
+                "22",
+                "-pix_fmt",
+                "yuv420p",
+                "-b:v",
+                "5M",
+                f"{newFilepath}"
+            ]
+
+            subprocess.run(command)

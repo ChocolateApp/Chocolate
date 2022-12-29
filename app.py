@@ -14,7 +14,7 @@ from deep_translator import GoogleTranslator
 from time import mktime
 from PIL import Image
 from pypresence import Presence
-import requests, os, subprocess, configparser, socket, datetime, subprocess, socket, platform, GPUtil, json, time, sqlalchemy, warnings, re, zipfile, ast, git
+import requests, os, subprocess, configparser, socket, datetime, subprocess, socket, platform, GPUtil, json, time, sqlalchemy, warnings, re, zipfile, ast, git, pycountry
 
 start_time = mktime(time.localtime())
 
@@ -146,8 +146,9 @@ class Seasons(db.Model):
     seasonDescription = db.Column(db.Text)
     seasonCoverPath = db.Column(db.String(255))
     modifiedDate = db.Column(db.Float)
+    numberOfEpisodeInFolder = db.Column(db.Integer)
 
-    def __init__(self, serie, release, episodesNumber, seasonNumber, seasonId, seasonName, seasonDescription, seasonCoverPath, modifiedDate):
+    def __init__(self, serie, release, episodesNumber, seasonNumber, seasonId, seasonName, seasonDescription, seasonCoverPath, modifiedDate, numberOfEpisodeInFolder):
         self.serie = serie
         self.release = release
         self.episodesNumber = episodesNumber
@@ -157,6 +158,7 @@ class Seasons(db.Model):
         self.seasonDescription = seasonDescription
         self.seasonCoverPath = seasonCoverPath
         self.modifiedDate = modifiedDate
+        self.numberOfEpisodeInFolder = numberOfEpisodeInFolder
 
     def __repr__(self) -> str:
         return f"<Seasons {self.serie} {self.seasonNumber}>"
@@ -289,11 +291,9 @@ with app.app_context():
 def load_user(id):
     return Users.query.get(int(id))
 
+dir = os.path.dirname(__file__)
 
 config = configparser.ConfigParser()
-
-
-dir = os.path.dirname(__file__)
 config.read(os.path.join(dir, 'config.ini'))
 if config["ChocolateSettings"]["language"] == "Empty":
     config["ChocolateSettings"]["language"] = "EN"
@@ -513,7 +513,10 @@ websitesTrailers = {
     "Vimeo": "https://vimeo.com/",
 }
 
+
+
 def getMovies(libraryName):
+
     movie = Movie()
     path = Libraries.query.filter_by(libName=libraryName).first().libFolder
     try:
@@ -547,208 +550,206 @@ def getMovies(libraryName):
             print("\033[?25l", end="")
             print(loading, end="\r", flush=True)
             
-            with app.app_context():
-                exists = db.session.query(Movies).filter_by(title=movieTitle).first() is not None
-                if not exists:
-                    movie = Movie()
-                    try:
-                        search = movie.search(movieTitle, adult=True)
-                    except TMDbException:
-                        print(TMDbException)
-                        allMoviesNotSorted.append(search)
-                        continue
+            exists = db.session.query(Movies).filter_by(title=movieTitle).first() is not None
+            if not exists:
+                movie = Movie()
+                try:
+                    search = movie.search(movieTitle, adult=True)
+                except TMDbException:
+                    print(TMDbException)
+                    allMoviesNotSorted.append(search)
+                    continue
 
-                    if not search:
-                        print(f"Movie {movieTitle} not found")
-                        allMoviesNotSorted.append(originalMovieTitle)
-                        continue
-                    bestMatch = search[0]
-                    if config["ChocolateSettings"]["askwhichmovie"] == "false" or len(search)==1:
-                        for i in range(len(search)):
-                            if (lev(movieTitle, search[i].title) < lev(movieTitle, bestMatch.title)
-                                and bestMatch.title not in filmFileList):
-                                bestMatch = search[i]
-                            elif (lev(movieTitle, search[i].title) == lev(movieTitle, bestMatch.title)
-                                and bestMatch.title not in filmFileList):
-                                bestMatch = bestMatch
-                            if (lev(movieTitle, bestMatch.title) == 0
-                                and bestMatch.title not in filmFileList):
-                                break
-
-                    res = bestMatch
-                    try:
-                        name = res.title
-                    except AttributeError as e:
-                        name = res.original_title
-                    movieId = res.id
-                    details = movie.details(movieId)
-
-                    movieCoverPath = f"https://image.tmdb.org/t/p/original{res.poster_path}"
-                    banniere = f"https://image.tmdb.org/t/p/original{res.backdrop_path}"
-                    realTitle, extension = os.path.splitext(originalMovieTitle)
-                    rewritedName = realTitle.replace(" ", "_")
-                    with open(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.png", "wb") as f:
-                        f.write(requests.get(movieCoverPath).content)
-                    try:
-                        img = Image.open(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.png")
-                        img.save(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.webp", "webp")
-                        os.remove(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.png")
-                        movieCoverPath = f"/static/img/mediaImages/{rewritedName}_Cover.webp"
-                    except:
-                        os.rename(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.png", f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.webp")
-                        movieCoverPath = "/static/img/broken.webp"
-
-                    with open(f"{dirPath}/static/img/mediaImages/{rewritedName}_Banner.png", "wb") as f:
-                        f.write(requests.get(banniere).content)
-                    if res.backdrop_path == None:
-                        banniere = f"https://image.tmdb.org/t/p/original{details.backdrop_path}"
-                        if banniere != "https://image.tmdb.org/t/p/originalNone":
-                            with open(f"{dirPath}/static/img/mediaImages/{rewritedName}_Banner.png", "wb") as f:
-                                f.write(requests.get(banniere).content)
-                        else:
-                            banniere = "/static/img/broken.webp"
-                    try:
-                        img = Image.open(f"{dirPath}/static/img/mediaImages/{rewritedName}_Banner.png")
-                        img.save(f"{dirPath}/static/img/mediaImages/{rewritedName}_Banner.webp", "webp")
-                        os.remove(f"{dirPath}/static/img/mediaImages/{rewritedName}_Banner.png")
-                        banniere = f"/static/img/mediaImages/{rewritedName}_Banner.webp"
-                    except:
-                        os.rename(f"{dirPath}/static/img/mediaImages/{rewritedName}_Banner.png", f"{dirPath}/static/img/mediaImages/{rewritedName}_Banner.webp")
-                        banniere = "/static/img/brokenBanner.webp"
-
-                    description = res.overview
-                    note = res.vote_average
-                    try:
-                        date = res.release_date
-                    except AttributeError as e:
-                        date = "Unknown"
-
-                    casts = details.casts.cast[:5]
-                    theCast = []
-                    for cast in casts:
-                        characterName = cast.character
-                        actorName = (
-                            cast.name.replace(" ", "_")
-                            .replace("/", "")
-                            .replace("\"", "")
-                        )
-                        actorImage = f"https://www.themoviedb.org/t/p/w600_and_h900_bestv2{cast.profile_path}"
-                        if not os.path.exists(f"{dirPath}/static/img/mediaImages/Actor_{actorName}.webp"):
-                            with open(f"{dirPath}/static/img/mediaImages/Actor_{actorName}.png", "wb") as f:
-                                f.write(requests.get(actorImage).content)
-                            try:
-                                img = Image.open(f"{dirPath}/static/img/mediaImages/Actor_{actorName}.png")
-                                img = img.save(f"{dirPath}/static/img/mediaImages/Actor_{actorName}.webp", "webp")
-                                os.remove(f"{dirPath}/static/img/mediaImages/Actor_{actorName}.png")
-                            except Exception as e:
-                                os.rename(f"{dirPath}/static/img/mediaImages/Actor_{actorName}.png", f"{dirPath}/static/img/mediaImages/Actor_{actorName}.webp")
-
-                        actorImage = f"/static/img/mediaImages/Actor_{actorName}.webp"
-                        actor = [cast.name, characterName, actorImage, cast.id]
-                        if actor not in theCast:
-                            theCast.append(actor)
-                        else:
+                if not search:
+                    allMoviesNotSorted.append(originalMovieTitle)
+                    continue
+                bestMatch = search[0]
+                if config["ChocolateSettings"]["askwhichmovie"] == "false" or len(search)==1:
+                    for i in range(len(search)):
+                        if (lev(movieTitle, search[i].title) < lev(movieTitle, bestMatch.title)
+                            and bestMatch.title not in filmFileList):
+                            bestMatch = search[i]
+                        elif (lev(movieTitle, search[i].title) == lev(movieTitle, bestMatch.title)
+                            and bestMatch.title not in filmFileList):
+                            bestMatch = bestMatch
+                        if (lev(movieTitle, bestMatch.title) == 0
+                            and bestMatch.title not in filmFileList):
                             break
-                        person = Person()
-                        p = person.details(cast.id)
-                        exists = Actors.query.filter_by(actorId=cast.id).first() is not None
-                        if not exists:
-                            actor = Actors(name=cast.name, actorImage=actorImage, actorDescription=p.biography, actorBirthDate=p.birthday, actorBirthPlace=p.place_of_birth, actorPrograms=f"{movieId}", actorId=cast.id)
-                            db.session.add(actor)
-                            db.session.commit()
-                        else:
-                            actor = Actors.query.filter_by(actorId=cast.id).first()
-                            actor.actorPrograms = f"{actor.actorPrograms} {movieId}"
-                            db.session.commit()
-                    theCast = theCast
-                    try:
-                        date = datetime.datetime.strptime(date, "%Y-%m-%d").strftime("%d/%m/%Y")
-                    except ValueError as e:
-                        date = "Unknown"
-                    except UnboundLocalError:
-                        date = "Unknown"
 
-                    genre = res.genre_ids
-                    video_path = f"{path}\{originalMovieTitle}"
-                    length = length_video(video_path)
-                    length = str(datetime.timedelta(seconds=length))
-                    length = length.split(":")
+                res = bestMatch
+                try:
+                    name = res.title
+                except AttributeError as e:
+                    name = res.original_title
+                movieId = res.id
+                details = movie.details(movieId)
 
-                    if len(length) == 3:
-                        hours = length[0]
-                        minutes = length[1]
-                        seconds = str(round(float(length[2])))
-                        if int(seconds) < 10:
-                            seconds = f"0{seconds}"
-                        length = f"{hours}:{minutes}:{seconds}"
-                    elif len(length) == 2:
-                        minutes = length[0]
-                        seconds = str(round(float(length[1])))
-                        if int(seconds) < 10:
-                            seconds = f"0{seconds}"
-                        length = f"{minutes}:{seconds}"
-                    elif len(length) == 1:
-                        seconds = str(round(float(length[0])))
-                        if int(seconds) < 10:
-                            seconds = f"0{seconds}"
-                        length = f"00:{seconds}"
+                movieCoverPath = f"https://image.tmdb.org/t/p/original{res.poster_path}"
+                banniere = f"https://image.tmdb.org/t/p/original{res.backdrop_path}"
+                realTitle, extension = os.path.splitext(originalMovieTitle)
+                rewritedName = realTitle.replace(" ", "_")
+                with open(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.png", "wb") as f:
+                    f.write(requests.get(movieCoverPath).content)
+                try:
+                    img = Image.open(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.png")
+                    img.save(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.webp", "webp")
+                    os.remove(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.png")
+                    movieCoverPath = f"/static/img/mediaImages/{rewritedName}_Cover.webp"
+                except:
+                    os.rename(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.png", f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.webp")
+                    movieCoverPath = "/static/img/broken.webp"
+
+                with open(f"{dirPath}/static/img/mediaImages/{rewritedName}_Banner.png", "wb") as f:
+                    f.write(requests.get(banniere).content)
+                if res.backdrop_path == None:
+                    banniere = f"https://image.tmdb.org/t/p/original{details.backdrop_path}"
+                    if banniere != "https://image.tmdb.org/t/p/originalNone":
+                        with open(f"{dirPath}/static/img/mediaImages/{rewritedName}_Banner.png", "wb") as f:
+                            f.write(requests.get(banniere).content)
                     else:
-                        length = "0"
+                        banniere = "/static/img/broken.webp"
+                try:
+                    img = Image.open(f"{dirPath}/static/img/mediaImages/{rewritedName}_Banner.png")
+                    img.save(f"{dirPath}/static/img/mediaImages/{rewritedName}_Banner.webp", "webp")
+                    os.remove(f"{dirPath}/static/img/mediaImages/{rewritedName}_Banner.png")
+                    banniere = f"/static/img/mediaImages/{rewritedName}_Banner.webp"
+                except:
+                    os.rename(f"{dirPath}/static/img/mediaImages/{rewritedName}_Banner.png", f"{dirPath}/static/img/mediaImages/{rewritedName}_Banner.webp")
+                    banniere = "/static/img/brokenBanner.webp"
 
-                    duration = length
+                description = res.overview
+                note = res.vote_average
+                try:
+                    date = res.release_date
+                except AttributeError as e:
+                    date = "Unknown"
 
-                    for genreId in genre:
-                        if genreList[genreId] not in genresUsed:
-                            genresUsed.append(genreList[genreId])
-                        if genreList[genreId] not in moviesGenre:
-                            moviesGenre.append(genreList[genreId])
-                    movieGenre = []
-                    for genreId in genre:
-                        movieGenre.append(genreList[genreId])
+                casts = details.casts.cast[:5]
+                theCast = []
+                for cast in casts:
+                    characterName = cast.character
+                    actorName = (
+                        cast.name.replace(" ", "_")
+                        .replace("/", "")
+                        .replace("\"", "")
+                    )
+                    actorImage = f"https://www.themoviedb.org/t/p/w600_and_h900_bestv2{cast.profile_path}"
+                    if not os.path.exists(f"{dirPath}/static/img/mediaImages/Actor_{actorName}.webp"):
+                        with open(f"{dirPath}/static/img/mediaImages/Actor_{actorName}.png", "wb") as f:
+                            f.write(requests.get(actorImage).content)
+                        try:
+                            img = Image.open(f"{dirPath}/static/img/mediaImages/Actor_{actorName}.png")
+                            img = img.save(f"{dirPath}/static/img/mediaImages/Actor_{actorName}.webp", "webp")
+                            os.remove(f"{dirPath}/static/img/mediaImages/Actor_{actorName}.png")
+                        except Exception as e:
+                            os.rename(f"{dirPath}/static/img/mediaImages/Actor_{actorName}.png", f"{dirPath}/static/img/mediaImages/Actor_{actorName}.webp")
 
-                    bandeAnnonce = details.videos.results
-                    bandeAnnonceUrl = ""
-                    if len(bandeAnnonce) > 0:
-                        for video in bandeAnnonce:
-                            bandeAnnonceType = video.type
-                            bandeAnnonceHost = video.site
-                            bandeAnnonceKey = video.key
-                            if bandeAnnonceType == "Trailer":
-                                try:
-                                    bandeAnnonceUrl = (
-                                        websitesTrailers[bandeAnnonceHost] + bandeAnnonceKey
-                                    )
-                                    break
-                                except KeyError as e:
-                                    bandeAnnonceUrl = "Unknown"
-                                    print(e)
-                    alternativesNames = []
-                    actualTitle = movieTitle
-                    characters = [" ", "-", "_", ":", ".", ",", "!", "'", "`", "\""]
-                    empty = ""
-                    for character in characters:
-                        for character2 in characters:
-                            if character != character2:
-                                stringTest = actualTitle.replace(character, character2)
-                                alternativesNames.append(stringTest)
-                                stringTest = actualTitle.replace(character2, character)
-                                alternativesNames.append(stringTest)
-                                stringTest = actualTitle.replace(character, empty)
-                                alternativesNames.append(stringTest)
-                                stringTest = actualTitle.replace(character2, empty)
-                                alternativesNames.append(stringTest)
-                                
-                    officialAlternativeNames = movie.alternative_titles(movie_id=movieId).titles
-                    if officialAlternativeNames is not None:
-                        for officialAlternativeName in officialAlternativeNames:
-                            alternativesNames.append(officialAlternativeName.title)
+                    actorImage = f"/static/img/mediaImages/Actor_{actorName}.webp"
+                    actor = [cast.name, characterName, actorImage, cast.id]
+                    if actor not in theCast:
+                        theCast.append(actor)
+                    else:
+                        break
+                    person = Person()
+                    p = person.details(cast.id)
+                    exists = Actors.query.filter_by(actorId=cast.id).first() is not None
+                    if not exists:
+                        actor = Actors(name=cast.name, actorImage=actorImage, actorDescription=p.biography, actorBirthDate=p.birthday, actorBirthPlace=p.place_of_birth, actorPrograms=f"{movieId}", actorId=cast.id)
+                        db.session.add(actor)
+                        db.session.commit()
+                    else:
+                        actor = Actors.query.filter_by(actorId=cast.id).first()
+                        actor.actorPrograms = f"{actor.actorPrograms} {movieId}"
+                        db.session.commit()
+                theCast = theCast
+                try:
+                    date = datetime.datetime.strptime(date, "%Y-%m-%d").strftime("%d/%m/%Y")
+                except ValueError as e:
+                    date = "Unknown"
+                except UnboundLocalError:
+                    date = "Unknown"
 
-                    alternativesNames = list(dict.fromkeys(alternativesNames))
+                genre = res.genre_ids
+                video_path = f"{path}\{originalMovieTitle}"
+                length = length_video(video_path)
+                length = str(datetime.timedelta(seconds=length))
+                length = length.split(":")
 
-                    alternativesNames = ",".join(alternativesNames)
-                    filmData = Movies(movieId, movieTitle, name, movieCoverPath, banniere, originalMovieTitle, description, note, date, json.dumps(movieGenre), str(duration), json.dumps(theCast), bandeAnnonceUrl, str(res["adult"]), libraryName=libraryName, alternativesNames=alternativesNames, vues=str({}))
-                    db.session.add(filmData)
-                    db.session.commit()
+                if len(length) == 3:
+                    hours = length[0]
+                    minutes = length[1]
+                    seconds = str(round(float(length[2])))
+                    if int(seconds) < 10:
+                        seconds = f"0{seconds}"
+                    length = f"{hours}:{minutes}:{seconds}"
+                elif len(length) == 2:
+                    minutes = length[0]
+                    seconds = str(round(float(length[1])))
+                    if int(seconds) < 10:
+                        seconds = f"0{seconds}"
+                    length = f"{minutes}:{seconds}"
+                elif len(length) == 1:
+                    seconds = str(round(float(length[0])))
+                    if int(seconds) < 10:
+                        seconds = f"0{seconds}"
+                    length = f"00:{seconds}"
+                else:
+                    length = "0"
+
+                duration = length
+
+                for genreId in genre:
+                    if genreList[genreId] not in genresUsed:
+                        genresUsed.append(genreList[genreId])
+                    if genreList[genreId] not in moviesGenre:
+                        moviesGenre.append(genreList[genreId])
+                movieGenre = []
+                for genreId in genre:
+                    movieGenre.append(genreList[genreId])
+
+                bandeAnnonce = details.videos.results
+                bandeAnnonceUrl = ""
+                if len(bandeAnnonce) > 0:
+                    for video in bandeAnnonce:
+                        bandeAnnonceType = video.type
+                        bandeAnnonceHost = video.site
+                        bandeAnnonceKey = video.key
+                        if bandeAnnonceType == "Trailer":
+                            try:
+                                bandeAnnonceUrl = (
+                                    websitesTrailers[bandeAnnonceHost] + bandeAnnonceKey
+                                )
+                                break
+                            except KeyError as e:
+                                bandeAnnonceUrl = "Unknown"
+                                print(e)
+                alternativesNames = []
+                actualTitle = movieTitle
+                characters = [" ", "-", "_", ":", ".", ",", "!", "'", "`", "\""]
+                empty = ""
+                for character in characters:
+                    for character2 in characters:
+                        if character != character2:
+                            stringTest = actualTitle.replace(character, character2)
+                            alternativesNames.append(stringTest)
+                            stringTest = actualTitle.replace(character2, character)
+                            alternativesNames.append(stringTest)
+                            stringTest = actualTitle.replace(character, empty)
+                            alternativesNames.append(stringTest)
+                            stringTest = actualTitle.replace(character2, empty)
+                            alternativesNames.append(stringTest)
+                            
+                officialAlternativeNames = movie.alternative_titles(movie_id=movieId).titles
+                if officialAlternativeNames is not None:
+                    for officialAlternativeName in officialAlternativeNames:
+                        alternativesNames.append(officialAlternativeName.title)
+
+                alternativesNames = list(dict.fromkeys(alternativesNames))
+
+                alternativesNames = ",".join(alternativesNames)
+                filmData = Movies(movieId, movieTitle, name, movieCoverPath, banniere, originalMovieTitle, description, note, date, json.dumps(movieGenre), str(duration), json.dumps(theCast), bandeAnnonceUrl, str(res["adult"]), libraryName=libraryName, alternativesNames=alternativesNames, vues=str({}))
+                db.session.add(filmData)
+                db.session.commit()
         elif searchedFilm.endswith("/") == False:
             allMoviesNotSorted.append(searchedFilm)
 
@@ -765,7 +766,6 @@ def getSeries(libraryName):
     try:
         allSeries = [name for name in os.listdir(allSeriesPath) if os.path.isdir(os.path.join(allSeriesPath, name)) and name.endswith((".rar", ".zip", ".part")) == False]
     except OSError as e:
-        print("No series found")
         return
     allSeasonsAppelations = ["S"]
     allEpisodesAppelations = ["E"]
@@ -829,7 +829,6 @@ def getSeries(libraryName):
     
     for serie in allSeriesName:
         if not isinstance(serie, str):
-            print(f"{serie} is not 'isinstance'")
             continue
         index = allSeriesName.index(serie) + 1
         percentage = index * 100 / len(allSeriesName)
@@ -840,191 +839,202 @@ def getSeries(libraryName):
         loading = f"{str(int(percentage)).rjust(3)}% | [\33[32m{loadingFirstPart} \33[31m{loadingSecondPart}\33[0m] | {serie} | {index}/{len(allSeriesName)}                              "
         print("\033[?25l", end="")
         print(loading, end="\r", flush=True)
-        with app.app_context():
+        show = TV()
+        serieTitle = serie
+        originalSerieTitle = serieTitle
+        try:
+            serieModifiedTime = os.path.getmtime(f"{allSeriesPath}\\{originalSerieTitle}")
+        except FileNotFoundError:
+            continue
+        try:
+            search = show.search(serieTitle)
+        except TMDbException as e:
+            allSeriesNotSorted.append(serieTitle)
+            break
 
-            show = TV()
-            serieTitle = serie
-            originalSerieTitle = serieTitle
-            try:
-                serieModifiedTime = os.path.getmtime(f"{allSeriesPath}\\{originalSerieTitle}")
-            except FileNotFoundError:
-                continue
-            try:
-                search = show.search(serieTitle)
-            except TMDbException as e:
-                allSeriesNotSorted.append(serieTitle)
-                break
+        if not search:
+            allSeriesNotSorted.append(serieTitle)
+            continue
 
-            if not search:
-                allSeriesNotSorted.append(serieTitle)
-                print(f"{originalSerieTitle} return nothing, try to rename it, the english name return more results.")
-                continue
+        askForGoodSerie = config["ChocolateSettings"]["askWhichSerie"]
+        bestMatch = search[0]
+        if askForGoodSerie == "false" or len(search)==1:
+            for i in range(len(search)):
+                if (
+                    lev(serieTitle, search[i].name) < lev(serieTitle, bestMatch.name)
+                    and bestMatch.name not in allSeriesName
+                ):
+                    bestMatch = search[i]
+                elif (
+                    lev(serieTitle, search[i].name) == lev(serieTitle, bestMatch.name)
+                    and bestMatch.name not in allSeriesName
+                ):
+                    bestMatch = bestMatch
+                if (
+                    lev(serieTitle, bestMatch.name) == 0
+                    and bestMatch.name not in allSeriesName
+                ):
+                    break
 
-            askForGoodSerie = config["ChocolateSettings"]["askWhichSerie"]
-            bestMatch = search[0]
-            if askForGoodSerie == "false" or len(search)==1:
-                for i in range(len(search)):
-                    if (
-                        lev(serieTitle, search[i].name) < lev(serieTitle, bestMatch.name)
-                        and bestMatch.name not in allSeriesName
-                    ):
-                        bestMatch = search[i]
-                    elif (
-                        lev(serieTitle, search[i].name) == lev(serieTitle, bestMatch.name)
-                        and bestMatch.name not in allSeriesName
-                    ):
-                        bestMatch = bestMatch
-                    if (
-                        lev(serieTitle, bestMatch.name) == 0
-                        and bestMatch.name not in allSeriesName
-                    ):
-                        break
+        res = bestMatch
+        serieId = res.id
 
-            res = bestMatch
+
+        exists = db.session.query(Series).filter_by(id=serieId).first() is not None
+        details = show.details(serieId)
+        seasonsInfo = details.seasons
+        rewritedName = serieTitle.replace(" ", "_")
+
+        seasonsNumber = []
+        seasons = os.listdir(f"{allSeriesPath}/{originalSerieTitle}")
+        for season in seasons:
+            if os.path.isdir(f"{allSeriesPath}/{originalSerieTitle}/{season}"):
+                season = re.sub(r"\D", "", season)
+                seasonsNumber.append(int(season))
+
+        if not exists and seasonsNumber:
+            details = show.details(serieId)
+            seasonsInfo = details.seasons
+            name = res.name
+            serieCoverPath = f"https://image.tmdb.org/t/p/original{res.poster_path}"
+            banniere = f"https://image.tmdb.org/t/p/original{res.backdrop_path}"
+            if not os.path.exists(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.png"):
+                with open(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.png","wb") as f:
+                    f.write(requests.get(serieCoverPath).content)
+
+                img = Image.open(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.png")
+                img = img.save(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.webp", "webp")
+                os.remove(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.png")
+
+            if not os.path.exists(f"{dirPath}/static/img/mediaImages/{rewritedName}_Banner.png"):
+                with open(f"{dirPath}/static/img/mediaImages/{rewritedName}_Banner.png","wb") as f:
+                    f.write(requests.get(banniere).content)
+
+                img = Image.open(f"{dirPath}/static/img/mediaImages/{rewritedName}_Banner.png")
+                img = img.save(f"{dirPath}/static/img/mediaImages/{rewritedName}_Banner.webp", "webp")
+                os.remove(f"{dirPath}/static/img/mediaImages/{rewritedName}_Banner.png")
+            banniere = f"/static/img/mediaImages/{rewritedName}_Banner.webp"
+            serieCoverPath = f"/static/img/mediaImages/{rewritedName}_Cover.webp"
+            description = res["overview"]
+            note = res.vote_average
+            date = res.first_air_date
             serieId = res.id
+            cast = details.credits.cast
+            runTime = details.episode_run_time
+            duration = ""
+            for i in range(len(runTime)):
+                if i != len(runTime) - 1:
+                    duration += f"{str(runTime[i])}:"
+                else:
+                    duration += f"{str(runTime[i])}"
+            serieGenre = details.genres
+            bandeAnnonce = details.videos.results
+            bandeAnnonceUrl = ""
+            if len(bandeAnnonce) > 0:
+                for video in bandeAnnonce:
+                    bandeAnnonceType = video.type
+                    bandeAnnonceHost = video.site
+                    bandeAnnonceKey = video.key
+                    if bandeAnnonceType == "Trailer" or len(bandeAnnonce) == 1:
+                        try:
+                            bandeAnnonceUrl = (websitesTrailers[bandeAnnonceHost] + bandeAnnonceKey
+                            )
+                            break
+                        except KeyError as e:
+                            bandeAnnonceUrl = "Unknown"
+                            print(e)
+            genreList = []
+            for genre in serieGenre:
+                genreList.append(str(genre.name))
+            newCast = []
+            cast = list(cast)[:5]
+            for actor in cast:
+                actorName = actor.name.replace(" ", "_").replace("/", "")
+                actorImage = f"https://image.tmdb.org/t/p/original{actor.profile_path}"
+                if not os.path.exists(f"{dirPath}/static/img/mediaImages/Actor_{actorName}.webp"):
+                    with open(f"{dirPath}/static/img/mediaImages/Actor_{actorName}.png", "wb") as f:
+                        f.write(requests.get(actorImage).content)
+                    img = Image.open(f"{dirPath}/static/img/mediaImages/Actor_{actorName}.png")
+                    img = img.save(f"{dirPath}/static/img/mediaImages/Actor_{actorName}.webp", "webp")
+                    os.remove(f"{dirPath}/static/img/mediaImages/Actor_{actorName}.png")
 
+                actorImage = f"/static/img/mediaImages/Actor_{actorName}.webp"
+                actorCharacter = actor.character
+                actor.profile_path = str(actorImage)
+                actorName = actorName.replace("_", " ")
+                thisActor = [str(actorName), str(actorCharacter), str(actorImage), str(actor.id)]
+                newCast.append(thisActor)
 
-            exists = db.session.query(Series).filter_by(id=serieId).first() is not None
-            if not exists:
-                details = show.details(serieId)
-                seasonsInfo = details.seasons
-                name = res.name
-                serieCoverPath = f"https://image.tmdb.org/t/p/original{res.poster_path}"
-                banniere = f"https://image.tmdb.org/t/p/original{res.backdrop_path}"
-                realName, realNameExtension = os.path.splitext(serieCoverPath)
-                rewritedName = realName.replace(" ", "_")
-                if not os.path.exists(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.png"):
-                    with open(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.png","wb") as f:
-                        f.write(requests.get(serieCoverPath).content)
+                
+                person = Person()
+                p = person.details(actor.id)
+                exists = Actors.query.filter_by(actorId=actor.id).first() is not None
+                if not exists:
+                    actor = Actors(name=actor.name, actorId=actor.id, actorImage=actorImage, actorDescription=p.biography, actorBirthDate=p.birthday, actorBirthPlace=p.place_of_birth, actorPrograms=f"{serieId}")
+                    db.session.add(actor)
+                    db.session.commit()
+                else:
+                    actor = Actors.query.filter_by(actorId=actor.id).first()
+                    actor.actorPrograms = f"{actor.actorPrograms} {serieId}"
+                    db.session.commit()
 
-                    img = Image.open(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.png")
-                    img = img.save(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.webp", "webp")
-                    os.remove(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.png")
+            newCast = json.dumps(newCast[:5])
+            genreList = json.dumps(genreList)
+            isAdult = str(details["adult"])
+            serieObject = Series(id=serieId, name=name, originalName=originalSerieTitle, genre=genreList, duration=duration, description=description, cast=newCast, bandeAnnonceUrl=bandeAnnonceUrl, serieCoverPath=serieCoverPath, banniere=banniere, note=note, date=date, serieModifiedTime=serieModifiedTime, adult=isAdult, libraryName=libraryName)
+            db.session.add(serieObject)
+            db.session.commit()
 
-                if not os.path.exists(f"{dirPath}/static/img/mediaImages/{rewritedName}_Banner.png"):
-                    with open(f"{dirPath}/static/img/mediaImages/{rewritedName}_Banner.png","wb") as f:
-                        f.write(requests.get(banniere).content)
+        for season in seasonsInfo:
+            try:
+                allEpisodes = [ f for f in os.listdir(f"{allSeriesPath}/{serie}/S{season.season_number}") if os.path.isfile(os.path.join(f"{allSeriesPath}/{serie}/S{season.season_number}", f)) ]
+            except FileNotFoundError as e:
+                continue
+            if len(allEpisodes) > 0:
+                releaseDate = season.air_date
+                episodesNumber = season.episode_count
+                seasonNumber = season.season_number
+                seasonId = season.id
+                seasonName = season.name
+                
+                try:
+                    exists = Seasons.query.filter_by(seasonId=seasonId).first() is not None
+                except sqlalchemy.exc.PendingRollbackError as e:
+                    db.session.rollback()
+                    exists = Seasons.query.filter_by(seasonId=seasonId).first() is not None
+                #number of episodes in the season
+                numberOfEpisodes = len(allEpisodes)
+                numberOfEpisodesInDatabase = Episodes.query.filter_by(seasonId=seasonId).count()
+                sameNumberOfEpisodes = numberOfEpisodes == numberOfEpisodesInDatabase
+                if seasonNumber in seasonsNumber and sameNumberOfEpisodes == False and numberOfEpisodes > 0:
+                    seasonDescription = season.overview
+                    seasonCoverPath = (f"https://image.tmdb.org/t/p/original{season.poster_path}")
+                    if not os.path.exists(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png"):
+                        with open(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png", "wb") as f:
+                            f.write(requests.get(seasonCoverPath).content)
+                        img = Image.open(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png")
+                        img = img.save(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.webp", "webp")
+                        os.remove(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png")
 
-                    img = Image.open(f"{dirPath}/static/img/mediaImages/{rewritedName}_Banner.png")
-                    img = img.save(f"{dirPath}/static/img/mediaImages/{rewritedName}_Banner.webp", "webp")
-                    os.remove(f"{dirPath}/static/img/mediaImages/{rewritedName}_Banner.png")
-                banniere = f"/static/img/mediaImages/{rewritedName}_Banner.webp"
-                serieCoverPath = f"/static/img/mediaImages/{rewritedName}_Cover.webp"
-                description = res["overview"]
-                note = res.vote_average
-                date = res.first_air_date
-                serieId = res.id
-                details = show.details(serieId)
-                seasonsInfo = details.seasons
-                cast = details.credits.cast
-                runTime = details.episode_run_time
-                duration = ""
-                for i in range(len(runTime)):
-                    if i != len(runTime) - 1:
-                        duration += f"{str(runTime[i])}:"
-                    else:
-                        duration += f"{str(runTime[i])}"
-                seasonsInfo = details.seasons
-                serieGenre = details.genres
-                bandeAnnonce = details.videos.results
-                bandeAnnonceUrl = ""
-                if len(bandeAnnonce) > 0:
-                    for video in bandeAnnonce:
-                        bandeAnnonceType = video.type
-                        bandeAnnonceHost = video.site
-                        bandeAnnonceKey = video.key
-                        if bandeAnnonceType == "Trailer" or len(bandeAnnonce) == 1:
-                            try:
-                                bandeAnnonceUrl = (websitesTrailers[bandeAnnonceHost] + bandeAnnonceKey
-                                )
-                                break
-                            except KeyError as e:
-                                bandeAnnonceUrl = "Unknown"
-                                print(e)
-                genreList = []
-                for genre in serieGenre:
-                    genreList.append(str(genre.name))
-                newCast = []
-                cast = list(cast)[:5]
-                for actor in cast:
-                    actorName = actor.name.replace(" ", "_").replace("/", "")
-                    actorImage = f"https://image.tmdb.org/t/p/original{actor.profile_path}"
-                    if not os.path.exists(f"{dirPath}/static/img/mediaImages/Actor_{actorName}.webp"):
-                        with open(f"{dirPath}/static/img/mediaImages/Actor_{actorName}.png", "wb") as f:
-                            f.write(requests.get(actorImage).content)
-                        img = Image.open(f"{dirPath}/static/img/mediaImages/Actor_{actorName}.png")
-                        img = img.save(f"{dirPath}/static/img/mediaImages/Actor_{actorName}.webp", "webp")
-                        os.remove(f"{dirPath}/static/img/mediaImages/Actor_{actorName}.png")
+                    seasonCoverPath = f"/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.webp"
 
-                    actorImage = f"/static/img/mediaImages/Actor_{actorName}.webp"
-                    actorCharacter = actor.character
-                    actor.profile_path = str(actorImage)
-                    actorName = actorName.replace("_", " ")
-                    thisActor = [str(actorName), str(actorCharacter), str(actorImage), str(actor.id)]
-                    newCast.append(thisActor)
-
-                    
-                    person = Person()
-                    p = person.details(actor.id)
-                    exists = Actors.query.filter_by(actorId=actor.id).first() is not None
-                    if not exists:
-                        actor = Actors(name=actor.name, actorId=actor.id, actorImage=actorImage, actorDescription=p.biography, actorBirthDate=p.birthday, actorBirthPlace=p.place_of_birth, actorPrograms=f"{serieId}")
-                        db.session.add(actor)
-                        db.session.commit()
-                    else:
-                        actor = Actors.query.filter_by(actorId=actor.id).first()
-                        actor.actorPrograms = f"{actor.actorPrograms} {serieId}"
-                        db.session.commit()
-
-                newCast = json.dumps(newCast[:5])
-                genreList = json.dumps(genreList)
-                isAdult = str(details["adult"])
-                serieObject = Series(id=serieId, name=name, originalName=originalSerieTitle, genre=genreList, duration=duration, description=description, cast=newCast, bandeAnnonceUrl=bandeAnnonceUrl, serieCoverPath=serieCoverPath, banniere=banniere, note=note, date=date, serieModifiedTime=serieModifiedTime, adult=isAdult, libraryName=libraryName)
-                db.session.add(serieObject)
-                db.session.commit()
-                seasonsNumber = []
-                seasons = os.listdir(f"{allSeriesPath}/{originalSerieTitle}")
-                for season in seasons:
-                    season = re.sub(r"\D", "", season)
-                    seasonsNumber.append(int(season))
-
-
-                for season in seasonsInfo:
-                    releaseDate = season.air_date
-                    episodesNumber = season.episode_count
-                    seasonNumber = season.season_number
-                    seasonId = season.id
-                    seasonName = season.name
+                    allSeasonsUglyDict = os.listdir(f"{allSeriesPath}/{serie}")
+                    try:
+                        allSeasons = [int(season.replace("S", "")) for season in allSeasonsUglyDict if os.path.isdir(f"{allSeriesPath}/{serie}/{season}")]
+                    except ValueError as e:
+                        print(f"Error with {serie}:\n{e}")
                     
                     try:
-                        exists = Seasons.query.filter_by(seasonId=seasonId).first() is not None
-                    except sqlalchemy.exc.PendingRollbackError as e:
-                        db.session.rollback()
-                        exists = Seasons.query.filter_by(seasonId=seasonId).first() is not None
-                    if not exists and seasonNumber in seasonsNumber:
-                        seasonDescription = season.overview
-                        seasonCoverPath = (f"https://image.tmdb.org/t/p/original{season.poster_path}")
-                        if not os.path.exists(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png"):
-                            with open(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png", "wb") as f:
-                                f.write(requests.get(seasonCoverPath).content)
-                            img = Image.open(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png")
-                            img = img.save(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.webp", "webp")
-                            os.remove(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png")
+                        modifiedDate = os.path.getmtime(f"{allSeriesPath}/{serie}/S{seasonNumber}")
+                    except FileNotFoundError as e:
+                        modifiedDate = 0
 
-                        seasonCoverPath = f"/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.webp"
+                    allEpisodesInDB = Episodes.query.filter_by(seasonId=seasonId).all()
+                    allEpisodesInDB = [episode.episodeName for episode in allEpisodesInDB]
 
-                        allSeasonsUglyDict = os.listdir(f"{allSeriesPath}/{serie}")
-                        try:
-                            allSeasons = [int(season.replace("S", "")) for season in allSeasonsUglyDict]
-                        except ValueError as e:
-                            break
-                        
-                        try:
-                            modifiedDate = os.path.getmtime(f"{allSeriesPath}/{serie}/S{seasonNumber}")
-                        except FileNotFoundError as e:
-                            continue
-
-                        thisSeason = Seasons(serie=serieId, release=releaseDate, episodesNumber=episodesNumber, seasonNumber=seasonNumber, seasonId=seasonId, seasonName=seasonName, seasonDescription=seasonDescription, seasonCoverPath=seasonCoverPath, modifiedDate=modifiedDate)
+                    exists = Seasons.query.filter_by(seasonId=seasonId).first() is not None
+                    if not exists:
+                        thisSeason = Seasons(serie=serieId, release=releaseDate, episodesNumber=episodesNumber, seasonNumber=seasonNumber, seasonId=seasonId, seasonName=seasonName, seasonDescription=seasonDescription, seasonCoverPath=seasonCoverPath, modifiedDate=modifiedDate, numberOfEpisodeInFolder=len(allEpisodes))
                         
                         try:
                             db.session.add(thisSeason)
@@ -1033,154 +1043,91 @@ def getSeries(libraryName):
                             db.session.rollback()
                             db.session.add(thisSeason)
                             db.session.commit()
-                        
-                        try:
-                            allEpisodes = os.listdir(f"{allSeriesPath}/{serie}/S{seasonNumber}")
-                        except FileNotFoundError as e:
-                            continue
-
+                    if len(allEpisodes) != len(allEpisodesInDB):
                         for episode in allEpisodes:
                             slug = f"/{serie}/S{seasonNumber}/{episode}"
                             episodeName = slug.split("/")[-1]
                             episodeName, extension = os.path.splitext(episodeName)
-
                             try:
                                 episodeIndex = int(episodeName.replace("E", ""))
-                            except:
-                                break
-                            showEpisode = Episode()
-                            try:
-                                episodeInfo = showEpisode.details(serieId, seasonNumber, episodeIndex)
-                                exists = Episodes.query.filter_by(episodeId=episodeInfo.id).first() is not None
-                                if not exists:
-                                    coverEpisode = f"https://image.tmdb.org/t/p/original{episodeInfo.still_path}"
-                                    realName, realNameExtension = os.path.splitext(serieCoverPath)
-                                    rewritedName = realName.replace(" ", "_")
-                                    if not os.path.exists(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.png"):
-                                        with open(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.png","wb") as f:
-                                            f.write(requests.get(coverEpisode).content)
-
-                                        img = Image.open(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.png")
-                                        img = img.save(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.webp", "webp")
-                                        os.remove(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.png")
-                                    coverEpisode = f"/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.webp"
-
-                                    try:
-                                        episodeData = Episodes(episodeId=episodeInfo.id, episodeName=episodeName, seasonId=seasonId, episodeNumber=episodeIndex, episodeDescription=episodeInfo.overview, episodeCoverPath=coverEpisode, releaseDate=episodeInfo.air_date, slug=slug, introStart=0.0, introEnd=0.0)
-                                        db.session.add(episodeData)
-                                        db.session.commit()
-                                    except:
-                                        pass
-                            except TMDbException as e:
-                                print(f"I didn't find an the episode {episodeIndex} of the season {seasonNumber} of the serie with ID {serieId}",e)
-
-                            
-
-            else:
-                seasonsNumber = []
-                seasons = os.listdir(f"{allSeriesPath}/{originalSerieTitle}")
-                for season in seasons:
-                    season = re.sub(r"\D", "", season)
-                    seasonsNumber.append(int(season))
-                theSerie = Series.query.filter_by(id=serieId).first()
-                theSerieModifiedTime = theSerie.serieModifiedTime
-                if serieModifiedTime > theSerieModifiedTime:
-                    theSerie.serieModifiedTime = serieModifiedTime
-                    db.session.commit()
-                details = show.details(serieId)
-                seasonsInfo = details.seasons
-
-                for season in seasonsInfo:
-                    releaseDate = season.air_date
-                    episodesNumber = season.episode_count
-                    seasonNumber = season.season_number
-                    seasonId = season.id
-                    seasonName = season.name
-                    
-                    try:
-                        exists = Seasons.query.filter_by(seasonId=seasonId).first() is not None
-                    except sqlalchemy.exc.PendingRollbackError as e:
-                        db.session.rollback()
-                        exists = Seasons.query.filter_by(seasonId=seasonId).first() is not None
-                    if not exists and seasonNumber in seasonsNumber:
-                        seasonDescription = season.overview
-                        seasonCoverPath = (f"https://image.tmdb.org/t/p/original{season.poster_path}")
-                        if not os.path.exists(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png"):
-                            with open(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png", "wb") as f:
-                                f.write(requests.get(seasonCoverPath).content)
-                            img = Image.open(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png")
-                            img = img.save(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.webp", "webp")
-                            os.remove(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png")
-
-                        seasonCoverPath = f"/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.webp"
-
-                        allSeasonsUglyDict = os.listdir(f"{allSeriesPath}/{serie}")
-                        try:
-                            allSeasons = [int(season.replace("S", "")) for season in allSeasonsUglyDict]
-                        except ValueError as e:
-                            break
-                        
-                        try:
-                            modifiedDate = os.path.getmtime(f"{allSeriesPath}/{serie}/S{seasonNumber}")
-                        except FileNotFoundError as e:
-                            break
-                        
-                        thisSeason = Seasons(serie=serieId, release=releaseDate, episodesNumber=episodesNumber, seasonNumber=seasonNumber, seasonId=seasonId, seasonName=seasonName, seasonDescription=seasonDescription, seasonCoverPath=seasonCoverPath, modifiedDate=modifiedDate)
-                        
-                        try:
-                            db.session.add(thisSeason)
-                            db.session.commit()
-                        except sqlalchemy.exc.PendingRollbackError as e:
-                            db.session.rollback()
-                            db.session.add(thisSeason)
-                            db.session.commit()
-                    elif seasonNumber in seasonsNumber:
-                        thisSeason = Seasons.query.filter_by(seasonId=seasonId).first()
-                        modifiedDate = os.path.getmtime(f"{allSeriesPath}/{serie}/S{seasonNumber}")
-                        modifiedDateDB = thisSeason.modifiedDate
-                        if modifiedDate > modifiedDateDB:
-                            thisSeason.modifiedDate = modifiedDate
-                            db.session.commit()
-
-                            try:
-                                allEpisodes = os.listdir(f"{allSeriesPath}/{serie}/S{seasonNumber}")
-                            except FileNotFoundError as e:
+                            except Exception as e:
                                 continue
-
-                            for episode in allEpisodes:
-
-                                slug = f"/{serie}/S{seasonNumber}/{episode}"
-                                episodeName = slug.split("/")[-1]
-                                episodeName, extension = os.path.splitext(episodeName)
-
+                            try:
                                 try:
-                                    episodeIndex = int(episodeName.replace("E", ""))
-                                except:
-                                    break
-                                showEpisode = Episode()
-                                try:
+                                    exists = Episodes.query.filter_by(episodeNumber=episodeIndex, seasonId=seasonId).first() is not None
+                                except sqlalchemy.exc.PendingRollbackError as e:
+                                    db.session.rollback()
+                                    exists = Episodes.query.filter_by(episodeNumber=episodeIndex, seasonId=seasonId).first() is not None
+                                if not exists:
+                                    showEpisode = Episode()
+                                    episodeDetails = showEpisode.details(serieId, seasonNumber, episodeIndex)
+                                    realEpisodeName = episodeDetails.name
                                     episodeInfo = showEpisode.details(serieId, seasonNumber, episodeIndex)
-                                    exists = Episodes.query.filter_by(episodeId=episodeInfo.id).first() is not None
-                                    if not exists:
-                                        coverEpisode = f"https://image.tmdb.org/t/p/original{episodeInfo.still_path}"
-                                        realName, realNameExtension = os.path.splitext(serieCoverPath)
-                                        rewritedName = realName.replace(" ", "_")
-                                        if not os.path.exists(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.png"):
-                                            with open(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.png","wb") as f:
-                                                f.write(requests.get(coverEpisode).content)
+                                    coverEpisode = f"https://image.tmdb.org/t/p/original{episodeInfo.still_path}"
+                                    rewritedName = serieTitle.replace(" ", "_")
+                                    if not os.path.exists(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.webp"):
+                                        with open(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.png","wb") as f:
+                                            f.write(requests.get(coverEpisode).content)                                        
+                                        try:
                                             img = Image.open(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.png")
                                             img = img.save(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.webp", "webp")
                                             os.remove(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.png")
-                                        coverEpisode = f"/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.webp"
-
+                                            coverEpisode = f"/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.webp"
+                                        except:
+                                            coverEpisode = f"/static/img/mediaImages/{rewritedName}S{seasonNumber}E{episodeIndex}_Cover.png"
+                                    try:
+                                        exists = Episodes.query.filter_by(episodeId=episodeInfo.id).first() is not None
+                                    except sqlalchemy.exc.PendingRollbackError as e:
+                                        db.session.rollback()
+                                        exists = Episodes.query.filter_by(episodeId=episodeInfo.id).first() is not None
+                                    if not exists:
+                                        episodeData = Episodes(episodeId=episodeInfo.id, episodeName=realEpisodeName, seasonId=seasonId, episodeNumber=episodeIndex, episodeDescription=episodeInfo.overview, episodeCoverPath=coverEpisode, releaseDate=episodeInfo.air_date, slug=slug, introStart=0.0, introEnd=0.0)
+                                        thisSeason = Seasons.query.filter_by(seasonId=seasonId).first()
+                                        thisSeason.numberOfEpisodeInFolder += 1
                                         try:
-                                            episodeData = Episodes(episodeId=episodeInfo.id, episodeName=episodeName, seasonId=seasonId, episodeNumber=episodeIndex, episodeDescription=episodeInfo.overview, episodeCoverPath=coverEpisode, releaseDate=episodeInfo.air_date, slug=slug, introStart=0.0, introEnd=0.0)
                                             db.session.add(episodeData)
                                             db.session.commit()
                                         except:
-                                            pass
-                                except TMDbException as e:
-                                    print(f"I didn't find an the episode {episodeIndex} of the season {seasonNumber} of the serie with ID {serieId}",e)
+                                            db.session.rollback()
+                                            db.session.add(episodeData)
+                                            db.session.commit()
+                            except TMDbException as e:
+                                print(f"I didn't find an the episode {episodeIndex} of the season {seasonNumber} of the serie with ID {serieId}",e)
+                    else:
+                        pass
+    #for all series in the db, check if the folder exists, if not, delete the serie from the db the seasons and the episodes
+    allSeriesInDB = Series.query.all()
+    allSeriesInDB = [serie.originalName for serie in allSeriesInDB if serie.libraryName == libraryName]
+    
+    for serie in allSeriesInDB:
+        if serie not in allSeries:
+            serieId = Series.query.filter_by(originalName=serie).first().id
+            allSeasons = Seasons.query.filter_by(serie=serieId).all()
+            for season in allSeasons:
+                seasonId = season.seasonId
+                allEpisodes = Episodes.query.filter_by(seasonId=seasonId).all()
+                for episode in allEpisodes:
+                    try:
+                        db.session.delete(episode)
+                        db.session.commit()
+                    except:
+                        db.session.rollback()
+                        db.session.delete(episode)
+                        db.session.commit()
+                try:
+                    db.session.delete(season)
+                    db.session.commit()
+                except:
+                    db.session.rollback()
+                    db.session.delete(season)
+                    db.session.commit()
+            try:
+                db.session.delete(Series.query.filter_by(id=serieId).first())
+                db.session.commit()
+            except:
+                db.session.rollback()
+                db.session.delete(Series.query.filter_by(id=serieId).first())
+                db.session.commit()
 
 def getGames(libraryName):
     allGamesPath = Libraries.query.filter_by(libName=libraryName).first().libFolder
@@ -1211,13 +1158,18 @@ def getGames(libraryName):
         loading = f"{str(int(percentage)).rjust(3)}% | [\33[32m{loadingFirstPart} \33[31m{loadingSecondPart}\33[0m] | {gameName} | {index}/{len(allConsoles)}                                                      "
         print("\033[?25l", end="")
         print(loading, end="\r", flush=True)
-        allFiles = os.listdir(allGamesPath)
+        allFiles = os.listdir(f"{allGamesPath}\\{console}")
         for file in allFiles:
-            with app.app_context():
+            #get all games in the db
+            allGamesInDB = Games.query.all()
+            allGamesInDB = [game.slug for game in allGamesInDB if game.libraryName == libraryName]
+            numberOfGamesInDB = len(allGamesInDB)
+            numberOfGamesInFolder = len(allFiles)
+            if numberOfGamesInDB < numberOfGamesInFolder:
                 exists = Games.query.filter_by(slug=f"{allGamesPath}/{console}/{file}").first() is not None
-                if file.endswith(tuple(supportedFileTypes)) and exists == None:
+                if file.endswith(tuple(supportedFileTypes)) and exists == False:
                     
-                    newFileName = file                    
+                    newFileName = file 
                     newFileName = re.sub(r'\d{5} - ', '', newFileName)
                     newFileName = re.sub(r'\d{4} - ', '', newFileName)
                     newFileName = re.sub(r'\d{3} - ', '', newFileName)
@@ -1249,8 +1201,6 @@ def getGames(libraryName):
                         game = Games(console=gameConsole, id=gameId, title=gameName, realTitle=gameRealTitle, cover=gameCover, description=gameDescription, note=gameNote, date=gameDate, genre=gameGenre, slug=gameSlug, libraryName=libraryName)
                         db.session.add(game)
                         db.session.commit()
-                    else:
-                        print(f"I didn't find the game {file} at {console}")
                 elif console == "PS1" and file.endswith(".cue") and exists == None:
                     if saidPS1 == False:
                         print(f"You need to zip all our .bin files and the .cue file in one .zip file to being able to play it")
@@ -1322,10 +1272,18 @@ def getGames(libraryName):
                                 except IntegrityError as e:
                                     e=e
                                     db.session.commit()
-                        
-
                 elif not file.endswith(".bin") and exists == None:
                     print(f"{file} is not supported, here's the list of supported files : \n{','.join(supportedFileTypes)}")
+        gamesInDb = Games.query.filter_by(console=console).all()
+        gamesInDb = [ game.realTitle for game in gamesInDb ]
+        for game in gamesInDb:
+            if game not in allFiles:
+                game = Games.query.filter_by(console=console, realTitle=game).first()
+                db.session.delete(game)
+                db.session.commit()
+            
+            
+
 
 def length_video(path: str) -> float:
     seconds = subprocess.run(
@@ -1371,6 +1329,19 @@ def gpuname() -> str:
 
 @app.before_request
 def before_request():
+    language = config["ChocolateSettings"]["language"]
+    #open language.json
+    with open(f"{dirPath}/static/lang/languages.json", "r", encoding="utf-8") as f:
+        languageDict = json.load(f)
+    #if language not in languageDict use EN
+    allLanguage = {}
+    if language not in languageDict:
+        allLanguage = languageDict["EN"]
+    else:
+        allLanguage = languageDict[language]
+        
+    g.language = allLanguage
+
     libraries = Libraries.query.all()
     libraries = [library.__dict__ for library in libraries]
     users = Users.query.all()
@@ -1389,8 +1360,10 @@ def before_request():
     libraries = sorted(libraries, key=lambda k: k['libName'])
     libraries = sorted(libraries, key=lambda k: k['libType'])
 
+
     g.libraries = libraries
     g.users = users
+    g.languageCode = language
 
 
 @app.route('/offline')
@@ -1585,11 +1558,9 @@ def get_chunk_serie(episodeId, idx=0):
         "-c:a",
         "aac",
         "-b:a",
-        "128k",
+        "196k",
         "-ac",
         "2",
-        "-preset",
-        "ultrafast",
         "-f",
         "mpegts",
         "pipe:1",
@@ -1626,11 +1597,22 @@ def get_chunk_serie_quality(quality, episodeId, idx=0):
     videoProperties = get_video_properties(episodePath)
     width = videoProperties["width"]
     height = videoProperties["height"]
-    newWidth = float(quality)
+    newWidth = int(float(quality))
     newHeight = round(float(width) / float(height) * newWidth)
     if (newHeight % 2) != 0:
         newHeight += 1
     logLevelValue = "error"
+
+
+    bitrate = {
+        "1080": "192k",
+        "720": "192k",
+        "480": "128k",
+        "360": "128k",
+        "240": "96k",
+        "144": "64k",
+    }
+
     command = [
         "ffmpeg",
         "-hide_banner",
@@ -1648,10 +1630,12 @@ def get_chunk_serie_quality(quality, episodeId, idx=0):
         "libx264",
         "-vf",
         f"scale={newHeight}:{newWidth}",
+        "-c:a",
+        "aac",
+        "-b:a",
+        bitrate[quality],
         "-ac",
         "2",
-        "-preset",
-        "ultrafast",
         "-f",
         "mpegts",
         "pipe:1",
@@ -1686,6 +1670,8 @@ def get_chunk(movieID, idx=0):
     time_start = str(datetime.timedelta(seconds=seconds))
     time_end = str(datetime.timedelta(seconds=seconds + CHUNK_LENGTH))
     logLevelValue = "error"
+
+
     command = [
         "ffmpeg",
         "-hide_banner",
@@ -1704,11 +1690,9 @@ def get_chunk(movieID, idx=0):
         "-c:a",
         "aac",
         "-b:a",
-        "128k",
+        "196k",
         "-ac",
         "2",
-        "-preset",
-        "ultrafast",
         "-f",
         "mpegts",
         "pipe:1",
@@ -1742,10 +1726,21 @@ def get_chunk_quality(quality, movieID, idx=0):
     videoProperties = get_video_properties(video_path)
     width = videoProperties["width"]
     height = videoProperties["height"]
-    newWidth = float(quality)
+    newWidth = int(float(quality))
     newHeight = round(float(width) / float(height) * newWidth)
     if (newHeight % 2) != 0:
         newHeight += 1
+
+    bitrate = {
+        "1080": "192k",
+        "720": "192k",
+        "480": "128k",
+        "360": "128k",
+        "240": "96k",
+        "144": "64k",
+    }
+
+
     logLevelValue = "error"
     command = [
         "ffmpeg",
@@ -1767,11 +1762,9 @@ def get_chunk_quality(quality, movieID, idx=0):
         "-c:a",
         "aac",
         "-b:a",
-        "128k",
+        bitrate[quality],
         "-ac",
         "2",
-        "-preset",
-        "ultrafast",
         "-f",
         "mpegts",
         "pipe:1",
@@ -1866,7 +1859,16 @@ def settings():
         if typeOfUser == "Admin":
             global allMoviesNotSorted
             condition = len(allMoviesNotSorted) > 0
-            return render_template("settings.html", notSorted=allMoviesNotSorted, conditionIfOne=condition)
+
+            config = configparser.ConfigParser()
+            config.read(os.path.join(dir, 'config.ini')) 
+            serverPort = config["ChocolateSettings"]["port"]
+            allowDownloads = config["ChocolateSettings"]["allowdownload"]
+            tmdbKey = config["APIKeys"]["tmdb"]
+            igdbID = config["APIKeys"]["igdbid"]
+            igdbSecret = config["APIKeys"]["igdbsecret"]   
+
+            return render_template("settings.html", notSorted=allMoviesNotSorted, conditionIfOne=condition, serverPort=serverPort, allowDownloads=allowDownloads, tmdbKey=tmdbKey, igdbID=igdbID, igdbSecret=igdbSecret)
         else:
             return redirect(url_for("home"))
 
@@ -2020,7 +2022,8 @@ def chunkCaptionSerie(language, index, episodeId):
 @app.route("/saveSettings", methods=["GET", "POST"])
 def saveSettings():
     global clientID, clientSecret
-    print(request.form)
+    config = configparser.ConfigParser()
+    config.read(os.path.join(dir, 'config.ini'))
     language = request.form["language"]
     port = request.form["port"]
     tmdbApiKey = request.form["tmdbKey"]
@@ -2028,7 +2031,7 @@ def saveSettings():
     igdbClientId = request.form["igdbID"]
     if language != "undefined":
         config.set("ChocolateSettings", "language", language)
-    if port != "" or port != " ":
+    if port != "" and port != " " and port != None:
         config.set("ChocolateSettings", "port", port)
     if tmdbApiKey != "":
         config.set("APIKeys", "TMDB", tmdbApiKey)
@@ -2038,6 +2041,14 @@ def saveSettings():
         config.set("APIKeys", "igdbsecret", igdbSecretKey)
         clientID = igdbClientId
         clientSecret = igdbSecretKey
+    try:
+        allowDownload = request.form["allowDownloadsCheckbox"]
+        if allowDownload == "on":
+            config.set("ChocolateSettings", "allowdownload", "true")
+        else:
+            config.set("ChocolateSettings", "allowdownload", "false")
+    except:
+        config.set("ChocolateSettings", "allowdownload", "false")
     with open(os.path.join(dir, 'config.ini'), "w") as conf:
         config.write(conf)
     return redirect(url_for("settings"))
@@ -2103,6 +2114,8 @@ def getAllSeries(library):
                 series.remove(serie)
                 
     seriesDict = { serie["name"]: serie for serie in series }
+
+    seriesDict = {k: v for k, v in sorted(seriesDict.items(), key=lambda item: item[1]["name"])}
 
     return json.dumps(seriesDict, ensure_ascii=False, default=str, indent=4)
 
@@ -2177,6 +2190,8 @@ def home():
 @app.route("/editMovie/<title>/<library>", methods=["GET", "POST"])
 @login_required
 def editMovie(title, library):
+    config = configparser.ConfigParser()
+    config.read(os.path.join(dir, 'config.ini'))
     #only for admins
     if current_user.accountType != "Admin":
         return redirect(url_for("home"))
@@ -2325,6 +2340,10 @@ def editMovie(title, library):
         os.remove(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.webp")
     except FileNotFoundError:
         pass
+    try:
+        os.remove(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.png")
+    except FileNotFoundError:
+        pass
     with open(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.png", "wb") as f:
         f.write(requests.get(movieCoverPath).content)
     try:
@@ -2366,19 +2385,20 @@ def editMovie(title, library):
 @app.route("/season/<theId>")
 @login_required
 def season(theId):
-    with app.app_context():
-        season = Seasons.query.filter_by(seasonId=theId).first()
-        season = season.__dict__
-        serie = Series.query.filter_by(id=int(season["serie"])).first()
-        serie = serie.__dict__
-        serie = serie["name"]
-        name = f"{serie} | {season['seasonName']}"
-        del season["_sa_instance_state"]
-        return render_template("season.html", serie=season, title=name)
+    config = configparser.ConfigParser()
+    config.read(os.path.join(dir, 'config.ini'))
+    season = Seasons.query.filter_by(seasonId=theId).first()
+    season = season.__dict__
+    serie = Series.query.filter_by(id=int(season["serie"])).first()
+    serie = serie.__dict__
+    serie = serie["name"]
+    name = f"{serie} | {season['seasonName']}"
+    canDownload = config["ChocolateSettings"]["allowDownload"].lower() == "true"
+    del season["_sa_instance_state"]
+    return render_template("season.html", serie=season, title=name, canDownload=canDownload)
 
 @app.route("/getSeasonData/<seasonId>/", methods=["GET", "POST"])
 def getSeasonData(seasonId):
-    global allSeriesDict
     season = Seasons.query.filter_by(seasonId=seasonId).first()
     episodes = Episodes.query.filter_by(seasonId=seasonId).all()
     episodesDict = {}
@@ -2404,11 +2424,42 @@ def getEpisodeData(serieName, seasonId, episodeId):
         response = {"response": "Not Found"}
         return json.dumps(response, ensure_ascii=False, default=str)
 
+@app.route("/categories")
+def categories():
+    #return a list of all categories
+    categoriesList = []
+    movies = Movies.query.all()
+    moviesDict = [ movie.__dict__ for movie in movies ]
+    for movie in moviesDict:
+        movieGenre = movie["genre"]
+        movieGenre = json.loads(movieGenre)
+        for genre in movieGenre:
+            if genre not in categoriesList:
+                categoriesList.append(genre)
+    categoriesList.sort()
+    return json.dumps(categoriesList, ensure_ascii=False, default=str)
+
+@app.route("/category/<category>")
+def category(category):
+    movies = Movies.query.all()
+    movieList = []
+    moviesDict = [ movie.__dict__ for movie in movies ]
+    for movie in moviesDict:
+        movieGenre = movie["genre"]
+        movieGenre = json.loads(movieGenre)
+        if category in movieGenre:
+            del movie["_sa_instance_state"]
+            movieList.append(movie)
+    return json.dumps(movieList, ensure_ascii=False, default=str)
 
 @app.route("/movies/<library>")
 @login_required
-def movies(library):
-    if library != "undefined":
+def moviesLib(library):
+    config = configparser.ConfigParser()
+    config.read(os.path.join(dir, 'config.ini'))
+    exists = Libraries.query.filter_by(libName=library).first() is not None
+    canDownload = config["ChocolateSettings"]["allowDownload"].lower() == "true"
+    if exists:
         thisLibrary = Libraries.query.filter_by(libName=library).first()
         movies = Movies.query.all()
         moviesDict = [ movie.__dict__ for movie in movies ]
@@ -2421,9 +2472,10 @@ def movies(library):
             conditionIfOne=searchedFilmsUp0,
             errorMessage=errorMessage,
             routeToUse=routeToUse,
+            canDownload=canDownload
         )
     else:
-        return "Not Found"
+        return redirect(url_for("home"))
 
 
 @app.route("/series/<library>")
@@ -2653,7 +2705,7 @@ def searchInAllSeries(library, search):
 @app.route("/search/<library>/<search>")
 @login_required
 def search(library, search):
-    library = library.replace("%20", " ")
+    library = library.replace("%20", " ").replace("#", "")
     theLibrary = Libraries.query.filter_by(libName=library).first()
     theLibrary = theLibrary.__dict__
     if theLibrary["libType"] == "movies":
@@ -2721,7 +2773,6 @@ def whoami():
 @app.route("/serie/<episodeId>")
 @login_required
 def serie(episodeId):
-    global allSeriesDict
     if episodeId.endswith("ttf"):
         pass
     else:
@@ -2735,6 +2786,9 @@ def serie(episodeId):
         allCaptions = generateCaptionSerie(episodeId)
         episodeId = int(episodeId)
         episodes = Episodes.query.filter_by(seasonId=seasonId).all()
+        theSeasons = Seasons.query.filter_by(seasonId=seasonId).first()
+        nextSeason = Seasons.query.filter_by(serie=theSeasons.serie, seasonNumber=theSeasons.seasonNumber+1).first()
+        previousSeason = Seasons.query.filter_by(serie=theSeasons.serie, seasonNumber=theSeasons.seasonNumber-1).first()
         episodes = sorted(episodes, key=lambda x: x.episodeNumber)
         firstEpisode = episodes[0].episodeNumber
         lastEpisode = episodes[-1].episodeNumber
@@ -2742,15 +2796,27 @@ def serie(episodeId):
         previousEpisode = episodes[theActualEpisodes-2]
         try:
             nextEpisode = episodes[theActualEpisodes]
+            nextEpisodeHREF = nextEpisode.episodeId
         except:
             nextEpisode = None
+        #check if there's a next episode in the next season
+        if nextEpisode == None:
+            if nextSeason != None:
+                nextEpisode = Episodes.query.filter_by(seasonId=nextSeason.seasonId).first()
+                nextEpisodeHREF = nextEpisode.episodeId
 
-        buttonNext = theActualEpisodes < lastEpisode
-        buttonPrevious = theActualEpisodes > firstEpisode
+        previousEpisodeHREF = previousEpisode.episodeId
+        if previousEpisode == None:
+            if previousSeason != None:
+                previousEpisode = Episodes.query.filter_by(seasonId=previousSeason.seasonId).first()
+                previousEpisodeHREF = previousEpisode.episodeId
 
-        buttonPreviousHREF = f"/serie/{previousEpisode.episodeId}"
+        buttonNext = theActualEpisodes < lastEpisode or nextEpisode != None
+        buttonPrevious = theActualEpisodes > firstEpisode or previousEpisode != None
+
+        buttonPreviousHREF = f"/serie/{previousEpisodeHREF}"
         try:
-            buttonNextHREF = f"/serie/{nextEpisode.episodeId}"
+            buttonNextHREF = f"/serie/{nextEpisodeHREF}"
         except:
             buttonNextHREF = None
         return render_template("serie.html", slug=slug, allCaptions=allCaptions, title=episodeName, buttonNext=buttonNext, buttonPrevious=buttonPrevious, buttonNextHREF=buttonNextHREF, buttonPreviousHREF=buttonPreviousHREF, movieUrl=link)
@@ -2768,7 +2834,9 @@ def mainMovie(movieID):
     height = int(videoProperties["height"])
     width = int(videoProperties["width"])
     m3u8File = f"""#EXTM3U\n\n"""
+    #m3u8File += f"\n\n{generateAudioMovie(movieID)}"
     qualities = [144, 240, 360, 480, 720, 1080]
+    file = []
     for quality in qualities:
         if quality < height:
             newWidth = int(quality)
@@ -2776,9 +2844,12 @@ def mainMovie(movieID):
             if (newHeight % 2) != 0:
                 newHeight += 1
             m3u8Line = f"""#EXT-X-STREAM-INF:BANDWIDTH={newWidth*newWidth*1000},RESOLUTION={newHeight}x{newWidth}\n/video/{quality}/{movieID}\n"""
-            m3u8File += m3u8Line
-    lastLine = f"#EXT-X-STREAM-INF:BANDWIDTH={width*height*1000},RESOLUTION={height}x{width}\n/video/{movieID}"
-    m3u8File += lastLine
+            file.append(m3u8Line)
+    lastLine = f"#EXT-X-STREAM-INF:BANDWIDTH={width*height*1000},RESOLUTION={width}x{height}\n/video/{movieID}\n"
+    file.append(lastLine)
+    file = file[::-1]
+    file = "".join(file)
+    m3u8File += file
     response = make_response(m3u8File)
 
     response.headers.set("Content-Type", "application/x-mpegURL")
@@ -2806,6 +2877,7 @@ def mainSerie(episodeID):
     height = int(videoProperties["height"])
     width = int(videoProperties["width"])
     m3u8File = f"""#EXTM3U\n\n"""
+    file = []
     qualities = [144, 240, 360, 480, 720, 1080]
     for quality in qualities:
         if quality < height:
@@ -2814,9 +2886,12 @@ def mainSerie(episodeID):
             if (newHeight % 2) != 0:
                 newHeight += 1
             m3u8Line = f"""#EXT-X-STREAM-INF:BANDWIDTH={newWidth*newWidth*1000},RESOLUTION={newHeight}x{newWidth}\n/videoSerie/{quality}/{episodeID}\n"""
-            m3u8File += m3u8Line
-    lastLine = f"#EXT-X-STREAM-INF:BANDWIDTH={width*height*1000},RESOLUTION={height}x{width}\n/videoSerie/{episodeID}"
-    m3u8File += lastLine
+            file.append(m3u8Line)
+    lastLine = f"#EXT-X-STREAM-INF:BANDWIDTH={width*height*1000},RESOLUTION={width}x{height}\n/videoSerie/{episodeID}\n"
+    file.append(lastLine)
+    file = file[::-1]
+    file = "".join(file)
+    m3u8File += file
 
     response = make_response(m3u8File)
 
@@ -2861,35 +2936,37 @@ def generateCaptionSerie(episodeId):
     captionResponse = captionResponse.split("\n")
 
     allCaptions = []
-    languages = {
-        "ara": "Arabic",
-        "eng": "English",
-        "fre": "Français",
-        "spa": "Español",
-        "por": "Português",
-        "ita": "Italiano",
-        "ger": "Deutsch",
-        "rus": "Русский",
-        "pol": "Polski",
-        "por": "Português",
-        "chi": "中文",
-        "srp": "Srpski",
-    }
 
     captionResponse.pop()
 
     for line in captionResponse:
         line = line.rstrip()
         language = line.split(",")[1]
+        newLanguage = pycountry.languages.get(alpha_2=language)
         index = line.split(",")[0]
-        allCaptions.append(
-            {
-                "index": index,
-                "languageCode": language,
-                "language": languages[language],
-                "url": f"/chunkCaptionSerie/{language}/{index}/{episodeId}.vtt",
-            }
-        )
+        try:
+            title = line.split(",")[2]
+
+            try:
+                titleName = title.split(" : ")[0]
+                subtitleType = title.split(" : ")[1]
+            except:
+                titleName = title
+                subtitleType = "Unknown"
+
+        except:
+            titleName = newLanguage
+            subtitleType = "Unknown"
+        if subtitleType.lower() != "pgs":
+            allCaptions.append(
+                {
+                    "index": index,
+                    "languageCode": language,
+                    "language": newLanguage,
+                    "url": f"/chunkCaptionSerie/{language}/{index}/{episodeId}.vtt",
+                    "name": titleName,
+                }
+            )
     return allCaptions
 
 
@@ -2910,7 +2987,6 @@ def generateCaptionMovie(movieID):
         "-select_streams",
         "s",
         "-show_entries",
-        #get the metadata of the stream, the index, the language and the title
         "stream=index:stream_tags=language,title",
         "-of",
         "csv=p=0",
@@ -2922,52 +2998,33 @@ def generateCaptionMovie(movieID):
         slug = slug.split("/")[-1]
     except:
         slug = slug.split("/")[-1]
-    rewriteSlug, movieExtension = os.path.splitext(slug)
     captionResponse = captionPipe.stdout.read().decode("utf-8")
     captionResponse = captionResponse.split("\n")
     captionResponse.pop()
     allCaptions = []
-    languages = {
-        "ara": "Arabic",
-        "eng": "English",
-        "fre": "Français",
-        "spa": "Español",
-        "por": "Português",
-        "ita": "Italiano",
-        "ger": "Deutsch",
-        "rus": "Русский",
-        "pol": "Polski",
-        "por": "Português",
-        "chi": "中文",
-        "srp": "Srpski",
-    }
     for line in captionResponse:
         line = line.rstrip()
         language = line.split(",")[1]
-        index = line.split(",")[0]
         try:
-            title = line.split(",")[2]
-
-            try:
-                titleName = title.split(" : ")[0]
-                subtitleType = title.split(" : ")[1]
-            except:
-                titleName = title
-                subtitleType = "Unknown"
-
+            newLanguage = pycountry.languages.get(alpha_2=language).name
         except:
-            titleName = language
-            subtitleType = "Unknown"
-        if subtitleType.lower() != "pgs":
-            allCaptions.append(
-                {
-                    "index": index,
-                    "languageCode": language,
-                    "language": languages[language],
-                    "url": f"/chunkCaption/{subtitleType}/{index}/{movieID}.vtt",
-                    "name": titleName,
-                }
-            )
+            try:
+                newLanguage = pycountry.languages.get(alpha_3=language).name
+            except:
+                newLanguage = language
+        index = line.split(",")[0]
+        titleName = line.split(",")[2]
+        if titleName.lower() == "full":
+            titleName = f"{newLanguage} Full"
+        allCaptions.append(
+            {
+                "index": index,
+                "languageCode": language,
+                "language": newLanguage,
+                "url": f"/chunkCaption/vtt/{index}/{movieID}.vtt",
+                "name": titleName,
+            }
+        )
 
     return allCaptions
 
@@ -2999,9 +3056,12 @@ def generateAudioMovie(movieID):
         line = line.rstrip()
         language = line.split(",")[1].upper()
         index = line.split(",")[0]
-        title = line.split(",")[2]
+        try:
+            title = line.split(",")[2]
+        except:
+            title = language
         default = "YES" if index == "1" else "NO"
-        theTrack = f"#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID=\"audio\",NAME=\"{language}\",LANGUAGE=\"{language}\",AUTOSELECT={default},DEFAULT={default},URI=\"/audioMovie/{movieID}/{index}\""
+        theTrack = f"#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID=\"audio\",NAME=\"{title}\",LANGUAGE=\"{language}\",AUTOSELECT={default},DEFAULT={default},URI=\"/audioMovie/{movieID}/{index}\""
         allTracks.append(theTrack)
     #convert allTracks to a multi-line string
     allTracksString = ""
@@ -3156,7 +3216,7 @@ def chunkAudio(movieId, trackId, chunkIndex):
         "-ac",
         "2",
         "-b:a",
-        "128k",
+        "196k",
         "-map",
         f"0:{trackId}",
         "-f",
@@ -3206,7 +3266,7 @@ def chunkAudioSerie(episodeId, trackId, chunkIndex):
         "-ac",
         "2",
         "-b:a",
-        "128k",
+        "196k",
         "-map",
         f"0:{trackId}",
         "-f",
@@ -3245,12 +3305,14 @@ def getActorData(actorId):
     actor = Actors.query.filter_by(actorId=actorId).first()
     movies = actor.actorPrograms.split(" ")
     for movie in movies:
-        try:
+        inMovies = Movies.query.filter_by(id=movie).first() is not None
+        inSeries = Series.query.filter_by(id=movie).first() is not None
+        if inMovies:
             thisMovie = Movies.query.filter_by(id=movie).first().__dict__
             del thisMovie["_sa_instance_state"]
             if thisMovie not in moviesData:
                 moviesData.append(thisMovie)
-        except:
+        elif inSeries:
             thisSeries = Series.query.filter_by(id=movie).first().__dict__
             del thisSeries["_sa_instance_state"]
             if thisSeries not in seriesData:
@@ -3287,6 +3349,35 @@ def scanIntro():
 def isChocolate():
     return json.dumps({"isChocolate": True})
 
+@app.route("/downloadMovie/<movieId>")
+def downloadMovie(movieId):
+    config = configparser.ConfigParser()
+    config.read(os.path.join(dir, 'config.ini'))
+    canDownload = config["ChocolateSettings"]["allowDownload"].lower() == "true"
+    if not canDownload:
+        return json.dumps({"error": "download not allowed"})
+    movie = Movies.query.filter_by(id=movieId).first()
+    moviePath = movie.slug
+    movieLibrary = movie.libraryName
+    library = Libraries.query.filter_by(libName=movieLibrary).first()
+    libraryPath = library.libFolder
+    moviePath = f"{libraryPath}\\{moviePath}"
+    return send_file(moviePath, as_attachment=True)
+
+@app.route("/downloadEpisode/<episodeId>")
+def downloadEpisode(episodeId):
+    config = configparser.ConfigParser()
+    config.read(os.path.join(dir, 'config.ini'))
+    canDownload = config["ChocolateSettings"]["allowDownload"].lower() == "true"
+    if not canDownload:
+        return json.dumps({"error": "download not allowed"})
+    episode = Episodes.query.filter_by(episodeId=episodeId).first()
+    season = Seasons.query.filter_by(seasonId=episode.seasonId).first()
+    serie = Series.query.filter_by(id=season.serie).first()
+    library = Libraries.query.filter_by(libName=serie.libraryName).first()
+    libraryPath = library.libFolder
+    episodePath = f"{libraryPath}\\{episode.slug}"
+    return send_file(episodePath, as_attachment=True)
 
 def sort_dict_by_key(unsorted_dict):
 
@@ -3318,15 +3409,16 @@ if __name__ == "__main__":
         libraries = [library.__dict__ for library in libraries]
         libraries = sorted(libraries, key=lambda k: k['libName'])
         libraries = sorted(libraries, key=lambda k: k['libType'])
-
-        for library in libraries:
-            if library["libType"] == "series":
-                getSeries(library["libName"])
-            elif library["libType"] == "movies":
-                getMovies(library["libName"])
-            elif library["libType"] == "games":
-                getGames(library["libName"])
-
+        try:
+            for library in libraries:
+                if library["libType"] == "series":
+                    getSeries(library["libName"])
+                elif library["libType"] == "movies":
+                    getMovies(library["libName"])
+                elif library["libType"] == "games":
+                    getGames(library["libName"])
+        except:
+            pass
 
     print()
     print("\033[?25h", end="")

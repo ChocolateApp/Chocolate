@@ -1,6 +1,6 @@
 {% extends 'header.html' %}{% block title %}{{ movie["title"] }}{% endblock %}{% block content %}
-<h1 class="selectMovieText">Select the right movie for <span id="realName">{{ movie["title"] }}</span> in <span id="library">{{ movie["libraryName"] }}</span></h1>
-<h2 class="selectMovieSecondText">If you don't find the movie, try to change the name of the file</h2>
+<h1 class="selectMovieText">{{ g.language["selectMovieText1"] }}<span id="realName">{{ movie["title"] }}</span>{{ g.language["selectMovieText2"] }}<span id="library">{{ movie["libraryName"] }}</span></h1>
+<h2 class="selectMovieSecondText">{{ g.language["selectMovieSecondText"] }}</h2>
 
 <div class="editMovieDiv">
     {% for film in allFilms %}
@@ -10,10 +10,10 @@
     </div>
     {% endfor %}
     <div class="customMovieDIV">
-        <label for="movieID">Custom movie ID :</label>
-        <p class="customeIDExplication">To get the movie ID, go to the movie on TMDB, and copy the numbers in the search bar</p>
+        <label for="movieID">{{ g.language["customMovieId"] }}</label>
+        <p class="customeIDExplication">{{ g.language["customIdExplication"] }}</p>
         <input type="text" id="movieID" name="movieID">
-        <button id="customMovieButton">Add this movie</button>
+        <button id="customMovieButton">{{ g.language["addThisMovie"] }}</button>
     </div>
     <script src="{{ url_for('static',filename='js/editMovie.js') }}" defer></script>
 </div>

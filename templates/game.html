@@ -1,7 +1,7 @@
 {% extends 'header.html' %}{% block title %}{{ gameName }} - {{ consoleName }}{% endblock %} {% block content %}{% include 'popup.html' %}
 <div class="backButton" id="backButton">
     <ion-icon name="arrow-back-outline" class="backArrow"></ion-icon>
-    <p>Back</p>
+    <p>{{ g.language["back"] }}</p>
 </div>
 <div class="gameScreen">
     <div id="game"></div>

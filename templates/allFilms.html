@@ -12,7 +12,11 @@
     </p>
     <a class="watchNowA">
         <ion-icon class="watchNow" name="play" role="img" class="md hydrated" aria-label="play outline"></ion-icon>
-        Watch Now
+        {{ g.language["watchNow"] }}
+    </a>
+    <a class="downloadNowA" id="downloadNowA">
+        <ion-icon name="download-outline"></ion-icon>
+        {{ g.language["downloadButton"] }}</a>
     </a>
 </div>
 <div class="loaderBackground" id="loaderBackground"></div>
@@ -20,5 +24,6 @@
 
 <div class="movies" id="{{ routeToUse }}"></div>
 <div class="brokenPath" id="{{ url_for('static',filename='img/broken.png') }}"></div>
+<div data-canDownload="{{ canDownload }}" id="canDownloadDiv"></div>
 <script src="{{ url_for('static',filename='js/allFilms.js') }}" type="text/javascript"></script>
 {% endif %}{% endblock %}

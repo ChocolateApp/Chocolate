@@ -12,7 +12,7 @@ homeButton.addEventListener("click", function() {
 function search() {
     var search = document.getElementById("search").value
     actualHref = window.location.href
-    libraryName = actualHref.split("/")[4]
+    libraryName = actualHref.split("/")[4].replace("#", "")
     if (search != "" && actualHref.split("/").length >= 5) {
         window.location.href = `/search/${libraryName}/${search}`
     }

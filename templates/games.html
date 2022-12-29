@@ -5,9 +5,9 @@
 {% else %} {% include 'popup.html' %}
 <div class="backButton" id="backButton">
     <ion-icon name="arrow-back-outline" class="backArrow"></ion-icon>
-    <p>Back</p>
+    <p>{{ g.language["back"] }}</p>
 </div>
-<h1 class="consoleName">{{ consoleName }} Games</h1>
+<h1 class="consoleName">{{ g.language["gamesConsole"].replace("xxconsoleNamexx", consoleName) }}</h1>
 <div class="loaderBackground" id="loaderBackground"></div>
 <img class="spinner" id="spinner" src="{{ url_for('static', filename='img/loader.gif') }}" />
 <div id="gameList"></div>

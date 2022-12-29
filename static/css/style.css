@@ -2,6 +2,8 @@
 * {
     margin: 0;
     padding: 0;
+    font-family: 'Poppins', Arial, Helvetica, sans-serif;
+    color: #ffffff;
 }
 
 body {
@@ -122,6 +124,9 @@ form#searchForm:hover .form_field_search {
 
 .form_field_search:focus {
     outline: none;
+    width: 15vw;
+    color: white;
+    font-size: 2vh;
 }
 
 .search_icon {
@@ -135,10 +140,10 @@ form#searchForm:hover .form_field_search {
 
 .movies,
 .series {
-    margin-top: 47.25vh;
-    width: 97vw;
+    margin-top: 50vh;
+    width: 93vw;
     flex-wrap: wrap;
-    margin-left: 3vw;
+    margin-left: 4.5vw;
     z-index: 2;
     position: absolute;
     display: grid;
@@ -146,6 +151,44 @@ form#searchForm:hover .form_field_search {
     grid-template-rows: 1fr;
     grid-column-gap: 3.84vw;
     grid-row-gap: 0px;
+}
+
+.categoriesContainer {
+    margin-top: 10vh;
+}
+
+.category {
+    margin-bottom: 2vh;
+    margin-left: 4.5vw;
+}
+
+.categoryText {
+    font-size: 2vh;
+}
+
+.moviesPrev,
+.moviesNext {
+    background: none;
+    border: none;
+    position: absolute;
+    margin-left: 1vw;
+    margin-top: 0vh;
+    font-size: 2vh;
+    cursor: pointer;
+}
+
+.moviesNext {
+    margin-left: 3vw;
+}
+
+.categoryElements {
+    display: flex;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    flex-direction: row;
+    align-items: center;
+    column-gap: 2vw;
+    transition: all 300ms;
 }
 
 .episodes {
@@ -174,6 +217,7 @@ form#searchForm:hover .form_field_search {
 .cover_episode {
     min-width: 35vw;
     max-width: 35vw;
+    border-radius: 1vw;
 }
 
 .episodeText {
@@ -189,9 +233,9 @@ form#searchForm:hover .form_field_search {
 }
 
 .episodeDescription {
-    height: 20vh;
-    display: table-cell;
-    vertical-align: middle;
+    height: 19vh;
+    display: block;
+    overflow: scroll;
 }
 
 .cover {
@@ -200,7 +244,7 @@ form#searchForm:hover .form_field_search {
     order: 1;
     cursor: pointer;
     margin-bottom: 2vh;
-    width: 13vw;
+    width: 11vw;
 }
 
 .cover:hover {
@@ -209,11 +253,11 @@ form#searchForm:hover .form_field_search {
 
 .cover_movie,
 .cover_serie {
-    border-radius: 1vh;
+    border-radius: 1rem;
     transition: 300ms transform;
     display: block;
-    width: 12.8vw;
-    height: 39vh;
+    width: 20rem;
+    height: 30rem;
     object-fit: cover;
 }
 
@@ -392,10 +436,10 @@ label[for="addLibraryButton"] {
 
 .pencilIcon {
     position: absolute;
-    margin-top: -4vh;
+    margin-top: -39vh;
     font-size: 4vh;
     color: white;
-    margin-left: 4vw;
+    margin-left: 5vw;
     filter: drop-shadow( 0px 0px 2px rgba(0, 0, 0, 1));
     display: none;
     z-index: 99999999;
@@ -606,10 +650,11 @@ label[for="games"] {
     cursor: pointer;
     color: #ffffff;
     font-size: 1.4vh;
-    padding: 2vh 3vw;
+    padding: 2vh 0;
     transition: 300ms;
-    background: none;
+    background: 0 0;
     margin-right: 6vw;
+    width: 20vw;
 }
 
 .createAccountButton {
@@ -623,9 +668,10 @@ label[for="games"] {
     cursor: pointer;
     color: #ffffff;
     font-size: 1.4vh;
-    padding: 2vh 3vw;
+    padding: 2vh 0;
     transition: 300ms;
-    background: none;
+    background: 0 0;
+    width: 20vw;
 }
 
 .saveSettings:hover,
@@ -635,7 +681,7 @@ label[for="games"] {
 }
 
 .saveSettingsForm {
-    margin-top: 2vh;
+    margin-top: 50vh;
     text-align: end;
     position: absolute;
     left: 35.6vw;
@@ -644,8 +690,8 @@ label[for="games"] {
 .createAccount {
     margin-top: 10vh;
     text-align: end;
-    margin-left: 17vw;
-    width: 45vw;
+    position: absolute;
+    left: 36.6vw;
 }
 
 .form_field_create_account {
@@ -806,8 +852,13 @@ label[for="games"] {
     color: #1d1d1d;
 }
 
-.playPopup ion-icon {
+ion-icon[name="play"] {
     margin-right: 0vw;
+    transition: 300ms;
+}
+
+.playPopup:hover ion-icon[name="play"] {
+    color: #1d1d1d;
 }
 
 .video-js[tabindex="-1"] {
@@ -1050,6 +1101,8 @@ label[for="games"] {
     margin-left: 15vw;
     margin-top: -28vh;
     width: 48vw;
+    overflow: scroll;
+    height: 27vh;
 }
 
 .seeMore {
@@ -1089,7 +1142,8 @@ label[for="games"] {
     filter: drop-shadow(0.1vh 0.1vh 0.5vh #000);
 }
 
-.watchNowA {
+.watchNowA,
+.downloadNowA {
     border-radius: 1.5vw;
     border: 0.2vw solid #ffffff;
     cursor: pointer;
@@ -1100,13 +1154,17 @@ label[for="games"] {
     font-weight: 700;
     display: flex;
     align-items: center;
-    transition: 300ms background, color;
+    transition: 300ms;
     z-index: 5;
     position: absolute;
     top: 35vh;
     left: 10vw;
     text-shadow: 0.1vh 0.1vh 0.5vh #000;
     box-shadow: 0.1vh 0.1vh 0.5vh #000;
+}
+
+.downloadNowA {
+    left: 32vw;
 }
 
 .watchNowA:hover {
@@ -1121,7 +1179,27 @@ label[for="games"] {
     filter: drop-shadow(1px 1px 10px rgba(255, 255, 255, 0));
 }
 
-.watchNowSeason {
+.downloadNowA:hover {
+    background: white;
+    color: #1d1d1d;
+    text-shadow: 0px 0px 0px rgba(0, 0, 0, 0);
+}
+
+.downloadNowA:hover ion-icon[name="download-outline"] {
+    color: #1d1d1d;
+    filter: drop-shadow(1px 1px 10px rgba(255, 255, 255, 0));
+}
+
+.episodeButtons {
+    width: 57vw;
+    height: 13vh;
+    display: flex;
+    align-items: center;
+    column-gap: 4vw;
+}
+
+.watchNowSeason,
+.downloadNowSeason {
     border-radius: 1.5vw;
     border: 0.2vw solid #ffffff;
     cursor: pointer;
@@ -1134,14 +1212,13 @@ label[for="games"] {
     align-items: center;
     transition: 300ms background, color;
     z-index: 5;
-    position: absolute;
     text-shadow: 0.1vh 0.1vh 0.5vh #000;
     box-shadow: 0.1vh 0.1vh 0.5vh #000;
-    margin-top: 28vh;
-    margin-left: 37vw;
+    position: initial;
 }
 
-.watchNowSeason:hover {
+.watchNowSeason:hover,
+.downloadNowSeason:hover {
     background: white;
     color: #1d1d1d;
     text-shadow: 0px 0px 0px rgba(0, 0, 0, 0);
@@ -1150,6 +1227,11 @@ label[for="games"] {
 .watchNowSeason:hover .watchNow {
     color: #1d1d1d;
     transition: 300ms;
+    filter: drop-shadow(1px 1px 10px rgba(255, 255, 255, 0));
+}
+
+.downloadNowSeason:hover ion-icon[name="download-outline"] {
+    color: #1d1d1d;
     filter: drop-shadow(1px 1px 10px rgba(255, 255, 255, 0));
 }
 
@@ -1199,6 +1281,7 @@ label[for="games"] {
     width: 100vw;
     height: 60vh;
     object-fit: cover;
+    background-size: cover;
 }
 
 .bigBanner {
@@ -1345,7 +1428,23 @@ input[type="search"]::-webkit-search-results-decoration {
 
 .passwordLogin {
     margin-left: calc((119vw/4) - 4vw) !important;
-    width: 10vw;
+    width: 12vw;
+}
+
+.aUsers {
+    grid-template-columns: repeat(1, 1fr);
+}
+
+.aaUsers {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.aaaUsers {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.maxUsers {
+    grid-template-columns: repeat(4, 1fr);
 }
 
 #password {
@@ -1373,15 +1472,16 @@ input[type="search"]::-webkit-search-results-decoration {
     cursor: pointer;
     color: #ffffff;
     font-size: 1.4vh;
-    padding: 3vh 4vw;
+    padding: 3vh 0;
     text-decoration: none;
     font-weight: 700;
-    display: flex;
-    align-items: center;
     transition: 300ms background, color;
     margin-left: calc((119vw/4) - 4vw);
     text-shadow: 0.1vh 0.1vh 0.5vh #000;
     box-shadow: 0.1vh 0.1vh 0.5vh #000;
+    width: 12vw;
+    text-align: center;
+    display: block;
 }
 
 #profilePicture {
@@ -1541,11 +1641,11 @@ input[type="search"]::-webkit-search-results-decoration {
     height: 480px;
     max-width: 100%;
     margin-left: 32vw;
-    margin-top: 18vh;
+    margin-top: 26vh;
 }
 
 .backButton {
-    width: 8vw;
+    width: 15vh;
     height: 4vh;
     margin-left: 8vw;
     margin-top: 4vh;
@@ -1772,10 +1872,246 @@ label[for="movieID"] {
     color: #1d1d1d;
 }
 
+.timeLineBackground {
+    width: 11vw;
+    height: 0.5vh;
+    border-radius: 20vh;
+    margin-left: 1vw;
+    position: absolute;
+    margin-top: 38vh;
+    z-index: 999999999;
+    transition: all 300ms ease-in-out;
+}
+
+.timeLine {
+    height: 0.5vh;
+    border-radius: 20vh;
+    margin-left: 0vw;
+    z-index: 999999999999999;
+    transition: all 300ms ease-in-out;
+}
+
+.cover:hover .timeLine {
+    background: white;
+}
+
+.cover:hover .timeLineBackground {
+    background: grey;
+}
+
+.noteCircleBack {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 3vw;
+    width: 3vw;
+    border-radius: 3vw;
+    position: absolute;
+    color: white;
+    margin-left: 10px !important;
+    margin-top: 10px !important;
+    text-shadow: 0vh 0vh 6px #000;
+    z-index: 99999999999999999999999999;
+    background: rgb(29 29 29 / 50%);
+    backdrop-filter: blur(5px);
+}
+
+@property --p {
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 0;
+}
+
+.pie {
+    --p: 20;
+    --b: 22px;
+    --c: darkred;
+    width: 3vw;
+    aspect-ratio: 1;
+    margin: 5px;
+    place-content: center;
+    font-size: 25px;
+    font-weight: bold;
+    font-family: sans-serif;
+}
+
+.pie:before,
+.pie:after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+}
+
+.pie:before {
+    inset: 0;
+    background: radial-gradient(farthest-side, var(--c) 98%, #0000) top/var(--b) var(--b) no-repeat, conic-gradient(var(--c) calc(var(--p)*1%), #0000 0);
+    -webkit-mask: radial-gradient(farthest-side, #0000 calc(99% - var(--b)), #000 calc(100% - var(--b)));
+    mask: radial-gradient(farthest-side, #0000 calc(99% - var(--b)), #000 calc(100% - var(--b)));
+}
+
+.pie:after {
+    inset: calc(50% - var(--b)/2);
+    background: var(--c);
+    transform: rotate(calc(var(--p)*3.6deg)) translateY(calc(66% - 3vw/2));
+}
+
+.animate {
+    animation: p 1s .5s both;
+}
+
+.no-round:before {
+    background-size: 0 0, auto;
+}
+
+.no-round:after {
+    content: none;
+}
+
+svg.noteSVG {
+    width: 3vw;
+    position: absolute;
+    margin-left: -5vw;
+    margin-top: 1vh;
+    z-index: 9999999999999;
+}
+
+svg.noteSVG text {
+    fill: white;
+    font-size: 2.5vh;
+}
+
+svg.noteSVG circle:nth-child(1) {
+    stroke: #535353;
+    stroke-width: 4;
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
+    stroke-linecap: round;
+    transform: rotate(0);
+    opacity: 0.75;
+}
+
+svg.noteSVG circle:nth-child(2) {
+    stroke: var(--color);
+    stroke-width: 6;
+    stroke-dasharray: 314.15;
+    stroke-dashoffset: calc(314.15 * var(--dash));
+    stroke-linecap: round;
+    transition: all .3s;
+    transform: rotate(-90deg);
+    transform-origin: center;
+}
+
+@keyframes p {
+    from {
+        --p: 0
+    }
+}
+
+.downloadMovieButton {
+    z-index: 99999999999;
+    margin-left: 80vw;
+    margin-top: 4.5vh;
+    position: absolute;
+    bottom: 2vh;
+    border-radius: 1.5vw;
+    border: 0.2vw solid #ffffff;
+    cursor: pointer;
+    color: #ffffff;
+    font-size: 1.4vh;
+    padding: 2vh 2vw;
+    text-decoration: none;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    transition: 300ms;
+}
+
+ion-icon[name="download-outline"] {
+    font-size: 3.4vh;
+    padding: 0px 1vw 0 0;
+    filter: drop-shadow(0.1vh 0.1vh 0.5vh #000);
+    transition: 300ms;
+}
+
+.downloadMovieButton:hover {
+    background: #ffffff;
+    color: #1d1d1d;
+}
+
+.downloadMovieButton:hover ion-icon[name="download-outline"] {
+    color: #1d1d1d;
+}
+
+.allowDownloadsDiv {
+    padding: 2vh;
+    display: flex;
+    align-items: center;
+    margin-left: -4.5vw;
+}
+
+.allowDownloads {
+    display: inline-block;
+    position: relative;
+    cursor: pointer;
+    user-select: none;
+    width: 3vw;
+    height: 4vh;
+    margin-left: 0.5vw;
+}
+
+.allowDownloads input {
+    display: none;
+}
+
+.allowDownloadsSlider {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ffffff;
+    border: 0.1vh solid #ffffff;
+    border-radius: 3vh;
+    transition: .4s;
+}
+
+.allowDownloadsSlider:before {
+    position: absolute;
+    content: "";
+    height: 3vh;
+    width: 3vh;
+    left: 0.2vw;
+    bottom: 0.2vw;
+    background: #1d1d1d;
+    border-radius: 50%;
+    transition: .4s;
+}
+
+.allowDownloadsCheckbox:checked+.allowDownloadsSlider {
+    background-color: #fff0;
+}
+
+.allowDownloadsCheckbox:focus+.allowDownloadsSlider {
+    box-shadow: 0 0 1px #ffffff;
+}
+
+.allowDownloadsCheckbox:checked+.allowDownloadsSlider:before {
+    transform: translateX(0.95vw);
+    background-color: white;
+}
+
 @media (max-width: 640px) {
     * {
         margin: 0;
         padding: 0;
+    }
+    .spinner {
+        width: 30vw;
+        height: 30vw;
+        position: fixed;
+        left: calc(50vw - 15vw);
+        z-index: 99999;
+        top: calc(50vh - 20vw);
     }
     .timePopup {
         z-index: 99;
@@ -2019,14 +2355,16 @@ label[for="movieID"] {
         min-width: 89vw;
         object-fit: cover;
         margin-left: 3vw;
+        border-radius: 1vh;
     }
     .episodeText {
-        height: 38vh;
+        height: 28vh;
         margin-left: -86vw;
         text-shadow: 0.1vh 0.1vh 0.5vh #000;
         margin-top: 24vh;
         width: auto;
         margin-right: 6vw;
+        margin-bottom: 10vh;
     }
     .episodeTitle {
         margin-top: 3vh;
@@ -2035,9 +2373,11 @@ label[for="movieID"] {
     }
     .episodeDescription {
         height: 20vh;
-        display: table-cell;
-        vertical-align: middle;
+        display: block;
         font-size: 3vw;
+        overflow-y: scroll;
+        margin-top: 1vh;
+        line-height: 140%;
     }
     .watchNowSeason {
         border-radius: 3.5vw;
@@ -2145,7 +2485,7 @@ label[for="movieID"] {
         margin-left: -11vw;
     }
     #profilePicture {
-        width: 32vw
+        width: 32vw;
     }
     .createAccountButton {
         width: 40vw;
@@ -2292,7 +2632,50 @@ label[for="movieID"] {
         width: 60vw;
     }
     #submitLogin {
-        padding: 3vh 16vw;
+        padding: 3vh 0;
         margin-left: 10vw;
+        width: 40vw;
+    }
+    .gameScreen {
+        margin-left: 8vw;
+        margin-top: 16vh;
+        margin-right: -6vw;
+        height: 80vh;
+        width: auto;
+        max-width: 90%;
+    }
+    .aUsers {
+        grid-template-columns: repeat(1, 1fr);
+    }
+    .aaUsers {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .aaaUsers {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .maxUsers {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .consoleList {
+        grid-row-gap: 0vh;
+        grid-template-rows: 23vh;
+    }
+    #gameList {
+        grid-template-columns: repeat(2, 1fr);
+        margin-left: 5vw;
+        width: 95vw;
+    }
+    .gameImage {
+        width: 45.5vw;
+    }
+    .gameName {
+        width: 46vw;
+        display: block;
+    }
+    .consoleName {
+        margin-top: 15vh;
+    }
+    .systemName {
+        font-size: 1.6vh;
     }
 }

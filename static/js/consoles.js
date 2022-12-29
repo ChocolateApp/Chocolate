@@ -12,6 +12,7 @@ function getAllConsoles() {
         return response.json();
     }).then(function(json) {
         var systems = json;
+        systems = systems.sort()
         var systemList = document.getElementById("systemList");
         for (system of systems) {
             fetch("/getConsoleData/" + system).then(function(response) {
