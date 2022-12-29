@@ -550,7 +550,9 @@ window.onload = function() {
     brokenPath = brokenPathDiv.getAttribute("id")
     brokenPathDiv.parentNode.removeChild(brokenPathDiv)
     playPopup = document.getElementsByClassName("playPopup")[0]
-    playPopup.style.visibility = "hidden"
+    playPopup.style.display = "none"
+    downloadPopup = document.getElementById("downloadMovieButton")
+    downloadPopup.style.display = "none"
     popupContent = document.getElementsByClassName("popupContent")[0]
     popupContent.style.height = "86vh"
     getFirstSeries()
