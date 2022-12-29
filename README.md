@@ -146,7 +146,6 @@ Don't forget to give the project a star! Thanks again!
 
 
 ## TO-DO for Chocolate Server
-- [ ] Add a download button
 - [ ] A docker image **URGENT**
 - [ ] Create a plugin system
 - [ ] Add the mobile ui of the video player
@@ -196,6 +195,7 @@ Don't forget to give the project a star! Thanks again!
 - [X] Increase the search system
 - [X] Upgrade the responsive
 - [X] Edit movie metadata directly on the website
+- [X] Add a download button
 
 <!--LANGUAGES TO TRANSLATE -->
 ## Languages to translate
