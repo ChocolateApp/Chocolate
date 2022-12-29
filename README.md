@@ -24,6 +24,7 @@ Chocolate is actually made with this technologies:
 
 * <img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/HTML/html1.svg" alt="HTML5" style="display: flex; align-items: center;">
 * <img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/CSS/css1.svg" alt="CSS3" style="display: flex; align-items: center;">
+* <img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/Javascript/javascript1.svg" alt="Javascript" style="display: flex; align-items: center;">
 * <img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/Python/python1.svg" alt="Python" style="display: flex; align-items: center;">
 * <img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/Flask/flask1.svg" alt="Flask" style="display: flex; align-items: center;">
 
