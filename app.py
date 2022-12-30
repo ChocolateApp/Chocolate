@@ -299,8 +299,11 @@ if config["ChocolateSettings"]["language"] == "Empty":
     config["ChocolateSettings"]["language"] = "EN"
 
 chocolateVersion = config["ChocolateSettings"]["version"]
-repo = git.Repo(search_parent_directories=True)
-lastCommitHash = repo.head.object.hexsha[:7]
+try:
+    repo = git.Repo(search_parent_directories=True)
+    lastCommitHash = repo.head.object.hexsha[:7]
+except:
+    lastCommitHash = "xxxxxxx"
 with app.app_context():
     libraries = Libraries.query.filter_by(libType="games").all() is not None
     if libraries:
