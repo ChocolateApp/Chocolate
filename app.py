@@ -12,10 +12,9 @@ from Levenshtein import distance as lev
 from ask_lib import AskResult, ask
 from deep_translator import GoogleTranslator
 from time import mktime
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image
 from pypresence import Presence
-import xml.etree.ElementTree as ET
-import requests, os, subprocess, configparser, socket, datetime, subprocess, socket, platform, GPUtil, json, time, sqlalchemy, warnings, re, zipfile, ast, git, pycountry, base64
+import requests, os, subprocess, configparser, socket, datetime, subprocess, socket, platform, GPUtil, json, time, sqlalchemy, warnings, re, zipfile, ast, git, pycountry
 
 start_time = mktime(time.localtime())
 

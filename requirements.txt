@@ -19,7 +19,6 @@ importlib_metadata==5.1.0
 keyring==23.11.0
 langcodes==3.3.0
 lockfile==0.12.2
-lxml==4.7.1
 MarkupSafe==2.1.1
 numpy==1.22.1
 opencv_python==4.5.5.64
