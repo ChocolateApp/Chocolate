@@ -12,9 +12,10 @@ from Levenshtein import distance as lev
 from ask_lib import AskResult, ask
 from deep_translator import GoogleTranslator
 from time import mktime
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 from pypresence import Presence
-import requests, os, subprocess, configparser, socket, datetime, subprocess, socket, platform, GPUtil, json, time, sqlalchemy, warnings, re, zipfile, ast, git, pycountry
+import xml.etree.ElementTree as ET
+import requests, os, subprocess, configparser, socket, datetime, subprocess, socket, platform, GPUtil, json, time, sqlalchemy, warnings, re, zipfile, ast, git, pycountry, base64
 
 start_time = mktime(time.localtime())
 
@@ -1890,11 +1891,10 @@ def login():
         accountPassword = request.form["password"]
         user = Users.query.filter_by(name=accountName).first()
         if user:
-            if user.verify_password(accountPassword):
+            if user.accountType == "Kid":
                 login_user(user)
-
                 return redirect(url_for("home"))
-            elif user.accountType == "Kid":
+            elif user.verify_password(accountPassword):
                 login_user(user)
                 return redirect(url_for("home"))
             else:
@@ -2491,58 +2491,91 @@ def seriesLibrary(library):
 @app.route("/tv/<library>")
 @login_required
 def tvLibrary(library):
-    m3uPATH = Libraries.query.filter_by(libName=library).first().libFolder
-    #m3u8Path can be a local file or a remote file
-    #if it's a remote file, you can use the requests library to get the content, else you can use the open function
-    m3uPATH = m3uPATH.replace(r"\\", "//").replace("\\", "/")
-    if m3uPATH.startswith("http"):
-        m3u8Path = requests.get(m3uPATH).text
+    return render_template("tv.html")
+
+@app.route("/tv/<library>/<id>")
+@login_required
+def tvChannel(library, id):
+    library = Libraries.query.filter_by(libName=library).first()
+    libFolder = library.libFolder
+
+    if is_valid_url(libFolder):
+        m3u = requests.get(libFolder).text
+        m3u = m3u.split("\n")
     else:
-        m3u8Path = open(m3uPATH).read()
-    lines = m3u8Path.split("\n")
-    lines.pop(0)
+        with open(libFolder, "r", encoding="utf-8") as f:
+            m3u = f.readlines()
+    m3u.pop(0)
+    while m3u[0] == "\n":
+        m3u.pop(0)
+    channelURL = m3u[int(id)+1]
 
-    firstChannelName = lines[0].split(" - ")[1]
-    firstChannelLink = lines[1]
-    firstChannelLink = f"/rtspToHLS/{firstChannelName}/{library}"
+    return render_template("channel.html", channelURL=channelURL)
 
-    return render_template("tv.html", firstChannelName=firstChannelName, firstChannelLink=firstChannelLink)
+@app.route("/getChannels/<library>")
+def getChannels(library):
+    libFolder = Libraries.query.filter_by(libName=library).first().libFolder
+    #open the m3u file
+    try:
+        with open(libFolder, "r", encoding="utf-8") as f:
+            m3u = f.readlines()
+    except OSError:
+        libFolder = libFolder.replace("\\", "/")
+        m3u = requests.get(libFolder).text
+        m3u = m3u.split("\n")        
+    #remove the first line
+    m3u.pop(0)
+    while m3u[0] == "\n":
+        m3u.pop(0)
+
+    #get the channels by getting 2 lines at a time
+    channels = []
+    for i in m3u:
+        if i.startswith(("#EXTVLCOPT", "#EXTGRP")):
+            m3u.remove(i)
+        elif i == "\n":
+            m3u.remove(i)
+    for i in range(0, len(m3u)-1, 2):
+        data = {}
+        try:
+            data["name"] = m3u[i].split(",")[1].replace("\n", "")
+            work = True
+        except:
+            work = False
+        if work:
+            data["url"] = m3u[i+1].replace("\n", "")
+            data["channelID"] = i
+            tvg_id_regex = r'tvg-id="(.+?)"'
+            tvg_id = None
+            match = re.search(tvg_id_regex, m3u[i])
+            if match:
+                tvg_id = match.group(1)
+                data["id"] = tvg_id
+
+            tvg_logo_regex = r'tvg-logo="(.+?)"'
+            match = re.search(tvg_logo_regex, m3u[i])
+            if match:
+                tvg_logo = match.group(1)
+                data["logo"] = tvg_logo
+            else:
+                brokenPath = "/static/img/borkenBanner.webp"
+                data["logo"] = brokenPath
+                #print(data["logo"])
+            channels.append(data)
+            print(f"Channel {((i+1)//2)+1} added {((i+1)//2)+1}/{int(len(m3u)/2)}")
+    return json.dumps(channels)
+
+def is_valid_url(url):
+    try:
+        response = requests.get(url)
+        return response.status_code == requests.codes.ok
+    except requests.exceptions.RequestException:
+        return False
 
 @app.route("/games/<library>")
 @login_required
 def games(library):
     return render_template("consoles.html")
-
-@app.route("/rtspToHLS/<name>/<library>")
-def rtspToHLS(name, library):
-    #convert rstp to hls with ffmpeg and transform the response to a file
-    #the streamLink is the line who containt the name
-    m3uPATH = Libraries.query.filter_by(libName=library).first().libFolder
-    m3uPATH = m3uPATH.replace(r"\\", "//").replace("\\", "/")
-    if m3uPATH.startswith("http"):
-        m3u8Path = requests.get(m3uPATH).text
-    else:
-        m3u8Path = open(m3uPATH).read()
-    lines = m3u8Path.split("\n")
-    lines.pop(0)
-    for line in lines:
-        if name in line:
-            index = lines.index(line)
-            streamLink = lines[index + 1]
-
-
-    command = ["ffmpeg", "-i", streamLink, "-c:v", "libx264", "-c:a", "aac", "-f", "hls", "-hls_time", "5", "-hls_list_size", "0", "-hls_segment_filename", "stream%03d.ts", "-f", "hls", "pipe:1"]
-    pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
-    file = pipe.stdout.read()
-    response = make_response(file)
-    response.headers.set("Content-Type", "application/x-mpegURL")
-    response.headers.set("Range", "bytes=0-4095")
-    response.headers.set("Accept-Encoding", "*")
-    response.headers.set("Access-Control-Allow-Origin", f"http://{local_ip}:{serverPort}")
-    response.headers.set(
-        "Content-Disposition", "attachment", filename=f"{name}.m3u8"
-    )
-    return response
 
 @app.route("/getAllConsoles/<library>")
 def getAllConsoles(library):

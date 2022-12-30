@@ -620,7 +620,7 @@ input[type="radio"] {
     text-align: center;
     width: 18vw;
     margin-top: -27vh;
-    font-size: 2vw;
+    font-size: 1vw;
     margin-left: 64vw;
 }
 
@@ -2098,6 +2098,36 @@ ion-icon[name="download-outline"] {
 .allowDownloadsCheckbox:checked+.allowDownloadsSlider:before {
     transform: translateX(0.95vw);
     background-color: white;
+}
+
+.tvChannels {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    align-content: flex-start;
+    margin-left: 6vw;
+    margin-top: 10vh;
+    justify-content: flex-start;
+    width: 97vw;
+}
+
+.channelDiv {
+    width: 12vw;
+    height: 18vh;
+    margin: 1vh;
+    text-align: center;
+    background: #121212c4;
+    backdrop-filter: blur(50px);
+    border-radius: 1vw;
+    cursor: pointer;
+}
+
+.channelImage {
+    width: 11vw;
+    height: 12vh;
+    object-fit: contain;
+    margin: 1vh;
+    border-radius: 2vh;
 }
 
 @media (max-width: 640px) {

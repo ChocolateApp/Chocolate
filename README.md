@@ -169,12 +169,10 @@ Don't forget to give the project a star! Thanks again!
 - [ ] Change season with the buttons
 
 ### Work in progress
-
 - [ ] Detect series intro and skip them
 - [ ] Dev a mobile/TV app with chromecasting, and download
 - [ ] Use Flask-PWA
 - [ ] Add all audio tracks
-- [ ] Add TV with M3U/M3U8 playlist
 
 ### Tasks Done
 - [X] Increase the boot speed
@@ -197,6 +195,7 @@ Don't forget to give the project a star! Thanks again!
 - [X] Upgrade the responsive
 - [X] Edit movie metadata directly on the website
 - [X] Add a download button
+- [X] Add TV with M3U playlist
 
 <!--LANGUAGES TO TRANSLATE -->
 ## Languages to translate

@@ -1,0 +1,9 @@
+{% extends 'header.html' %}{% block title %}TV{% endblock %}{% block content %}
+
+<div id='playerWrapper'>
+    <video id="movie" class="video-js" controls preload="auto">
+        <source src="{{ channelURL }}" type="application/x-mpegURL" label="Source">
+    </video>
+    <script src="{{ url_for('static',filename='js/channel.js') }}" defer></script>
+</div>
+{% endblock %}
