@@ -13,6 +13,7 @@ Flask_Login==0.6.2
 flask_sqlalchemy==3.0.2
 get_video_properties==0.1.1
 GPUtil==1.4.0
+GitPython==3.1.2
 HTMLParser==0.0.2
 ImageHash==4.3.1
 importlib_metadata==5.1.0
@@ -25,6 +26,7 @@ opencv_python==4.5.5.64
 ordereddict==1.1
 Pillow==9.3.0
 protobuf==4.21.9
+pycountry==22.3.5
 pyOpenSSL==22.1.0
 pypresence==4.2.0
 python_Levenshtein==0.20.8
