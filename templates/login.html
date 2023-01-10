@@ -1,7 +1,7 @@
 {% extends 'header.html' %}{% block title %}Login{% endblock %} {% block content %}
 <div class="allUsers">
     {% for user in allUsers %}
-    <div id="{{ user.name }}" class="user" type="{{ user.accountType }}">
+    <div id="{{ user.name }}" class="user" type="{{ user.accountType }}" data-passwordEmpty="{{ user.passwordEmpty }}">
         <img src="{{ user.profilePicture }}" alt="{{ user.name }}">
         <h1>{{ user.name }}</h1>
     </div>

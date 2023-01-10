@@ -21,6 +21,7 @@ keyring==23.11.0
 langcodes==3.3.0
 lockfile==0.12.2
 MarkupSafe==2.1.1
+moviepy==1.0.3
 numpy==1.22.1
 opencv_python==4.5.5.64
 ordereddict==1.1

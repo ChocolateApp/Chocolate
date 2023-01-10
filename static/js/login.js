@@ -19,8 +19,9 @@ for (user of allusers) {
         document.getElementsByClassName("nameInputForm")[0].value = this.id
         loginForm = document.getElementsByClassName("loginForm")[0]
         accountType = this.getAttribute("type")
+        passwordEmpty = this.getAttribute("data-passwordEmpty")
         print
-        if (["Admin", "Adult", "Teen"].includes(accountType)) {
+        if (["Admin", "Adult", "Teen"].includes(accountType) && passwordEmpty == "no") {
             loginForm.style.display = "block"
         } else {
             loginForm = document.getElementsByClassName("loginForm")[0]

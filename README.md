@@ -53,6 +53,12 @@ This is what you have to do to get started with Chocolate :
 * Go here: [https://www.myqnap.org/product/chocolate81/](https://www.myqnap.org/product/chocolate81/)
 * Enjoy !
 
+#### For Docker
+* Clone the repository
+* Execute `docker build -t chocolate .`
+* When the build is finished, execute `docker run chocolate`
+* Enjoy !
+
 ### Files organizations
 
 #### For Movies :
@@ -167,6 +173,7 @@ Don't forget to give the project a star! Thanks again!
 - [ ] Add support to trakt
 - [ ] Use the GPU to encode videos if possible
 - [ ] Change season with the buttons
+- [ ] Add logs
 
 ### Work in progress
 - [ ] Detect series intro and skip them
@@ -196,6 +203,8 @@ Don't forget to give the project a star! Thanks again!
 - [X] Edit movie metadata directly on the website
 - [X] Add a download button
 - [X] Add TV with M3U playlist
+- [X] Added new type of library, "other", for files that are not movies, series, games, tv
+- [X] Add 2 buttons, one rescan the library, and the other one in the settings to rescan all the libraries
 
 <!--LANGUAGES TO TRANSLATE -->
 ## Languages to translate
@@ -212,16 +221,16 @@ Don't forget to give the project a star! Thanks again!
 - [X] BS: Bosnian
 - [X] BG: Bulgarian
 - [X] CA: Catalan
-- [ ] NY: Chichewa
+- [X] NY: Chichewa
 - [X] CO: Corsican
 - [X] HR: Croatian
-- [ ] CS: Czech
-- [ ] DA: Danish
-- [ ] NL: Dutch
+- [X] CS: Czech
+- [X] DA: Danish
+- [X] NL: Dutch
 - [X] EN: English
-- [ ] EO: Esperanto
-- [ ] ET: Estonian
-- [ ] FI: Finnish
+- [X] EO: Esperanto
+- [X] ET: Estonian
+- [X] FI: Finnish
 - [X] FR: French
 - [ ] FY: Frisian
 - [ ] GL: Galician
@@ -256,7 +265,7 @@ Don't forget to give the project a star! Thanks again!
 - [ ] MS: Malay
 - [ ] ML: Malayalam
 - [ ] MT: Maltese
-- [ ] ZH: Mandarin
+- [X] ZH: Mandarin
 - [ ] MI: Maori
 - [ ] MR: Marathi
 - [ ] MN: Mongolian

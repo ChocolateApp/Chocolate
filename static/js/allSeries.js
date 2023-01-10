@@ -448,12 +448,25 @@ function setPopup() {
     })
 }
 
+let expanded = false;
+
+function showCheckboxes() {
+    var checkboxes = document.getElementById("checkboxes");
+    if (!expanded) {
+      checkboxes.style.display = "block";
+      expanded = true;
+    } else {
+      checkboxes.style.display = "none";
+      expanded = false;
+    }
+  }
 
 
 function getFirstSeries() {
     series = document.getElementsByClassName("series")[0]
     routeToUse = series.getAttribute("id")
     series.id = "series"
+    let allGenres = []
 
     fetch(routeToUse).then(function(response) {
         return response.json()
@@ -496,6 +509,42 @@ function getFirstSeries() {
                 series = document.getElementsByClassName("series")[0]
                 var cover = document.createElement("div")
                 cover.className = "cover"
+
+                let genres = serie[1]["genre"]
+                genres = JSON.parse(genres)
+                for (let genre of genres) {
+                    if (cover.getAttribute("data-genre") !== null) {
+                        cover.setAttribute("data-genre", `${cover.getAttribute("data-genre")} ${genre}`)
+
+                    } else {
+                        cover.setAttribute("data-genre", `${genre}`)
+                    }
+
+                    if (allGenres.includes(genre) === false) {
+                        allGenres.push(genre)
+                    }
+                }
+                
+                cover.setAttribute("data-title", serie[1]["name"])
+                cover.setAttribute("data-rating", serie[1]["note"])
+                let dateString = serie[1]["date"];
+                const dateParts = dateString.split("-");
+                const day = parseInt(dateParts[2], 10);
+                const month = parseInt(dateParts[1], 10);
+                const year = parseInt(dateParts[0], 10);
+                const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+                let daysSinceStartOfYear = 0;
+                
+                for (let i = 0; i < month - 1; i++) {
+                  daysSinceStartOfYear += daysInMonth[i];
+                }
+                
+                daysSinceStartOfYear += day;
+                const daysSinceStartOfTime = (year * 365) + daysSinceStartOfYear;
+
+                cover.setAttribute("data-date", daysSinceStartOfTime)
+
+
                 var content = document.createElement("div")
                 content.className = "content"
                 var image = document.createElement("img")
@@ -508,6 +557,7 @@ function getFirstSeries() {
                 image.title = serie[0]
                 image.alt = serie[0]
                 image.setAttribute("serieId", serie[1]['id'].toString())
+                image.setAttribute("loading", "lazy");
 
                 content.appendChild(image)
                 cover.appendChild(content)
@@ -515,35 +565,223 @@ function getFirstSeries() {
             }
         }
 
-        if (data.length <= 1) {
-            spinner = document.getElementsByClassName("spinner")[0]
-            backgroundSpinner = document.getElementById("loaderBackground")
-            spinner.style.opacity = "0"
-            spinner.style.display = "none"
-            backgroundSpinner.style.display = "none"
-        } else {
+        
 
-        const imgs = document.images
-        const imgsArray = Array.prototype.slice.call(document.images)
+        if (data.length == 1) {
+            let bigBackground = document.getElementsByClassName("bannerCover")[0]
+            bigBackground.style.height = "100vh"
 
-        for (img of imgsArray) {
-            const acutalIndex = imgsArray.indexOf(img)
-            img = imgs.item(acutalIndex)
-            img.addEventListener("load", function() {
-                const imagesLenght = imgs.length - 1
-                if (acutalIndex == imagesLenght) {
-                    spinner = document.getElementsByClassName("spinner")[0]
-                    backgroundSpinner = document.getElementById("loaderBackground")
-                    spinner.style.opacity = "0"
-                    spinner.style.display = "none"
-                    backgroundSpinner.style.display = "none"
-                }
-            })
-        }}
+            let bannerGenre = document.getElementsByClassName("bannerGenre")[0]
+            let bannerTitle = document.getElementsByClassName("bannerTitle")[0]
+            let bannerDescription = document.getElementsByClassName("bannerDescription")[0]
+            let watchNow = document.getElementsByClassName("watchNowA")[0]
+            let rescanButton = document.getElementById("rescanButton")
+
+            let selectA = document.getElementsByClassName("selectA")[0]
+            let sortA = document.getElementsByClassName("sortA")[0]
+
+            bannerGenre.style.top = "46vh"
+            bannerTitle.style.top = "47.5vh"
+            bannerDescription.style.top = "55vh"
+            watchNow.style.top = "65vh"
+            rescanButton.style.marginTop = "65vh"
+
+            selectA.style.display = "none"
+            sortA.style.display = "none"
+        }
+
+        
+        allGenres.sort()
+        for (const genre of allGenres) {
+            let checkboxes = document.getElementById("checkboxes")
+            let checkbox = document.createElement("input")
+            checkbox.setAttribute("type", "checkbox")
+
+            checkbox.setAttribute("id", genre)
+            checkbox.setAttribute("name", genre)
+            checkbox.setAttribute("value", genre)
+            checkbox.setAttribute("class", "checkboxGenre")
+            
+            let label = document.createElement("label")
+            label.setAttribute("for", genre)
+            label.appendChild(checkbox)
+
+            label.innerHTML += `${genre}`
+            checkboxes.appendChild(label)
+        }
+
+        removeLoader(data)
 
         setPopup()
     })
 }
+
+function showLoader() {
+    spinner = document.getElementsByClassName("spinner")[0]
+    backgroundSpinner = document.getElementById("loaderBackground")
+    spinner.style.opacity = "1"
+    spinner.style.display = "block"
+    backgroundSpinner.style.display = "block"
+}
+
+function forceHideLoader() {
+    let loaderBackground = document.getElementById("loaderBackground")
+    loaderBackground.style.display = "none"
+    let spinner = document.getElementsByClassName("spinner")[0]
+    spinner.style.display = "none"
+    spinner.style.opacity = "0"
+}
+
+let oldSelectValue = "title"
+let alreadySorted = false
+
+function sortFilms() {
+    let select = document.getElementById("sortSelect")
+    let selectValue = select.value
+    if (selectValue == "title") {
+        orderByAlphabetical()
+    } else if (selectValue == "date") {
+        orderByDate()
+    } else if (selectValue == "rating") {
+        orderByRating()
+    }
+    select.options[0].innerText = select.options[select.selectedIndex].label;
+	select.selectedIndex = 0;
+}
+
+function orderByAlphabetical() {
+    showLoader()
+    let allMovies = document.getElementById("series")
+    let movies = allMovies.children
+    let moviesArray = []
+    for (let i = 0; i < movies.length; i++) {
+        moviesArray.push(movies[i])
+    }
+    moviesArray.sort(function(a, b) {
+        let titleA = a.getAttribute("data-title")
+        let titleB = b.getAttribute("data-title")
+        if (titleA < titleB) {
+            return -1
+        } else if (titleA > titleB) {
+            return 1
+        }
+        return 0
+    })
+    allMovies.innerHTML = ""
+    if (oldSelectValue == "title") {
+        moviesArray.reverse()
+        oldSelectValue = "titleReverse"
+    } else {
+        oldSelectValue = "title"
+    }
+
+    for (let i = 0; i < moviesArray.length; i++) {
+        allMovies.appendChild(moviesArray[i])
+    }
+    
+    forceHideLoader()
+}
+
+function orderByRating() {
+    showLoader()
+    let allMovies = document.getElementById("series")
+    let movies = allMovies.children
+    let moviesArray = []
+    for (let i = 0; i < movies.length; i++) {
+        moviesArray.push(movies[i])
+    }
+    moviesArray.sort(function(a, b) {
+        let ratingA = a.getAttribute("data-rating")
+        let ratingB = b.getAttribute("data-rating")
+        if (ratingA < ratingB) {
+            return 1
+        } else if (ratingA > ratingB) {
+            return -1
+        } else {
+            return 0
+        }
+    })
+    if (oldSelectValue == "rating") {
+        moviesArray.reverse()
+        oldSelectValue = "ratingReverse"
+    } else {
+        oldSelectValue = "rating"
+    }
+
+
+    allMovies.innerHTML = ""
+    for (let i = 0; i < moviesArray.length; i++) {
+        allMovies.appendChild(moviesArray[i])
+    }
+    forceHideLoader()
+}
+
+function orderByDate() {
+    showLoader()
+    let allMovies = document.getElementById("series")
+    let movies = allMovies.children
+    let moviesArray = []
+    for (let i = 0; i < movies.length; i++) {
+        moviesArray.push(movies[i])
+    }
+    moviesArray.sort(function(a, b) {
+        let dateA = a.getAttribute("data-date")
+        let dateB = b.getAttribute("data-date")
+        if (dateA < dateB) {
+            return 1
+        } else if (dateA > dateB) {
+            return -1
+        } else {
+            return 0
+        }
+    })
+
+    if (oldSelectValue == "date") {
+        moviesArray.reverse()
+        oldSelectValue = "dateReverse"
+    } else {
+        oldSelectValue = "date"
+    }
+
+
+
+    allMovies.innerHTML = ""
+    for (let i = 0; i < moviesArray.length; i++) {
+        allMovies.appendChild(moviesArray[i])
+    }
+    forceHideLoader()
+}
+
+function removeLoader(data){
+    if (data.length <= 1) {
+        spinner = document.getElementsByClassName("spinner")[0]
+        backgroundSpinner = document.getElementById("loaderBackground")
+        spinner.style.opacity = "0"
+        spinner.style.display = "none"
+        backgroundSpinner.style.display = "none"
+    } else {
+
+    const imgs = document.images
+    const imgsArray = Array.prototype.slice.call(document.images)
+    imgs.length = 32
+    imgsArray.splice(36, imgsArray.length - 1)
+    imgsArray.splice(0, 4)
+    for (img of imgsArray) {
+        const acutalIndex = imgsArray.indexOf(img)
+        img = imgs.item(acutalIndex)
+        img.addEventListener("load", function() {
+            const imagesLenght = imgsArray.length - 1
+            if (acutalIndex == (imagesLenght-4)) {
+                spinner = document.getElementsByClassName("spinner")[0]
+                backgroundSpinner = document.getElementById("loaderBackground")
+                spinner.style.opacity = "0"
+                spinner.style.display = "none"
+                backgroundSpinner.style.display = "none"
+            }
+        })
+    }}
+}
+
 
 window.onload = function() {
     brokenPathDiv = document.getElementsByClassName("brokenPath")[0]

@@ -14,7 +14,7 @@ from deep_translator import GoogleTranslator
 from time import mktime
 from PIL import Image
 from pypresence import Presence
-import requests, os, subprocess, configparser, socket, datetime, subprocess, socket, platform, GPUtil, json, time, sqlalchemy, warnings, re, zipfile, ast, git, pycountry
+import requests, os, subprocess, configparser, socket, datetime, subprocess, socket, platform, GPUtil, json, time, sqlalchemy, warnings, re, zipfile, ast, git, pycountry, zlib
 
 start_time = mktime(time.localtime())
 
@@ -46,7 +46,10 @@ class Users(db.Model, UserMixin):
 
     def __init__(self, name, password, profilePicture, accountType):
         self.name = name
-        self.password = generate_password_hash(password)
+        if password != None:
+            self.password = generate_password_hash(password)
+        else:
+            self.password = None
         self.profilePicture = profilePicture
         self.accountType = accountType
 
@@ -54,6 +57,8 @@ class Users(db.Model, UserMixin):
         return f'<Name {self.name}>'
 
     def verify_password(self, pwd):
+        if self.password == None:
+            return True
         return check_password_hash(self.password, pwd)
 
 class Movies(db.Model):
@@ -220,20 +225,28 @@ class Games(db.Model):
         return f"<Games {self.title}>"
     
 
-class TVChannels(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    libraryName = db.Column(db.String(255), primary_key=True)
-    name = db.Column(db.String(255), primary_key=True)
-    path = db.Column(db.String(255))
+class OthersVideos(db.Model):
+    videoHash = db.Column(db.String(255), primary_key=True)
+    title = db.Column(db.String(255), primary_key=True)
+    slug = db.Column(db.String(255))
+    mediaType = db.Column(db.String(255))
+    banner = db.Column(db.String(255))
+    duration = db.Column(db.String(255))
+    libraryName = db.Column(db.String(255))
+    vues = db.Column(db.Text, default=str({}))
 
-    def __init__(self, id, libraryName, name, path):
-        self.id = id
+    def __init__(self, videoHash, title, slug, mediaType, banner, duration, libraryName, vues):
+        self.videoHash = videoHash
+        self.title = title
+        self.slug = slug
+        self.mediaType = mediaType
+        self.banner = banner
+        self.duration = duration
         self.libraryName = libraryName
-        self.name = name
-        self.path = path
+        self.vues = vues
     
     def __repr__(self) -> str:
-        return f"<TVChannels {self.name}>"
+        return f"<OthersVideos {self.title}>"
 
 class Language(db.Model):
     language = db.Column(db.String(255), primary_key=True)
@@ -317,6 +330,7 @@ apiKeyTMDB = config["APIKeys"]["TMDB"]
 if apiKeyTMDB == "Empty":
     print("Follow this tutorial to get your TMDB API Key : https://developers.themoviedb.org/3/getting-started/introduction")
 tmdb.api_key = config["APIKeys"]["TMDB"]
+tmdb.language = config["ChocolateSettings"]["language"]
 
 def searchGame(game, console):
     url = f"https://www.igdb.com/search_autocomplete_all?q={game.replace(' ', '%20')}"
@@ -349,9 +363,7 @@ def IGDBRequest(url, console):
         token = token["access_token"]
 
         headers = {
-            "Accept": "application/json",
-            "Authorization": f"Bearer {token}",
-            "Client-ID": clientID
+            "Accept": "application/json", "Authorization": f"Bearer {token}", "Client-ID": clientID
         }
 
         games = response.json()["game_suggest"]
@@ -370,16 +382,7 @@ def IGDBRequest(url, console):
                     platforms = [i["abbreviation"] for i in gamePlatforms]
 
                     realConsoleName = {
-                        "GB": "Game Boy",
-                        "GBA": "Game Boy Advance",
-                        "GBC": "Game Boy Color",
-                        "N64": "Nintendo 64",
-                        "NES": "Nintendo Entertainment System",
-                        "NDS": "Nintendo DS",
-                        "SNES": "Super Nintendo Entertainment System",
-                        "Sega Master System": "Sega Master System",
-                        "Sega Mega Drive": "Sega Mega Drive",
-                        "PS1": "PS1"
+                        "GB": "Game Boy", "GBA": "Game Boy Advance", "GBC": "Game Boy Color", "N64": "Nintendo 64", "NES": "Nintendo Entertainment System", "NDS": "Nintendo DS", "SNES": "Super Nintendo Entertainment System", "Sega Master System": "Sega Master System", "Sega Mega Drive": "Sega Mega Drive", "PS1": "PS1"
                     }
 
                     if realConsoleName[console] not in platforms and console not in platforms:
@@ -405,13 +408,7 @@ def IGDBRequest(url, console):
                     genres = ", ".join(genres)
 
                     gameData = {
-                        "title": game["name"],
-                        "cover": game["cover"]["url"].replace("//", "https://"),
-                        "description": game["summary"],
-                        "note": game["total_rating"],
-                        "date": game["first_release_date"],
-                        "genre": genres,
-                        "id": game["id"]
+                        "title": game["name"], "cover": game["cover"]["url"].replace("//", "https://"), "description": game["summary"], "note": game["total_rating"], "date": game["first_release_date"], "genre": genres, "id": game["id"]
                     }
                     return gameData
                 except:
@@ -519,7 +516,7 @@ websitesTrailers = {
 
 
 def getMovies(libraryName):
-
+    allMoviesNotSorted = []
     movie = Movie()
     path = Libraries.query.filter_by(libName=libraryName).first().libFolder
     try:
@@ -557,7 +554,11 @@ def getMovies(libraryName):
             if not exists:
                 movie = Movie()
                 try:
-                    search = movie.search(movieTitle, adult=True)
+                    match = re.search(r'\((\d{4})\)$', movieTitle)
+                    if match:
+                        search = movie.search(movieTitle, year=match.group(1), adult=True)
+                    else:
+                        search = movie.search(movieTitle, adult=True)
                 except TMDbException:
                     print(TMDbException)
                     allMoviesNotSorted.append(search)
@@ -591,6 +592,7 @@ def getMovies(libraryName):
                 banniere = f"https://image.tmdb.org/t/p/original{res.backdrop_path}"
                 realTitle, extension = os.path.splitext(originalMovieTitle)
                 rewritedName = realTitle.replace(" ", "_")
+
                 with open(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.png", "wb") as f:
                     f.write(requests.get(movieCoverPath).content)
                 try:
@@ -601,7 +603,7 @@ def getMovies(libraryName):
                 except:
                     os.rename(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.png", f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.webp")
                     movieCoverPath = "/static/img/broken.webp"
-
+                
                 with open(f"{dirPath}/static/img/mediaImages/{rewritedName}_Banner.png", "wb") as f:
                     f.write(requests.get(banniere).content)
                 if res.backdrop_path == None:
@@ -617,7 +619,6 @@ def getMovies(libraryName):
                     os.remove(f"{dirPath}/static/img/mediaImages/{rewritedName}_Banner.png")
                     banniere = f"/static/img/mediaImages/{rewritedName}_Banner.webp"
                 except:
-                    os.rename(f"{dirPath}/static/img/mediaImages/{rewritedName}_Banner.png", f"{dirPath}/static/img/mediaImages/{rewritedName}_Banner.webp")
                     banniere = "/static/img/brokenBanner.webp"
 
                 description = res.overview
@@ -763,6 +764,56 @@ def getMovies(libraryName):
             db.session.delete(movie)
             db.session.commit()
 
+class EpisodeGroup():
+    def __init__(self, **entries):
+        if "success" in entries and entries["success"] is False:
+            raise TMDbException(entries["status_message"])
+        for key, value in entries.items():
+            if isinstance(value, list):
+                value = [EpisodeGroup(**item) if isinstance(item, dict) else item for item in value]
+            elif isinstance(value, dict):
+                value = EpisodeGroup(**value)
+            setattr(self, key, value)
+
+def getEpisodeGroupe(apikey, serieId, language="EN"):
+    details = show.details(serieId)
+    seasonsInfo = details.seasons
+    serieTitle = details.name
+    url = f"https://api.themoviedb.org/3/tv/{serieId}/episode_groups?api_key={apikey}&language={language}"
+    r = requests.get(url)
+    data = r.json()
+    if data["results"]:
+        print(f"Found {len(data['results'])} episode groups for {serieTitle}")
+        for episodeGroup in data["results"]:
+            index = data["results"].index(episodeGroup) + 1
+            name = episodeGroup["name"]
+            episodeCount = episodeGroup["episode_count"]
+            description = episodeGroup["description"]
+            print(f"{index}: Found {episodeCount} episodes for {name} ({description})")
+        print("0: Use the default episode group")
+        selectedEpisodeGroup = int(input("Which episode group do you want to use ? "))
+        if selectedEpisodeGroup > 0:
+            theEpisodeGroup = data["results"]
+            episode_group_data_url = f"https://api.themoviedb.org/3/tv/episode_group/{theEpisodeGroup['id']}?api_key={apikey}&language={language}"
+            r = requests.get(episode_group_data_url)
+            data = r.json()
+
+            seasons = data["groups"]
+            for season in seasons:
+                seasonId = season["id"]
+                seasonName = season["name"]
+                episodesNumber = len(season["episodes"])
+                releaseDate = season["episodes"][0]["air_date"]
+                seasonNumber = season["order"]
+                seasonDescription = season.overview
+                seasonPoster = "/static/img/broken.png"
+
+                #get the season from seasonId
+                seasonsInfo = [season for season in seasonsInfo if season.id == seasonId]
+                if seasonsInfo:
+                    seasonsInfo = EpisodeGroup(id=seasonId, name=seasonName, episode_count=episodesNumber, air_date=releaseDate, season_number=seasonNumber, overview=seasonDescription, poster_path=seasonPoster)
+        else:
+            seasonsInfo = seasonsInfo
 
 def getSeries(libraryName):
     allSeriesPath = Libraries.query.filter_by(libName=libraryName).first().libFolder
@@ -882,10 +933,12 @@ def getSeries(libraryName):
         res = bestMatch
         serieId = res.id
 
-
+        if (db.session.query(Series).filter_by(originalName=serieTitle).first() is not None):
+            serieId = db.session.query(Series).filter_by(originalName=serieTitle).first().id
         exists = db.session.query(Series).filter_by(id=serieId).first() is not None
         details = show.details(serieId)
         seasonsInfo = details.seasons
+
         rewritedName = serieTitle.replace(" ", "_")
 
         seasonsNumber = []
@@ -894,10 +947,14 @@ def getSeries(libraryName):
             if os.path.isdir(f"{allSeriesPath}/{originalSerieTitle}/{season}"):
                 season = re.sub(r"\D", "", season)
                 seasonsNumber.append(int(season))
-
-        if not exists and seasonsNumber:
+        
+        seasons = Seasons.query.filter_by(serie=serieId).all()
+        seasonInDb = [season for season in seasons]
+        
+        if (not exists and seasonsNumber) and not (len(seasonsNumber) != len(seasonInDb)):
             details = show.details(serieId)
             seasonsInfo = details.seasons
+
             name = res.name
             serieCoverPath = f"https://image.tmdb.org/t/p/original{res.poster_path}"
             banniere = f"https://image.tmdb.org/t/p/original{res.backdrop_path}"
@@ -921,7 +978,6 @@ def getSeries(libraryName):
             description = res["overview"]
             note = res.vote_average
             date = res.first_air_date
-            serieId = res.id
             cast = details.credits.cast
             runTime = details.episode_run_time
             duration = ""
@@ -999,6 +1055,8 @@ def getSeries(libraryName):
                 seasonNumber = season.season_number
                 seasonId = season.id
                 seasonName = season.name
+                seasonDescription = season.overview
+                seasonPoster = season.poster_path
                 
                 try:
                     exists = Seasons.query.filter_by(seasonId=seasonId).first() is not None
@@ -1010,8 +1068,7 @@ def getSeries(libraryName):
                 numberOfEpisodesInDatabase = Episodes.query.filter_by(seasonId=seasonId).count()
                 sameNumberOfEpisodes = numberOfEpisodes == numberOfEpisodesInDatabase
                 if seasonNumber in seasonsNumber and sameNumberOfEpisodes == False and numberOfEpisodes > 0:
-                    seasonDescription = season.overview
-                    seasonCoverPath = (f"https://image.tmdb.org/t/p/original{season.poster_path}")
+                    seasonCoverPath = (f"https://image.tmdb.org/t/p/original{seasonPoster}")
                     if not os.path.exists(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png"):
                         with open(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png", "wb") as f:
                             f.write(requests.get(seasonCoverPath).content)
@@ -1285,20 +1342,59 @@ def getGames(libraryName):
                 db.session.delete(game)
                 db.session.commit()
             
-            
+def getOthersVideos(library):    
+    allVideosPath = Libraries.query.filter_by(libName=library).first().libFolder
+    allVideos = os.listdir(allVideosPath)
+    supportedVideoTypes = [".mp4", ".webm", ".mkv"]
+
+    allVideos = [ video for video in allVideos if os.path.splitext(video)[1] in supportedVideoTypes ]
+
+    mediaTypes = {
+        ".mp4": "video/mp4",
+        ".webm": "video/webm",
+        ".mkv": "video/x-matroska",
+    }
+    for video in allVideos:
+        title, extension = os.path.splitext(video)
+
+        index = allVideos.index(video) + 1
+        percentage = index * 100 / len(allVideos)
+
+        loadingFirstPart = ("•" * int(percentage * 0.2))[:-1]
+        loadingFirstPart = f"{loadingFirstPart}➤"
+        loadingSecondPart = "•" * (20 - int(percentage * 0.2))
+        loading = f"{str(int(percentage)).rjust(3)}% | [\33[32m{loadingFirstPart} \33[31m{loadingSecondPart}\33[0m] | {title} | {index}/{len(allVideos)}                                                      "
+        print("\033[?25l", end="")
+        print(loading, end="\r", flush=True)
+
+        slug = f"{allVideosPath}/{video}"
+
+        with open(slug, "rb") as f:
+            video_hash = zlib.crc32(f.read())
+
+        # Conversion du hash en chaîne hexadécimale
+        video_hash_hex = hex(video_hash)[2:]
+
+        # Récupération des 10 premiers caractères
+        videoHash = video_hash_hex[:10]
+        exists = OthersVideos.query.filter_by(videoHash=videoHash).first() is not None
+
+        if extension in supportedVideoTypes and not exists:
+            videoType = mediaTypes[extension]
+            videoDuration = length_video(slug)
+            middle = videoDuration // 2
+            banner = f"/static/img/mediaImages/Other_Banner_{title.replace(' ', '_')}.png"
+            if os.path.exists(f"{dir}{banner}") == False:
+                subprocess.run(["ffmpeg", "-i", slug, "-vf", f"select='eq(n,{middle})'", "-vframes", "1", f"{dir}{banner}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            video = OthersVideos(videoHash=videoHash, title=title, slug=slug, mediaType=videoType, banner=banner, duration=videoDuration, libraryName=library, vues=str({}))
+            db.session.add(video)
+            db.session.commit()
 
 
 def length_video(path: str) -> float:
     seconds = subprocess.run(
         [
-            "ffprobe",
-            "-v",
-            "error",
-            "-show_entries",
-            "format=duration",
-            "-of",
-            "default=noprint_wrappers=1:nokey=1",
-            path,
+            "ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", path,
         ],
         stdout=subprocess.PIPE,
         text=True,
@@ -1350,15 +1446,14 @@ def before_request():
     users = Users.query.all()
     for library in libraries:
         del library["_sa_instance_state"]
-    
-    #get username with Flask-
     if current_user.is_authenticated:
         username = current_user.name
         for library in libraries:
-            if library["availableFor"] != None:
-                availableFor = library["availableFor"].split(",")
-                if username not in availableFor:
-                    libraries.remove(library)
+            for library2 in libraries:
+                if library2["availableFor"] != None:
+                    availableFor = library2["availableFor"].split(",")
+                    if username not in availableFor:
+                        libraries.remove(library2)
 
     libraries = sorted(libraries, key=lambda k: k['libName'])
     libraries = sorted(libraries, key=lambda k: k['libType'])
@@ -1367,6 +1462,7 @@ def before_request():
     g.libraries = libraries
     g.users = users
     g.languageCode = language
+    g.currentUser = current_user
 
 
 @app.route('/offline')
@@ -1450,6 +1546,81 @@ def create_m3u8_quality(quality, movieID):
     )
 
     return response
+
+@app.route("/other-video/<hash>", methods=["GET"])
+def create_other_m3u8(hash):
+    other = OthersVideos.query.filter_by(videoHash=hash).first()
+    slug = other.slug
+    library = other.libraryName
+    theLibrary = Libraries.query.filter_by(libName=library).first()
+    path = theLibrary.libFolder
+    video_path = slug
+    duration = length_video(video_path)
+    file = f"""
+#EXTM3U
+
+#EXT-X-VERSION:4
+#EXT-X-TARGETDURATION:{CHUNK_LENGTH}
+#EXT-X-MEDIA-SEQUENCE:1
+    """
+
+    for i in range(0, int(duration), CHUNK_LENGTH):
+        file += f"""
+#EXTINF:{float(CHUNK_LENGTH)},
+/chunkOther/{hash}-{(i // CHUNK_LENGTH) + 1}.ts
+        """
+
+    file += """
+#EXT-X-ENDLIST"""
+
+    response = make_response(file)
+    response.headers.set("Content-Type", "application/x-mpegURL")
+    response.headers.set("Range", "bytes=0-4095")
+    response.headers.set("Accept-Encoding", "*")
+    response.headers.set("Access-Control-Allow-Origin", f"http://{local_ip}:{serverPort}")
+    response.headers.set(
+        "Content-Disposition", "attachment", filename=f"{hash}.m3u8"
+    )
+
+    return response
+
+@app.route("/other-video/<quality>/<hash>", methods=["GET"])
+def create_other_m3u8_quality(quality, hash):
+    other = OthersVideos.query.filter_by(videoHash=hash).first()
+    slug = other.slug
+    library = other.libraryName
+    theLibrary = Libraries.query.filter_by(libName=library).first()
+    path = theLibrary.libFolder
+    video_path = slug
+    duration = length_video(video_path)
+    file = f"""
+#EXTM3U
+
+#EXT-X-VERSION:4
+#EXT-X-TARGETDURATION:{CHUNK_LENGTH}
+#EXT-X-MEDIA-SEQUENCE:1
+    """
+
+    for i in range(0, int(duration), CHUNK_LENGTH):
+        file += f"""
+#EXTINF:{float(CHUNK_LENGTH)},
+/chunkOther/{quality}/{hash}-{(i // CHUNK_LENGTH) + 1}.ts
+        """
+
+    file += """
+#EXT-X-ENDLIST"""
+
+    response = make_response(file)
+    response.headers.set("Content-Type", "application/x-mpegURL")
+    response.headers.set("Range", "bytes=0-4095")
+    response.headers.set("Accept-Encoding", "*")
+    response.headers.set("Access-Control-Allow-Origin", f"http://{local_ip}:{serverPort}")
+    response.headers.set(
+        "Content-Disposition", "attachment", filename=f"{hash}.m3u8"
+    )
+
+    return response
+
 
 @app.route("/videoSerie/<episodeId>", methods=["GET"])
 def create_serie_m3u8(episodeId):
@@ -1786,6 +1957,122 @@ def get_chunk_quality(quality, movieID, idx=0):
 
     return response
 
+@app.route("/chunkOther/<hash>-<int:idx>.ts", methods=["GET"])
+def get_chunk_other(hash, idx=0):
+    seconds = (idx - 1) * CHUNK_LENGTH
+    movie = OthersVideos.query.filter_by(videoHash=hash).first()
+    video_path = movie.slug
+
+    time_start = str(datetime.timedelta(seconds=seconds))
+    time_end = str(datetime.timedelta(seconds=seconds + CHUNK_LENGTH))
+    logLevelValue = "error"
+
+
+    command = [
+        "ffmpeg",
+        "-hide_banner",
+        "-loglevel",
+        logLevelValue,
+        "-ss",
+        time_start,
+        "-to",
+        time_end,
+        "-i",
+        video_path,
+        "-output_ts_offset",
+        time_start,
+        "-c:v",
+        "libx264",
+        "-c:a",
+        "aac",
+        "-b:a",
+        "196k",
+        "-ac",
+        "2",
+        "-f",
+        "mpegts",
+        "pipe:1",
+    ]
+    pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
+
+    response = make_response(pipe.stdout.read())
+    response.headers.set("Content-Type", "video/MP2T")
+    response.headers.set("Range", "bytes=0-4095")
+    response.headers.set("Accept-Encoding", "*")
+    response.headers.set("Access-Control-Allow-Origin", f"http://{local_ip}:{serverPort}")
+    response.headers.set(
+        "Content-Disposition", "attachment", filename=f"{hash}-{idx}.ts"
+    )
+
+    return response
+
+@app.route("/chunkOther/<quality>/<hash>-<int:idx>.ts", methods=["GET"])
+def get_chunk_other_quality(quality, hash, idx=0):
+    seconds = (idx - 1) * CHUNK_LENGTH
+    movie = OthersVideos.query.filter_by(videoHash=hash).first()
+    video_path = movie.slug
+
+    time_start = str(datetime.timedelta(seconds=seconds))
+    time_end = str(datetime.timedelta(seconds=seconds + CHUNK_LENGTH))
+    videoProperties = get_video_properties(video_path)
+    width = videoProperties["width"]
+    height = videoProperties["height"]
+    newWidth = int(float(quality))
+    newHeight = round(float(width) / float(height) * newWidth)
+    if (newHeight % 2) != 0:
+        newHeight += 1
+
+    bitrate = {
+        "1080": "192k",
+        "720": "192k",
+        "480": "128k",
+        "360": "128k",
+        "240": "96k",
+        "144": "64k",
+    }
+
+    logLevelValue = "error"
+    command = [
+        "ffmpeg",
+        "-hide_banner",
+        "-loglevel",
+        logLevelValue,
+        "-ss",
+        time_start,
+        "-to",
+        time_end,
+        "-i",
+        video_path,
+        "-output_ts_offset",
+        time_start,
+        "-c:v",
+        "libx264",
+        "-vf",
+        f"scale={newHeight}:{newWidth}",
+        "-c:a",
+        "aac",
+        "-b:a",
+        bitrate[quality],
+        "-ac",
+        "2",
+        "-f",
+        "mpegts",
+        "pipe:1",
+    ]
+
+    pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
+
+    response = make_response(pipe.stdout.read())
+    response.headers.set("Content-Type", "video/MP2T")
+    response.headers.set("Range", "bytes=0-4095")
+    response.headers.set("Accept-Encoding", "*")
+    response.headers.set("Access-Control-Allow-Origin", f"http://{local_ip}:{serverPort}")
+    response.headers.set(
+        "Content-Disposition", "attachment", filename=f"{hash}-{idx}.ts"
+    )
+
+    return response
+
 @app.route("/chunkCaption/<subtitleType>/<index>/<movieID>.vtt", methods=["GET"])
 def chunkCaption(movieID, subtitleType, index):
     subtitleType = subtitleType.lower()
@@ -1797,17 +2084,7 @@ def chunkCaption(movieID, subtitleType, index):
     video_path = f"{path}/{slug}"
     if subtitleType == "srt":
         extractCaptionsCommand = [
-            "ffmpeg",
-            "-hide_banner",
-            "-loglevel",
-            "error",
-            "-i",
-            video_path,
-            "-map",
-            f"0:{index}",
-            "-f",
-            "webvtt",
-            "pipe:1",
+            "ffmpeg", "-hide_banner", "-loglevel", "error", "-i", video_path, "-map", f"0:{index}", "-f", "webvtt", "pipe:1",
         ]
         extractCaptions = subprocess.run(extractCaptionsCommand, stdout=subprocess.PIPE)
 
@@ -1830,6 +2107,7 @@ def settings():
     if request.method == "POST":
         accountName = request.form["name"]
         accountPassword = request.form["password"]
+        print(request.form)
         try:
             f = request.files['profilePicture']
             name, extension = os.path.splitext(f.filename)
@@ -1841,9 +2119,10 @@ def settings():
         except:
             profilePicture = "/static/img/defaultUserProfilePic.png"
         accountTypeInput = request.form["type"]
-
-        if accountTypeInput == "Kid":
-            accountPassword = ""
+        print(accountPassword)
+        print(type(accountPassword))
+        if accountTypeInput == "Kid" or accountPassword == "":
+            accountPassword = None
 
         new_user = Users(name=accountName, password=accountPassword, profilePicture=profilePicture, accountType=accountTypeInput)
         db.session.add(new_user)
@@ -1881,7 +2160,7 @@ def login():
     allUsersDict = []
     theresAnAdmin = False
     for user in allUsers:
-        userDict = {"name": user.name, "profilePicture": user.profilePicture, "accountType": user.accountType}
+        userDict = {"name": user.name, "profilePicture": user.profilePicture, "accountType": user.accountType, "passwordEmpty": "yes" if user.password == None else "no"}
         if user.accountType == "Admin":
             theresAnAdmin = True
         allUsersDict.append(userDict)
@@ -1948,6 +2227,7 @@ def logout():
     return redirect(url_for("login"))
 
 @app.route("/profil", methods=["GET", "POST"])
+@login_required
 def profil():
     user = current_user
     currentUsername = user.name
@@ -1969,7 +2249,10 @@ def profil():
             logout_user()
             db.session.commit()
         if userToEdit.password != generate_password_hash(password) and len(password)>0:
-            userToEdit.password = generate_password_hash(password)
+            if password == "":
+                userToEdit.password = None
+            else:
+                userToEdit.password = generate_password_hash(password)
             db.session.commit()
         if userToEdit.profilePicture != profilePicture and profilePicture != "/static/img/defaultUserProfilePic.png":
             f = request.files['profilePicture']
@@ -2090,7 +2373,8 @@ def createLib():
         "movies": "film",
         "series": "videocam",
         "games": "game-controller",
-        "tv": "tv"
+        "tv": "tv",
+        "other": "desktop"
         }
 
     libPath = libPath.replace("/", "\\")
@@ -2155,7 +2439,7 @@ def getSimilarSeries(seriesId) -> list:
 
 @app.route("/getMovieData/<movieId>", methods=["GET", "POST"])
 def getMovieData(movieId):
-    exists = db.session.query(Movies).filter_by(id=movieId).first() is not None
+    exists = Movies.query.filter_by(id=movieId).first() is not None
     if exists:
         movie = Movies.query.filter_by(id=movieId).first().__dict__
         del movie["_sa_instance_state"]
@@ -2164,10 +2448,19 @@ def getMovieData(movieId):
     else:
         return json.dumps("Not Found", ensure_ascii=False)
 
+@app.route("/getOtherData/<videoHash>", methods=["GET", "POST"])
+def getOtherData(videoHash):
+    exists = OthersVideos.query.filter_by(videoHash=videoHash).first() is not None
+    if exists:
+        other = OthersVideos.query.filter_by(videoHash=videoHash).first().__dict__
+        del other["_sa_instance_state"]
+        return json.dumps(other, ensure_ascii=False)
+    else:
+        return json.dumps("Not Found", ensure_ascii=False)
 
 @app.route("/getSerieData/<serieId>", methods=["GET", "POST"])
 def getSeriesData(serieId):
-    exists = db.session.query(Series).filter_by(id=serieId).first() is not None
+    exists = Series.query.filter_by(id=serieId).first() is not None
     if exists:
         serie = Series.query.filter_by(id=serieId).first().__dict__
         serie["seasons"] = getSerieSeasons(serie["id"])
@@ -2290,8 +2583,6 @@ def editMovie(title, library):
     
     theMovie.genre = movieGenre
 
-    
-
     casts = movieInfo.casts.cast[:5]
     theCast = []
     for cast in casts:
@@ -2382,7 +2673,7 @@ def editMovie(title, library):
     theMovie.banner = banniere
     db.session.commit()
 
-    return redirect(url_for("movies", library=theMovie.libraryName))
+    return redirect(url_for("moviesLib", library=theMovie.libraryName))
 
 @app.route("/season/<theId>")
 @login_required
@@ -2426,33 +2717,39 @@ def getEpisodeData(serieName, seasonId, episodeId):
         response = {"response": "Not Found"}
         return json.dumps(response, ensure_ascii=False, default=str)
 
-@app.route("/categories")
-def categories():
-    #return a list of all categories
-    categoriesList = []
-    movies = Movies.query.all()
-    moviesDict = [ movie.__dict__ for movie in movies ]
-    for movie in moviesDict:
-        movieGenre = movie["genre"]
-        movieGenre = json.loads(movieGenre)
-        for genre in movieGenre:
-            if genre not in categoriesList:
-                categoriesList.append(genre)
-    categoriesList.sort()
-    return json.dumps(categoriesList, ensure_ascii=False, default=str)
+@app.route("/rescan/<library>", methods=["GET", "POST"])
+@login_required
+def rescan(library):
+    exists = Libraries.query.filter_by(libName=library).first() is not None
+    if exists:
+        library = Libraries.query.filter_by(libName=library).first().__dict__
+        if library["libType"] == "series":
+            getSeries(library["libName"])
+        elif library["libType"] == "movies":
+            getMovies(library["libName"])
+        elif library["libType"] == "games":
+            getGames(library["libName"])
+        elif library["libType"] == "other":
+            getOthersVideos(library["libName"])
+        return json.dumps(True)
+    return json.dumps(False)
 
-@app.route("/category/<category>")
-def category(category):
-    movies = Movies.query.all()
-    movieList = []
-    moviesDict = [ movie.__dict__ for movie in movies ]
-    for movie in moviesDict:
-        movieGenre = movie["genre"]
-        movieGenre = json.loads(movieGenre)
-        if category in movieGenre:
-            del movie["_sa_instance_state"]
-            movieList.append(movie)
-    return json.dumps(movieList, ensure_ascii=False, default=str)
+@app.route("/rescanAll")
+@login_required
+def rescanAll():
+    library = Libraries.query.all()
+    for lib in library:
+        lib = lib.__dict__
+        if lib["libType"] == "series":
+            getSeries(lib["libName"])
+        elif lib["libType"] == "movies":
+            getMovies(lib["libName"])
+        elif lib["libType"] == "games":
+            getGames(lib["libName"])
+        elif lib["libType"] == "other":
+            getOthersVideos(lib["libName"])
+    return json.dumps(True)
+
 
 @app.route("/movies/<library>")
 @login_required
@@ -2470,12 +2767,7 @@ def moviesLib(library):
         searchedFilmsUp0 = len(moviesDict) == 0
         errorMessage = "Verify that the path is correct, or restart Chocolate"
         routeToUse = f"/getAllMovies/{thisLibrary.libName}"
-        return render_template("allFilms.html",
-            conditionIfOne=searchedFilmsUp0,
-            errorMessage=errorMessage,
-            routeToUse=routeToUse,
-            canDownload=canDownload
-        )
+        return render_template("allFilms.html", conditionIfOne=searchedFilmsUp0, errorMessage=errorMessage, routeToUse=routeToUse, canDownload=canDownload, library=library, rescanLink=f"/rescan/{library}")
     else:
         return redirect(url_for("home"))
 
@@ -2488,12 +2780,35 @@ def seriesLibrary(library):
     searchedSeriesUp0 = len(seriesDict.keys()) == 0
     errorMessage = "Verify that the path is correct, or restart Chocolate"
     routeToUse = f"/getAllSeries/{library}"
-    return render_template("allSeries.html", conditionIfOne=searchedSeriesUp0, errorMessage=errorMessage, routeToUse=routeToUse)
+    return render_template("allSeries.html", conditionIfOne=searchedSeriesUp0, errorMessage=errorMessage, routeToUse=routeToUse, rescanLink=f"/rescan/{library}", library=library)
 
 @app.route("/tv/<library>")
 @login_required
 def tvLibrary(library):
     return render_template("tv.html")
+
+@app.route("/other/<library>")
+@login_required
+def otherLibrary(library):
+    routeToUse = f"/getAllOther/{library}"
+    config = configparser.ConfigParser()
+    config.read(os.path.join(dir, 'config.ini'))
+    canDownload = config["ChocolateSettings"]["allowDownload"].lower() == "true"
+    return render_template("other.html", library=library, routeToUse=routeToUse, canDownload=canDownload, rescanLink=f"/rescan/{library}")
+
+@app.route("/downloadOther/<videoHash>")
+@login_required
+def downloadOther(videoHash):
+    video = OthersVideos.query.filter_by(videoHash=videoHash).first()
+    video = video.__dict__
+    del video["_sa_instance_state"]
+    return send_file(video["slug"], as_attachment=True)
+
+@app.route("/getAllOther/<library>")
+def getAllOther(library):
+    other = OthersVideos.query.filter_by(libraryName=library).all()
+    otherDict = [ video.__dict__ for video in other ]
+    return json.dumps(otherDict, ensure_ascii=False, default=str)
 
 @app.route("/tv/<library>/<id>")
 @login_required
@@ -2508,11 +2823,18 @@ def tvChannel(library, id):
         with open(libFolder, "r", encoding="utf-8") as f:
             m3u = f.readlines()
     m3u.pop(0)
-    while m3u[0] == "\n":
-        m3u.pop(0)
-    channelURL = m3u[int(id)+1]
-
-    return render_template("channel.html", channelURL=channelURL)
+    for ligne in m3u:
+        if not ligne.startswith(("#EXTINF", "http")):
+            m3u.remove(ligne)
+    line = m3u[int(id)]
+    nextLine = m3u[int(id)+1]
+    if line.startswith("#EXTINF"):
+        line = nextLine
+    try:
+        channelName = line.split(",")[1].replace("\n", "")
+    except IndexError:
+        channelName = "Channel"
+    return render_template("channel.html", channelURL=line, channelName=channelName)
 
 @app.route("/getChannels/<library>")
 def getChannels(library):
@@ -2533,7 +2855,7 @@ def getChannels(library):
     #get the channels by getting 2 lines at a time
     channels = []
     for i in m3u:
-        if i.startswith(("#EXTVLCOPT", "#EXTGRP")):
+        if not i.startswith(("#EXTINF", "http")):
             m3u.remove(i)
         elif i == "\n":
             m3u.remove(i)
@@ -2560,11 +2882,12 @@ def getChannels(library):
                 tvg_logo = match.group(1)
                 data["logo"] = tvg_logo
             else:
-                brokenPath = "/static/img/borkenBanner.webp"
+                brokenPath = "/static/img/brokenBanner.webp"
                 data["logo"] = brokenPath
                 #print(data["logo"])
             channels.append(data)
-            print(f"Channel {((i+1)//2)+1} added {((i+1)//2)+1}/{int(len(m3u)/2)}")
+    #order the channels by name
+    channels = sorted(channels, key=lambda k: k['name'])
     return json.dumps(channels)
 
 def is_valid_url(url):
@@ -2577,7 +2900,7 @@ def is_valid_url(url):
 @app.route("/games/<library>")
 @login_required
 def games(library):
-    return render_template("consoles.html")
+    return render_template("consoles.html", rescanLink=f"/rescan/{library}", library=library)
 
 @app.route("/getAllConsoles/<library>")
 def getAllConsoles(library):
@@ -2626,11 +2949,7 @@ def console(library, consoleName):
         errorMessage = "Verify that the games path is correct"
         
         routeToUse = "/getAllGames"
-        return render_template("games.html",
-            conditionIfOne=searchedGamesUp0,
-            errorMessage=errorMessage,
-            routeToUse=routeToUse,
-            consoleName=consoleName
+        return render_template("games.html", conditionIfOne=searchedGamesUp0, errorMessage=errorMessage, routeToUse=routeToUse, consoleName=consoleName
         )
     else:
         return json.dumps({"response": "Not Found"}, ensure_ascii=False, default=str)
@@ -2662,17 +2981,7 @@ def game(console, gameSlug):
         bios = f"/bios/{consoleName}"
         del game["_sa_instance_state"]
         scripts = {
-            "Gameboy": f'<script type="text/javascript">\nEJS_player = "#game";\nEJS_biosUrl = "";\nEJS_gameUrl = "{slug}";\nEJS_core = "gb";\n</script>',
-            "Gameboy Advance": f'<script type="text/javascript">\nEJS_player = "#game";\nEJS_biosUrl = "";\nEJS_gameUrl = "{slug}";\nEJS_core = "gba";\n</script>',
-            "Gameboy Color": f'<script type="text/javascript">\nEJS_player = "#game";\nEJS_biosUrl = "";\nEJS_gameUrl = "{slug}";\nEJS_core = "gb";\n</script>',
-            "Nintendo 64": f'<script type="text/javascript">\nEJS_player = "#game";\nEJS_gameUrl = "{slug}";\nEJS_core = "n64";\n</script>',
-            "Nintendo Entertainment System": f'<script type="text/javascript">\nEJS_player = "#game";\nEJS_biosUrl = "";\nEJS_gameUrl = "{slug}";\nEJS_core = "nes";\nEJS_lightgun = false;\n</script>',
-            "Nintendo DS": f'<script type="text/javascript">\nEJS_player = "#game";\nEJS_biosUrl = "";\nEJS_gameUrl = "{slug}";\nEJS_core = "nds";\n</script>',
-            "Super Nintendo Entertainment System": f'<script type="text/javascript">\nEJS_player = "#game";\nEJS_biosUrl = "";\nEJS_gameUrl = "{slug}";\nEJS_core = "snes";\nEJS_mouse = false;\nEJS_multitap = false;\n</script>',
-            "Sega Mega Drive": f'<script type="text/javascript">\nEJS_player = "#game";\nEJS_gameUrl = "{slug}";\nEJS_core = "segaMD";\n</script>',
-            "Sega Master System": f'<script type="text/javascript">\nEJS_player = "#game";\nEJS_gameUrl = "{slug}";\nEJS_core = "segaMS";\n</script>',
-            "Sega Saturn": f'<script type="text/javascript">\nEJS_player = "#game";\nEJS_biosUrl = "";\nEJS_gameUrl = "{slug}";\nEJS_core = "segaSaturn";\n</script>',
-            "PS1": f'<script type="text/javascript">\nEJS_player = "#game";\nEJS_biosUrl = "{bios}";\nEJS_gameUrl = "{slug}";\nEJS_core = "psx";\n</script>',
+            "Gameboy": f'<script type="text/javascript">\nEJS_player = "#game";\nEJS_biosUrl = "";\nEJS_gameUrl = "{slug}";\nEJS_core = "gb";\n</script>', "Gameboy Advance": f'<script type="text/javascript">\nEJS_player = "#game";\nEJS_biosUrl = "";\nEJS_gameUrl = "{slug}";\nEJS_core = "gba";\n</script>', "Gameboy Color": f'<script type="text/javascript">\nEJS_player = "#game";\nEJS_biosUrl = "";\nEJS_gameUrl = "{slug}";\nEJS_core = "gb";\n</script>', "Nintendo 64": f'<script type="text/javascript">\nEJS_player = "#game";\nEJS_gameUrl = "{slug}";\nEJS_core = "n64";\n</script>', "Nintendo Entertainment System": f'<script type="text/javascript">\nEJS_player = "#game";\nEJS_biosUrl = "";\nEJS_gameUrl = "{slug}";\nEJS_core = "nes";\nEJS_lightgun = false;\n</script>', "Nintendo DS": f'<script type="text/javascript">\nEJS_player = "#game";\nEJS_biosUrl = "";\nEJS_gameUrl = "{slug}";\nEJS_core = "nds";\n</script>', "Super Nintendo Entertainment System": f'<script type="text/javascript">\nEJS_player = "#game";\nEJS_biosUrl = "";\nEJS_gameUrl = "{slug}";\nEJS_core = "snes";\nEJS_mouse = false;\nEJS_multitap = false;\n</script>', "Sega Mega Drive": f'<script type="text/javascript">\nEJS_player = "#game";\nEJS_gameUrl = "{slug}";\nEJS_core = "segaMD";\n</script>', "Sega Master System": f'<script type="text/javascript">\nEJS_player = "#game";\nEJS_gameUrl = "{slug}";\nEJS_core = "segaMS";\n</script>', "Sega Saturn": f'<script type="text/javascript">\nEJS_player = "#game";\nEJS_biosUrl = "";\nEJS_gameUrl = "{slug}";\nEJS_core = "segaSaturn";\n</script>', "PS1": f'<script type="text/javascript">\nEJS_player = "#game";\nEJS_biosUrl = "{bios}";\nEJS_gameUrl = "{slug}";\nEJS_core = "psx";\n</script>',
         }
         theScript = scripts[consoleName]
         theScript = Markup(theScript)
@@ -2722,8 +3031,7 @@ def searchInAllMovies(library, search):
 def searchInAllSeries(library, search):
     search = search.replace("%20", " ")
     series = Series.query.filter_by(libraryName=library).all()
-    #SELECT * FROM Series WHERE ((name, originalName,description,cast,date) like %search%)    
-    series = [m for m in series if any(search in x.lower() for x in (m.name, m.originalName, m.description, m.cast, m.date, m.genre))]
+    series = [s for s in series if any(search.lower() in x.lower() for x in (s.name.lower(), s.originalName.lower(), s.description.lower(), s.cast.lower(), s.date.lower(), s.genre.lower()))]
     series = [i.__dict__ for i in series]
     for serie in series:
         del serie["_sa_instance_state"]
@@ -2743,24 +3051,19 @@ def search(library, search):
     library = library.replace("%20", " ").replace("#", "")
     theLibrary = Libraries.query.filter_by(libName=library).first()
     theLibrary = theLibrary.__dict__
+    config = configparser.ConfigParser()
+    config.read(os.path.join(dir, 'config.ini'))
+    canDownload = config["ChocolateSettings"]["allowDownload"].lower() == "true"
     if theLibrary["libType"] == "movies":
         searchedFilmsUp0 = False
         errorMessage = "Verify your search terms"
         routeToUse = f"/searchInMovies/{library}/{search}"
-        return render_template("allFilms.html",
-            conditionIfOne=searchedFilmsUp0,
-            errorMessage=errorMessage,
-            routeToUse=routeToUse,
-        )
+        return render_template("allFilms.html", conditionIfOne=searchedFilmsUp0, errorMessage=errorMessage, routeToUse=routeToUse, canDownload=canDownload, library=library)
     elif theLibrary["libType"] == "series":
         searchedFilmsUp0 = False
         errorMessage = "Verify your search terms"
         routeToUse = f"/searchInSeries/{library}/{search}"
-        return render_template("allSeries.html",
-            conditionIfOne=searchedFilmsUp0,
-            errorMessage=errorMessage,
-            routeToUse=routeToUse,
-        )
+        return render_template("allSeries.html", conditionIfOne=searchedFilmsUp0, errorMessage=errorMessage, routeToUse=routeToUse, library=library)
 
 
 @app.route("/movie/<movieID>")
@@ -2774,9 +3077,20 @@ def movie(movieID):
         link = f"/mainMovie/{movieID}".replace(" ", "%20")
         allCaptions = generateCaptionMovie(movieID)
         title = rewriteSlug
-        return render_template(
-        "film.html", slug=slug, allCaptions=allCaptions, title=title, movieUrl=link)
+        return render_template("film.html", slug=slug, allCaptions=allCaptions, title=title, movieUrl=link)
     return "Shut up and take my money !"
+
+
+@app.route("/otherVideo/<videoHash>")
+@login_required
+def otherVideo(videoHash):
+    if not videoHash.endswith("ttf"):
+        video = OthersVideos.query.filter_by(videoHash=videoHash).first()
+        video = video.__dict__
+        link = f"/mainOther/{videoHash}".replace(" ", "%20")
+        return render_template("otherVideo.html", title=video["title"], movieUrl=link)
+    return "Shut up and take my money !"
+
 
 @app.route("/setVuesTimeCode/", methods=["POST"])
 @login_required
@@ -2794,6 +3108,25 @@ def setVuesTimeCode():
 
     actualVues = str(actualVues)
     movie.vues = actualVues
+    db.session.commit()
+    return "ok"
+
+@app.route("/setVuesOtherTimeCode/", methods=["POST"])
+@login_required
+def setVuesOtherTimeCode():
+    data = request.get_json()
+    videoHash = data["movieHASH"]
+    timeCode = data["timeCode"]
+    username = current_user.name
+    video = OthersVideos.query.filter_by(videoHash=videoHash).first()
+    actualVues = video.vues
+
+    actualVues = ast.literal_eval(actualVues)
+
+    actualVues[username] = timeCode
+
+    actualVues = str(actualVues)
+    video.vues = actualVues
     db.session.commit()
     return "ok"
 
@@ -2869,7 +3202,6 @@ def mainMovie(movieID):
     height = int(videoProperties["height"])
     width = int(videoProperties["width"])
     m3u8File = f"""#EXTM3U\n\n"""
-    #m3u8File += f"\n\n{generateAudioMovie(movieID)}"
     qualities = [144, 240, 360, 480, 720, 1080]
     file = []
     for quality in qualities:
@@ -2878,11 +3210,10 @@ def mainMovie(movieID):
             newHeight = int(float(width) / float(height) * newWidth)
             if (newHeight % 2) != 0:
                 newHeight += 1
-            m3u8Line = f"""#EXT-X-STREAM-INF:BANDWIDTH={newWidth*newWidth*1000},RESOLUTION={newHeight}x{newWidth}\n/video/{quality}/{movieID}\n"""
+            m3u8Line = f"""#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH={newWidth*newWidth*1000},RESOLUTION={newHeight}x{newWidth}\n/video/{quality}/{movieID}\n"""
             file.append(m3u8Line)
-    lastLine = f"#EXT-X-STREAM-INF:BANDWIDTH={width*height*1000},RESOLUTION={width}x{height}\n/video/{movieID}\n"
+    lastLine = f"""#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH={width*height*1000},RESOLUTION={width}x{height}\n/video/{movieID}\n"""
     file.append(lastLine)
-    file = file[::-1]
     file = "".join(file)
     m3u8File += file
     response = make_response(m3u8File)
@@ -2936,6 +3267,41 @@ def mainSerie(episodeID):
     response.headers.set("Access-Control-Allow-Origin", f"http://{local_ip}:{serverPort}")
     response.headers.set(
         "Content-Disposition", "attachment", filename=f"{episodeID}.m3u8"
+    )
+    return response
+
+
+@app.route("/mainOther/<otherHash>")
+def mainOther(otherHash):
+    movie = OthersVideos.query.filter_by(videoHash=otherHash).first()
+    video_path = movie.slug
+    videoProperties = get_video_properties(video_path)
+    height = int(videoProperties["height"])
+    width = int(videoProperties["width"])
+    m3u8File = f"""#EXTM3U\n\n"""
+    qualities = [144, 240, 360, 480, 720, 1080]
+    file = []
+    for quality in qualities:
+        if quality < height:
+            newWidth = int(quality)
+            newHeight = int(float(width) / float(height) * newWidth)
+            if (newHeight % 2) != 0:
+                newHeight += 1
+            m3u8Line = f"""#EXT-X-STREAM-INF:BANDWIDTH={newWidth*newWidth*1000},RESOLUTION={newHeight}x{newWidth}\n/other-video/{quality}/{otherHash}\n"""
+            file.append(m3u8Line)
+    lastLine = f"#EXT-X-STREAM-INF:BANDWIDTH={width*height*1000},RESOLUTION={width}x{height}\n/other-video/{otherHash}\n"
+    file.append(lastLine)
+    file = file[::-1]
+    file = "".join(file)
+    m3u8File += file
+    response = make_response(m3u8File)
+
+    response.headers.set("Content-Type", "application/x-mpegURL")
+    response.headers.set("Range", "bytes=0-4095")
+    response.headers.set("Accept-Encoding", "*")
+    response.headers.set("Access-Control-Allow-Origin", f"http://{local_ip}:{serverPort}")
+    response.headers.set(
+        "Content-Disposition", "attachment", filename=f"{otherHash}.m3u8"
     )
     return response
 
@@ -2995,16 +3361,9 @@ def generateCaptionSerie(episodeId):
         if subtitleType.lower() != "pgs":
             allCaptions.append(
                 {
-                    "index": index,
-                    "languageCode": language,
-                    "language": newLanguage,
-                    "url": f"/chunkCaptionSerie/{language}/{index}/{episodeId}.vtt",
-                    "name": titleName,
-                }
+                    "index": index,         "languageCode": language,         "language": newLanguage,         "url": f"/chunkCaptionSerie/{language}/{index}/{episodeId}.vtt",         "name": titleName,     }
             )
     return allCaptions
-
-
 
 def generateCaptionMovie(movieID):
     movie = Movies.query.filter_by(id=movieID).first()
@@ -3053,12 +3412,7 @@ def generateCaptionMovie(movieID):
             titleName = f"{newLanguage} Full"
         allCaptions.append(
             {
-                "index": index,
-                "languageCode": language,
-                "language": newLanguage,
-                "url": f"/chunkCaption/vtt/{index}/{movieID}.vtt",
-                "name": titleName,
-            }
+                "index": index,     "languageCode": language,     "language": newLanguage,     "url": f"/chunkCaption/vtt/{index}/{movieID}.vtt",     "name": titleName, }
         )
 
     return allCaptions
@@ -3093,6 +3447,8 @@ def generateAudioMovie(movieID):
         index = line.split(",")[0]
         try:
             title = line.split(",")[2]
+            if " " in title:
+                title = language
         except:
             title = language
         default = "YES" if index == "1" else "NO"
@@ -3430,12 +3786,7 @@ if __name__ == "__main__":
     if enabledRPC == "true":
         try:
             RPC.update(
-            state="Loading Chocolate...",
-            details=f"The Universal MediaManager | v{chocolateVersion} ({lastCommitHash})",
-            large_image="loader",
-            large_text="Chocolate",
-            buttons=[{"label": "Github", "url": "https://github.com/ChocolateApp/Chocolate"}],
-            start=start_time)
+            state="Loading Chocolate...", details=f"The Universal MediaManager | v{chocolateVersion} ({lastCommitHash})", large_image="loader", large_text="Chocolate", buttons=[{"label": "Github", "url": "https://github.com/ChocolateApp/Chocolate"}], start=start_time)
         except:
             pass
         
@@ -3444,16 +3795,15 @@ if __name__ == "__main__":
         libraries = [library.__dict__ for library in libraries]
         libraries = sorted(libraries, key=lambda k: k['libName'])
         libraries = sorted(libraries, key=lambda k: k['libType'])
-        try:
-            for library in libraries:
-                if library["libType"] == "series":
-                    getSeries(library["libName"])
-                elif library["libType"] == "movies":
-                    getMovies(library["libName"])
-                elif library["libType"] == "games":
-                    getGames(library["libName"])
-        except:
-            pass
+        for library in libraries:
+            if library["libType"] == "series":
+                getSeries(library["libName"])
+            elif library["libType"] == "movies":
+                getMovies(library["libName"])
+            elif library["libType"] == "games":
+                getGames(library["libName"])
+            elif library["libType"] == "other":
+                getOthersVideos(library["libName"])
 
     print()
     print("\033[?25h", end="")
@@ -3462,12 +3812,7 @@ if __name__ == "__main__":
     if enabledRPC == "true":
         try:
             RPC.update(
-            state="Idling",
-            details=f"The Universal MediaManager | v{chocolateVersion} ({lastCommitHash})",
-            large_image="largeimage",
-            large_text="Chocolate",
-            buttons=[{"label": "Github", "url": "https://github.com/ChocolateApp/Chocolate"}],
-            start=time.time())
+            state="Idling", details=f"The Universal MediaManager | v{chocolateVersion} ({lastCommitHash})", large_image="largeimage", large_text="Chocolate", buttons=[{"label": "Github", "url": "https://github.com/ChocolateApp/Chocolate"}], start=time.time())
         except:
             pass
 

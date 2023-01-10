@@ -70,7 +70,6 @@ function setPopup() {
         content.addEventListener("click", function() {
             popup = document.getElementById("popup")
             popup.style.display = "block"
-
             document.body.style.overflow = "hidden !important"
             fetch("/getMovieData/" + movieId).then(function(response) {
                 return response.json()
@@ -234,38 +233,86 @@ function svgEl(name, attrs) {
     return el
 }
 
-function removeLoader(data){
+function hideLoader(data){
+
     if (data.length <= 1) {
-        spinner = document.getElementsByClassName("spinner")[0]
-        backgroundSpinner = document.getElementById("loaderBackground")
-        spinner.style.opacity = "0"
+        const spinner = document.getElementsByClassName("spinner")[0]
+        const backgroundSpinner = document.getElementById("loaderBackground")
         spinner.style.display = "none"
         backgroundSpinner.style.display = "none"
-    } else {
+        return
+    }
 
     const imgs = document.images
     const imgsArray = Array.prototype.slice.call(document.images)
-
+    imgs.length = 32
+    imgsArray.splice(36, imgsArray.length - 1)
+    imgsArray.splice(0, 4)
     for (img of imgsArray) {
         const acutalIndex = imgsArray.indexOf(img)
         img = imgs.item(acutalIndex)
         img.addEventListener("load", function() {
-            const imagesLenght = imgs.length - 1
-            if (acutalIndex == imagesLenght) {
+            const imagesLenght = imgsArray.length - 1
+            if (acutalIndex == (imagesLenght-4)) {
                 spinner = document.getElementsByClassName("spinner")[0]
                 backgroundSpinner = document.getElementById("loaderBackground")
-                spinner.style.opacity = "0"
                 spinner.style.display = "none"
                 backgroundSpinner.style.display = "none"
             }
         })
-    }}
+    }
+}
+
+function showLoader() {
+    spinner = document.getElementsByClassName("spinner")[0]
+    backgroundSpinner = document.getElementById("loaderBackground")
+    spinner.style.opacity = "1"
+    spinner.style.display = "block"
+    backgroundSpinner.style.display = "block"
+}
+
+let genreChecked = {}
+
+function setGenreCheckboxes() {
+    const allCheckboxes = document.getElementsByClassName("checkboxGenre")
+    for (const checkbox of allCheckboxes) {
+        checkbox.addEventListener("click", function() {
+            if (checkbox.checked == true) {
+                genreChecked[checkbox.name] = true
+            } else {
+                genreChecked[checkbox.name] = false
+            }
+
+            filterMovies()
+        })
+    }
+}
+
+function filterMovies() {
+    const allMovies = document.getElementsByClassName("cover")
+    //allGenreCheckeds c'est tous les clés de genreChecked qui sont à true
+    const allGenreCheckeds = Object.keys(genreChecked).filter(key => genreChecked[key] == true)
+    for (const movie of allMovies) {
+        work = true
+        for (genre of allGenreCheckeds) {
+            allGenresOfMovie = movie.getAttribute("data-genre")
+            if (allGenresOfMovie.includes(genre) == false) {
+                work = false
+            }
+        }
+        if (work == true) {
+            movie.style.display = "block"
+        } else {
+            movie.style.display = "none"
+        }
+    }
 }
 
 function getFirstMovies() {
     movies = document.getElementsByClassName("movies")[0]
     routeToUse = movies.getAttribute("id")
     movies.id = "movies"
+    let allGenres = []
     let username = ""
     fetch("/whoami").then(function(response) {
         return response.json()
@@ -284,12 +331,47 @@ function getFirstMovies() {
                     let movieID = movie.id
                     let cover = document.createElement("div")
                     cover.className = "cover"
+                    cover.setAttribute("data-id", movieID)
+                    cover.setAttribute("data-title", movie.title)
+                    cover.setAttribute("data-rating", movie.note)
+                    let genres = movie.genre
+                    genres = createObjectFromString(genres)
+                    for (let genre of genres) {
+                        if (cover.getAttribute("data-genre") !== null) {
+                            cover.setAttribute("data-genre", `${cover.getAttribute("data-genre")} ${genre}`)
+
+                        } else {
+                            cover.setAttribute("data-genre", `${genre}`)
+                        }
+
+                        if (allGenres.includes(genre) === false) {
+                            allGenres.push(genre)
+                        }
+                    }
+                    let dateString = movie.date
+                    const dateParts = dateString.split("/");
+                    const day = parseInt(dateParts[0], 10);
+                    const month = parseInt(dateParts[1], 10);
+                    const year = parseInt(dateParts[2], 10);
+                    const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+                    let daysSinceStartOfYear = 0;
+                    
+                    for (let i = 0; i < month - 1; i++) {
+                      daysSinceStartOfYear += daysInMonth[i];
+                    }
+                    
+                    daysSinceStartOfYear += day;
+                    const daysSinceStartOfTime = (year * 365) + daysSinceStartOfYear;
+
+                    cover.setAttribute("data-date", daysSinceStartOfTime)
+
                     cover.style.marginBottom = "2vh"
                     let content = document.createElement("div")
                     content.className = "content"
                     let image = document.createElement("img")
                     image.className = "cover_movie"
                     image.src = movie.cover
+                    image.setAttribute("loading", "lazy");
                     if (image.src == "https://image.tmdb.org/t/p/originalNone") {
                         image.src = brokenPath
                     }
@@ -409,8 +491,6 @@ function getFirstMovies() {
                 }
             }
 
-            removeLoader(data)
-
             if (data.length == 1) {
                 let bigBackground = document.getElementsByClassName("bannerCover")[0]
                 bigBackground.style.height = "100vh"
@@ -419,16 +499,194 @@ function getFirstMovies() {
                 let bannerTitle = document.getElementsByClassName("bannerTitle")[0]
                 let bannerDescription = document.getElementsByClassName("bannerDescription")[0]
                 let watchNow = document.getElementsByClassName("watchNowA")[0]
+                let downloadA = document.getElementById("downloadNowA")
+                let rescanButton = document.getElementById("rescanButton")
+
+                let selectA = document.getElementsByClassName("selectA")[0]
+                let sortA = document.getElementsByClassName("sortA")[0]
 
                 bannerGenre.style.top = "46vh"
                 bannerTitle.style.top = "47.5vh"
                 bannerDescription.style.top = "55vh"
                 watchNow.style.top = "65vh"
-            }
+                downloadA.style.top = "65vh"
+                rescanButton.style.marginTop = "65vh"
 
+                selectA.style.display = "none"
+                sortA.style.display = "none"
+            }
+            
+            hideLoader(data)
+            //order allGenres by alphabetical order
+            allGenres.sort()
+            for (const genre of allGenres) {
+                let checkboxes = document.getElementById("checkboxes")
+                let checkbox = document.createElement("input")
+                checkbox.setAttribute("type", "checkbox")
+
+                checkbox.setAttribute("id", genre)
+                checkbox.setAttribute("name", genre)
+                checkbox.setAttribute("value", genre)
+                checkbox.setAttribute("class", "checkboxGenre")
+                
+                let label = document.createElement("label")
+                label.setAttribute("for", genre)
+                label.appendChild(checkbox)
+
+                label.innerHTML += `${genre}`
+                checkboxes.appendChild(label)
+            }
             setPopup()
+            setGenreCheckboxes()
         })
     })
+}
+
+var expanded = false;
+
+function showCheckboxes() {
+  var checkboxes = document.getElementById("checkboxes");
+  let select = document.querySelector(".selectBox select")
+  let selectA = document.getElementsByClassName("selectA")[0]
+  if (!expanded) {
+    checkboxes.style.display = "block";
+    selectA.style.background = "white"
+    select.style.color = "black"
+    expanded = true;
+  } else {
+    checkboxes.style.display = "none";
+    selectA.style.background = "none"
+    select.style.color = "white"
+    expanded = false;
+  }
+}
+
+function forceHideLoader() {
+    let loaderBackground = document.getElementById("loaderBackground")
+    loaderBackground.style.display = "none"
+    let spinner = document.getElementsByClassName("spinner")[0]
+    spinner.style.display = "none"
+    spinner.style.opacity = "0"
+}
+
+let oldSelectValue = "title"
+let alreadySorted = false
+
+function sortFilms() {
+    let select = document.getElementById("sortSelect")
+    let selectValue = select.value
+    if (selectValue == "title") {
+        orderByAlphabetical()
+    } else if (selectValue == "date") {
+        orderByDate()
+    } else if (selectValue == "rating") {
+        orderByRating()
+    }
+    select.options[0].innerText = select.options[select.selectedIndex].label;
+	select.selectedIndex = 0;
+}
+
+function orderByAlphabetical() {
+    showLoader()
+    let allMovies = document.getElementById("movies")
+    let movies = allMovies.children
+    let moviesArray = []
+    for (let i = 0; i < movies.length; i++) {
+        moviesArray.push(movies[i])
+    }
+    moviesArray.sort(function(a, b) {
+        let titleA = a.getAttribute("data-title")
+        let titleB = b.getAttribute("data-title")
+        if (titleA < titleB) {
+            return -1
+        } else if (titleA > titleB) {
+            return 1
+        }
+        return 0
+    })
+    allMovies.innerHTML = ""
+    if (oldSelectValue == "title") {
+        moviesArray.reverse()
+        oldSelectValue = "titleReverse"
+    } else {
+        oldSelectValue = "title"
+    }
+
+    for (let i = 0; i < moviesArray.length; i++) {
+        allMovies.appendChild(moviesArray[i])
+    }
+    
+    forceHideLoader()
+}
+
+function orderByRating() {
+    showLoader()
+    let allMovies = document.getElementById("movies")
+    let movies = allMovies.children
+    let moviesArray = []
+    for (let i = 0; i < movies.length; i++) {
+        moviesArray.push(movies[i])
+    }
+    moviesArray.sort(function(a, b) {
+        let ratingA = a.getAttribute("data-rating")
+        let ratingB = b.getAttribute("data-rating")
+        if (ratingA < ratingB) {
+            return 1
+        } else if (ratingA > ratingB) {
+            return -1
+        } else {
+            return 0
+        }
+    })
+    if (oldSelectValue == "rating") {
+        moviesArray.reverse()
+        oldSelectValue = "ratingReverse"
+    } else {
+        oldSelectValue = "rating"
+    }
+
+
+    allMovies.innerHTML = ""
+    for (let i = 0; i < moviesArray.length; i++) {
+        allMovies.appendChild(moviesArray[i])
+    }
+    forceHideLoader()
+}
+
+function orderByDate() {
+    showLoader()
+    let allMovies = document.getElementById("movies")
+    let movies = allMovies.children
+    let moviesArray = []
+    for (let i = 0; i < movies.length; i++) {
+        moviesArray.push(movies[i])
+    }
+    moviesArray.sort(function(a, b) {
+        let dateA = a.getAttribute("data-date")
+        let dateB = b.getAttribute("data-date")
+        if (dateA < dateB) {
+            return 1
+        } else if (dateA > dateB) {
+            return -1
+        } else {
+            return 0
+        }
+    })
+
+    if (oldSelectValue == "date") {
+        moviesArray.reverse()
+        oldSelectValue = "dateReverse"
+    } else {
+        oldSelectValue = "date"
+    }
+
+
+
+    allMovies.innerHTML = ""
+    for (let i = 0; i < moviesArray.length; i++) {
+        allMovies.appendChild(moviesArray[i])
+    }
+    forceHideLoader()
 }
 
 window.onload = function() {

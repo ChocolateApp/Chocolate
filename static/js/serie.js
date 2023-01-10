@@ -13,15 +13,17 @@ window.onload = function() {
         },
         controlBar: {
             children: [
-               'playToggle',
-               'volumePanel',
-               'currentTimeDisplay',
-               'progressControl',
-               'remainingTimeDisplay',
-               'captionsButton',
-               'audioTrackButton',
-               'pictureInPictureToggle',
-               'fullscreenToggle',
+                'playToggle',
+                'volumePanel',
+                'currentTimeDisplay',
+                'progressControl',
+                'remainingTimeDisplay',
+                'captionsButton',
+                'audioTrackButton',
+                'chromecastButton',
+                'airPlayButton',
+                'pictureInPictureToggle',
+                'fullscreenToggle',
             ],
         },
     }
@@ -30,7 +32,6 @@ window.onload = function() {
         displayCurrentQuality: true,
         placementIndex: 7
     });
-    player.chromecast();
 
     var video = document.getElementById("movie_html5_api")
     let introStart = 0

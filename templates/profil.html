@@ -3,8 +3,8 @@
     <ion-icon name="pencil-outline" class="editProfilePicture"></ion-icon>
     <img src="{{ user.profilePicture }}" alt="{{ user.name }}" id="profilePictureImg">
     <input type="file" name="profilePicture" id="profilePicture" style="display: none;" accept="image/*">
-    <input type="text" name="name" id="name" value="{{ user.name }}" class="name form_field_create_account profileUsername">
-    <input type="password" name="password" id="password" placeholder='{{ g.language["password"] }}' class="name form_field_create_account profilePassword">
+    <input type="text" name="name" id="name" value="{{ user.name }}" class="name form_field_create_account profileUsername"> {% if user.accountType != "Kid" %}
+    <input type="password" name="password" id="password" placeholder='{{ g.language["password"] }}' class="name form_field_create_account profilePassword"> {% endif %}
     <input type="submit" value='{{ g.language["editProfile"] }}' class="profileSubmitChanges">
 </form>
 <script src="{{ url_for('static',filename='js/profil.js') }}" defer type="text/javascript"></script>{% endblock %}

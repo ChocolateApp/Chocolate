@@ -27,6 +27,12 @@
                 <br>
                 <span>{{ g.language["tvChannels"] }}</span>
             </label>
+            <input type="radio" name="libType" id="other" class="input-hidden" libType="other">
+            <label for="other" id="tvLabel">
+                <ion-icon name="desktop-outline"></ion-icon>
+                <br>
+                <span>{{ g.language["other"] }}</span>
+            </label>
         </div>
         <div class="libraryName">
             <label for="libraryName">{{ g.language["name"] }}:</label>
@@ -84,6 +90,12 @@
         <label for="addLibraryButton">{{ g.language["createNewLib"] }} : </label>
         <button type="button" id="addLibraryButton" onclick="addLibrary()">
             <ion-icon name="add-circle-outline" name="Create a new library"></ion-icon>
+        </button>
+    </div>
+    <div class="rescanAllDiv">
+        <label for="rescanAllButton">Rescan all libraries : </label>
+        <button type="button" id="rescanAllButton" onclick="rescanAll()" class="rescanAllButton">
+            <ion-icon name="refresh-outline" name="Rescan all libraries"></ion-icon>Rescan all libraries
         </button>
     </div>
     <div class="languageDiv">

@@ -140,7 +140,7 @@ form#searchForm:hover .form_field_search {
 
 .movies,
 .series {
-    margin-top: 50vh;
+    margin-top: 57vh;
     width: 93vw;
     flex-wrap: wrap;
     margin-left: 4.5vw;
@@ -256,9 +256,13 @@ form#searchForm:hover .form_field_search {
     border-radius: 1rem;
     transition: 300ms transform;
     display: block;
-    width: 20rem;
-    height: 30rem;
+    width: 13vw;
     object-fit: cover;
+    aspect-ratio: 0.65;
+}
+
+.actorSerieTitle {
+    width: 13vw;
 }
 
 .not_seen {
@@ -684,14 +688,14 @@ label[for="games"] {
     margin-top: 50vh;
     text-align: end;
     position: absolute;
-    left: 35.6vw;
+    left: 40.5vw;
 }
 
 .createAccount {
     margin-top: 10vh;
     text-align: end;
     position: absolute;
-    left: 36.6vw;
+    left: 40.5vw;
 }
 
 .form_field_create_account {
@@ -865,7 +869,7 @@ ion-icon[name="play"] {
     width: 94vw !important;
     height: 81.55vh !important;
     top: 9.15vh;
-    left: 4.5vw;
+    left: 1.5vw;
 }
 
 .notSorted {
@@ -873,7 +877,7 @@ ion-icon[name="play"] {
     text-align: center;
     width: 97vw;
     margin-left: 3vw;
-    margin-top: 65vh;
+    margin-top: 130vh;
 }
 
 .notSorted h1 {
@@ -1494,7 +1498,7 @@ input[type="search"]::-webkit-search-results-decoration {
     display: none;
     margin-left: 0vw;
     z-index: 2;
-    position: absolute;
+    position: fixed;
     width: 60vw;
     padding: 50vh 20vw 41vh;
     margin-top: 0vh;
@@ -1572,7 +1576,7 @@ input[type="search"]::-webkit-search-results-decoration {
     grid-row-gap: 4vh;
     width: 97vw;
     margin-left: 9.5vw;
-    margin-top: 7vh;
+    margin-top: 20vh;
 }
 
 .systemDiv {
@@ -2130,6 +2134,197 @@ ion-icon[name="download-outline"] {
     border-radius: 2vh;
 }
 
+.rescanButton {
+    right: 1vw;
+    background: none;
+    margin-top: 18vw;
+    border-radius: 1.5vw;
+    border: 0.2vw solid #ffffff;
+    cursor: pointer;
+    color: #ffffff;
+    font-size: 1.4vh;
+    padding: 3vh 4vw;
+    text-decoration: none;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    transition: 300ms;
+    z-index: 5;
+    position: absolute;
+    text-shadow: 0.1vh 0.1vh 0.5vh #000;
+    box-shadow: 0.1vh 0.1vh 0.5vh #000;
+}
+
+.rescanButton ion-icon {
+    font-size: 3.4vh;
+    padding: 0px 1vw 0 0;
+    filter: drop-shadow(0.1vh 0.1vh 0.5vh #000);
+    transition: 300ms;
+}
+
+.rescanButton:hover {
+    background: #ffffff;
+    color: #1d1d1d;
+    text-shadow: 0.1vh 0.1vh 0.5vh rgba(0, 0, 0, 0);
+}
+
+.rescanButton:hover ion-icon {
+    color: #1d1d1d;
+    filter: drop-shadow(0 0 0 rgba(0, 0, 0, 0))
+}
+
+.rescanConsoles {
+    right: 17vh;
+    margin-top: 3vw;
+}
+
+.rescanAllDiv {
+    display: flex;
+    vertical-align: middle;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-content: center;
+    align-items: center;
+}
+
+.rescanAllDiv label {
+    margin-right: 1vh;
+}
+
+.rescanAllButton {
+    background: none;
+    border-radius: 1.5vw;
+    border: 0.2vw solid #ffffff;
+    cursor: pointer;
+    color: #ffffff;
+    font-size: 1.4vh;
+    padding: 2vh 3vw;
+    text-decoration: none;
+    font-weight: 700;
+    align-items: center;
+    transition: 300ms;
+    text-shadow: 0.1vh 0.1vh 0.5vh #000;
+    box-shadow: 0.1vh 0.1vh 0.5vh #000;
+    min-width: 16vw;
+}
+
+.rescanAllButton ion-icon {
+    vertical-align: middle;
+    font-size: 3.4vh;
+    padding: 0px 1vw 0 0;
+    transition: 300ms;
+}
+
+.sortA {
+    right: 2vw;
+    background: none;
+    border-radius: 1.5vw;
+    border: 0.2vw solid #ffffff;
+    cursor: pointer;
+    color: #ffffff;
+    font-size: 2vh;
+    padding: 0.1vh 0.5vw;
+    text-decoration: none;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    transition: 300ms;
+    z-index: 5;
+    position: absolute;
+    text-shadow: 0.1vh 0.1vh 0.5vh #000;
+    box-shadow: 0.1vh 0.1vh 0.5vh #000;
+    margin-top: 25vw;
+}
+
+#funnelIcon {
+    margin-left: 1vw;
+}
+
+.sortSelect {
+    background: none;
+    border: none;
+    width: 9vw;
+    padding: 1.5vh 1vw 1.5vh 1vw;
+    font-size: 1vh;
+    font-weight: 700;
+}
+
+.sortSelect:focus {
+    outline: none;
+}
+
+.sortSelect option {
+    background: #1d1d1d;
+    color: #ffffff;
+    font-size: 1.4vh;
+}
+
+.selectA {
+    right: 19vw;
+    background: none;
+    border-radius: 1.5vw;
+    border: 0.2vw solid #ffffff;
+    cursor: pointer;
+    color: #ffffff;
+    font-size: 2vh;
+    padding: 0.1vh 0.5vw;
+    text-decoration: none;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    transition: 300ms;
+    z-index: 5;
+    position: absolute;
+    box-shadow: 0.1vh 0.1vh 0.5vh #000;
+    margin-top: 25vw;
+}
+
+.multiselect {
+    background: none;
+    border: none;
+    width: 10vw;
+    font-size: 1vh;
+    font-weight: 700;
+}
+
+.selectBox {
+    position: relative;
+}
+
+.selectBox select {
+    background: none;
+    border: none;
+    width: 9vw;
+    padding: 1.5vh 1vw 1.5vh 1vw;
+    font-size: 1vh;
+    font-weight: 700;
+}
+
+.overSelect {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+#checkboxes {
+    padding-bottom: 1vh;
+    display: none;
+}
+
+#checkboxes label {
+    display: flex;
+    gap: 0.2vw;
+    color: black;
+    align-items: flex-end;
+}
+
+#checkboxes label:hover {
+    background-color: #1d1d1d;
+    color: white;
+}
+
 @media (max-width: 640px) {
     * {
         margin: 0;
@@ -2162,8 +2357,8 @@ ion-icon[name="download-outline"] {
     .cover_serie {
         object-fit: cover;
         border-radius: 1vh;
-        width: 30.4vw;
-        height: 21vh;
+        width: 30.5vw;
+        height: 26vh;
         transform: scale(1);
         transition: 300ms;
     }
@@ -2181,7 +2376,7 @@ ion-icon[name="download-outline"] {
         margin-left: 5.8vw;
         grid-column-gap: 1vw;
         grid-template-columns: repeat(3, 1fr);
-        margin-top: 48vh;
+        margin-top: 54.5vh;
     }
     .bannerTitle {
         left: 10vw;
@@ -2698,14 +2893,107 @@ ion-icon[name="download-outline"] {
     .gameImage {
         width: 45.5vw;
     }
-    .gameName {
-        width: 46vw;
-        display: block;
-    }
     .consoleName {
         margin-top: 15vh;
     }
     .systemName {
         font-size: 1.6vh;
+    }
+    .timeLineBackground {
+        width: 28.5vw;
+        height: 0.5vh;
+        margin-top: 25vh;
+    }
+    svg.noteSVG {
+        width: 11vw;
+    }
+    svg.noteSVG text {
+        fill: white;
+        font-size: 4.5vh;
+    }
+    svg.noteSVG circle:nth-child(1) {
+        stroke-width: 8px;
+    }
+    svg.noteSVG circle:nth-child(2) {
+        stroke-width: 6px;
+    }
+    .downloadNowA {
+        font-size: 0.75vh;
+        padding: 0.4vh 2vw;
+        top: 42vh;
+        margin-left: 8vw;
+    }
+    ion-icon[name="download-outline"] {
+        font-size: 2.5vh;
+    }
+    .rescanButton {
+        margin-top: 42vh;
+        padding: 0vh 1vw;
+        font-size: 1vh;
+    }
+    .rescanButton ion-icon {
+        font-size: 2.4vh;
+        padding: 0.5vh 1vw;
+    }
+    .selectA {
+        margin-top: 48vh;
+        padding: 0.5vh 0.5vw;
+        right: 33vw;
+    }
+    .multiselect {
+        width: 27vw;
+    }
+    .selectBox select {
+        width: 27vw;
+        padding: 0.4vh 1vw;
+    }
+    .sortA {
+        margin-top: 48vh;
+        padding: 0.5vh 0.5vw;
+        right: 1vw;
+    }
+    .sortSelect {
+        width: 22.5vw;
+        padding: 0.4vh 1vw;
+        font-size: 1vh;
+    }
+    .tvChannels {
+        display: flex;
+        align-items: center;
+        align-content: stretch;
+        margin-left: 6vw;
+        margin-top: 10vh;
+        justify-content: space-evenly;
+        width: 94vw;
+        flex-direction: row;
+        flex-wrap: wrap;
+        column-gap: 5vw;
+        row-gap: 10vh;
+    }
+    .channelDiv {
+        width: 40vw;
+        height: 23vh;
+        margin: 1vh;
+        text-align: center;
+        background: #121212c4;
+        backdrop-filter: blur(50px);
+        border-radius: 1vw;
+        cursor: pointer;
+    }
+    .channelImage {
+        width: 20vw;
+        height: 12vh;
+        object-fit: contain;
+        margin: 1vh;
+        border-radius: 2vh;
+    }
+    .channelName {
+        height: 9vh;
+        display: table-cell;
+        vertical-align: middle;
+        width: 40vw;
+    }
+    .pencilIcon {
+        margin-top: -25vh;
     }
 }

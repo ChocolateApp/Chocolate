@@ -13,3 +13,4 @@ static/bios/*
 .vscode/tasks.json
 static/img/*
 .venv
+database.db-journal

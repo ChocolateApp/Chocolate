@@ -16,9 +16,15 @@ function saveSettings(event) {
 }
 
 function createAccount(event) {
-    form = document.getElementById("createAccount")
-    form.action = "/createAccount"
-    form.submit()
+    type = document.getElementById("type").value
+    password = document.getElementById("password").value
+    if (type == "Admind" && password == "") {
+        alert("You need to enter a password for an Admin account")
+    } else {
+        form = document.getElementById("createAccount")
+        form.action = "/createAccount"
+        form.submit()
+    }
 }
 
 function getCookie(name) {
@@ -165,4 +171,40 @@ function newLib(){
             }
           })
     }
+}
+
+function rescanAll() {
+    url = "/rescanAll"
+    button = document.getElementById("rescanAllButton")
+    texts = ["Scanning", "Scanning.", "Scanning..", "Scanning..."]
+    button.disabled = true
+
+    //setInterval
+    var i = 0
+    var interval = setInterval(function() {
+        i++
+        if (i == 4) {
+            i = 0
+        }
+        button.innerHTML = `<ion-icon name="refresh-outline"></ion-icon>${texts[i]}`
+    }, 500)
+
+    //fetch with get
+    fetch(url, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json"
+        }}).then(function(response) {
+            return response.json()
+        }).then(function(data) {
+            console.log(data)
+            if (data == true) {
+                clearInterval(interval)
+                button.innerHTML = '<ion-icon name="refresh-outline"></ion-icon>Done'
+            } else {
+                clearInterval(interval)
+                button.innerHTML = '<ion-icon name="refresh-outline"></ion-icon>Error'
+                button.classList.add("error")
+            }
+        })
 }

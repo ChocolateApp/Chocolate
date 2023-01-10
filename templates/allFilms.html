@@ -1,8 +1,34 @@
-{% extends 'header.html' %}{% block title %}Movies Library{% endblock %} {% block content %} {% if conditionIfOne %}
+{% extends 'header.html' %}{% block title %}{{ library }}{% endblock %} {% block content %} {% if conditionIfOne %}
 
 <h1 style="text-align: center;width: 100vw;position: absolute;top: 23vh;color: black;">{{ errorMessage }}</h1>
 
-{% else %} {% include 'popup.html' %}
+{% else %} {% if g.currentUser["accountType"] == "Admin" %}
+<button class="rescanButton" id="rescanButton" data-url="{{ rescanLink }}" onclick="rescanLib()"> 
+    <ion-icon name="refresh-outline"></ion-icon>
+    Rescan {{ library }}
+</button> {% endif %}
+<a class="selectA">
+    <div class="multiselect">
+        <div class="selectBox" onclick="showCheckboxes()">
+            <select>
+            <option>Select an option</option>
+            </select>
+            <div class="overSelect"></div>
+        </div>
+        <div id="checkboxes">
+        </div>
+    </div>
+</a>
+<a class="sortA">
+    <ion-icon id="funnelIcon" name="funnel-outline"></ion-icon>
+    <select class="sortSelect" id="sortSelect" onchange="sortFilms()">
+        <option value="" disabled style="display:none;"></option>
+        <option value="title" selected>Alphabetic</option>
+        <option value="rating" >Rating</option>
+        <option value="date">Date</option>
+    </select>
+</a>
+{% include 'popup.html' %}
 <div class="bigBanner">
     <div class="bannerCover"></div>
     <p class="bannerGenre">

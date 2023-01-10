@@ -24,3 +24,11 @@ options = {
 
 //add the quality selector
 var player = videojs('movie', options);
+
+//when the player is ready, show the progress bar and set the visibility to hidden
+player.ready(function() {
+    progressBar = document.querySelector('.vjs-progress-control');
+    progressBar.style.visibility = 'hidden';
+    progressBar.style.display = 'block';
+
+});

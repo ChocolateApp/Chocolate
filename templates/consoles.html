@@ -1,4 +1,8 @@
-{% extends 'header.html' %}{% block title %}Consoles{% endblock %}{% block content %} {% include 'popup.html' %}
+{% extends 'header.html' %}{% block title %}Consoles{% endblock %}{% block content %} {% include 'popup.html' %} {% if g.currentUser["accountType"] == "Admin" %}
+<button class="rescanButton rescanConsoles" id="rescanButton" data-url="{{ rescanLink }}" onclick="rescanLib()"> 
+    <ion-icon name="refresh-outline"></ion-icon>
+    Rescan {{ library }}
+</button> {% endif %}
 
 <div class="loaderBackground" id="loaderBackground"></div>
 <img class="spinner" id="spinner" src="{{ url_for('static', filename='img/loader.gif') }}" />
