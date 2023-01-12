@@ -35,5 +35,6 @@ SQLAlchemy==1.4.41
 tmdbv3api==1.7.7
 toml==0.10.2
 tornado==6.1
+virtualenv==20.17.1
 Werkzeug==2.2.2
 zipp==3.11.0

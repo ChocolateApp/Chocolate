@@ -1,0 +1,11 @@
+version: '3.9'
+
+services:
+  chocolate:
+    container_name: chocolate
+    image: imprevisible/chocolate:latest
+    ports:
+      - 8500:8500
+    volumes:
+      - ./:/chocolate
+      - /:/computer

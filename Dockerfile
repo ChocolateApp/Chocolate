@@ -5,6 +5,6 @@ RUN apt-get update && apt-get install -y ffmpeg && apt-get install -y git
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-COPY . /app
+COPY . /chocolate
 
-CMD ["python", "/app/app.py"]
+CMD ["python", "/chocolate/app.py"]
