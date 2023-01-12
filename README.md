@@ -54,9 +54,7 @@ This is what you have to do to get started with Chocolate :
 * Enjoy !
 
 #### For Docker
-* Clone the repository
-* Execute `docker build -t chocolate .`
-* When the build is finished, execute `docker run chocolate`
+* Execute `docker pull imprevisible/chocolate:latest`
 * Enjoy !
 
 ### Files organizations

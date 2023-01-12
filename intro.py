@@ -156,24 +156,26 @@ def listAllSeasons():
 def detectIntro(mainPath, libName, findPath, seasonName):
     episodesListe1 = listAllVideoFiles(mainPath)
     episodesListe1.sort(key=lambda f: int(re.sub("\D", "", f)))
-    episodesData = {}
+    
     librarie = Libraries.query.filter_by(libName=libName).first()
     seriesPath = librarie.libFolder
+    minutesToDetect = 5
     for episode1 in episodesListe1:
         
         episodeSlug = f"{mainPath}/{episode1}".replace("\\", "/")
         episodeFindPath = f"{findPath}/{episode1}".replace("\\", "/")
         episodeSlug = episodeSlug.replace(seriesPath, "")
         episodeData = Episodes.query.filter_by(slug=episodeFindPath).first()
-        a = bool(episodeData.introStart == 0.0) # if introStart is 0.0, then it"s not set
-        b = bool(episodeData.introEnd == 0.0) # if introEnd is 0.0, then it"s not set
-        c = bool(a and b) # if both are 0.0, then it"s not set
+        a = bool(episodeData.introStart == 0.0) # if introStart is 0.0, then it's not set
+        b = bool(episodeData.introEnd == 0.0) # if introEnd is 0.0, then it's not set
+        c = bool(a and b) # if both are 0.0, then it's not set
         #print(f"Pour l"épisode {episodeSlug}, a = {a}, b = {b}, c = {c}")
+        timeStart = time.time()
         if (a ^ b) or c:
             episodeOneData = {}
             episodeOneData['name'] = episode1
-            episodeOneData['start'] = None
-            episodeOneData['end'] = None
+            episodeOneData['start'] = 0
+            episodeOneData['end'] = 0
             episode1Index = episodesListe1.index(episode1)
             if episode1Index < len(episodesListe1) - 1:
                 episode2 = episodesListe1[episode1Index + 1]
@@ -192,8 +194,8 @@ def detectIntro(mainPath, libName, findPath, seasonName):
             frameCount1 = int(cap1.get(cv2.CAP_PROP_FRAME_COUNT))
             frameCount2 = int(cap2.get(cv2.CAP_PROP_FRAME_COUNT))
 
-            maxFrame1 = round(frameRate1 * 60*5)
-            maxFrame2 = round(frameRate2 * 60*5)
+            maxFrame1 = round(frameRate1 * 60*minutesToDetect)
+            maxFrame2 = round(frameRate2 * 60*minutesToDetect)
 
 
             #print(f"Serie: {mainPath}")
@@ -202,7 +204,8 @@ def detectIntro(mainPath, libName, findPath, seasonName):
             secondesEp1 = []
             ep1Start = 0
             secondesEp2 = []
-            ratio = (int(160/2), int(90/2))
+            divider = 0.1
+            ratio = (int(16/divider), int(9/divider))
             for frameEp1 in range(1, maxFrame1, round(frameRate1)):
                 cap1.set(1, frameEp1)
                 ret1, frame1 = cap1.read()
@@ -219,30 +222,18 @@ def detectIntro(mainPath, libName, findPath, seasonName):
                 frame2 = str(imagehash.dhash(Image.fromarray(frame2)))
                 secondesEp2.append(frame2)
                 #print(f"frameEp2: {str(frameEp2).zfill(4)} - frame2: {frame2}")
-            while searchForIntroStart:
-                for frame1 in secondesEp1:
-                    #print(f"Searching {frame1} in secondesEp2")
-                    if frame1 in secondesEp2:
-                        ep1StartIndex = secondesEp1.index(frame1)
-                        ep1Start = ep1StartIndex
+            searchForIntroStart = True
+            for frame1 in secondesEp1:
+                #print(f"Searching {frame1} in secondesEp2")
+                if frame1 in secondesEp2:
+                    ep1StartIndex = secondesEp1.index(frame1)
+                    ep1Start = ep1StartIndex
+                    if searchForIntroStart:
                         episodeOneData['start'] = ep1Start
-
-                        ep2StartIndex = secondesEp2.index(frame1)
                         searchForIntroStart = False
-                        break
-            #print(f"J"ai trouvé le départ de l"intro à {ep1Start}s dans {episode1} et {ep2StartIndex}s dans {episode2}")
-            secondesEp1 = secondesEp1[ep1StartIndex:]
-            secondesEp2 = secondesEp2[ep2StartIndex:]
-            #print(secondesEp1)
-            
-            for frame in secondesEp1:
-                secondes = secondesEp1.index(frame)
-                if frame in secondesEp2:
-                    episodeOneData['end'] = secondes
-                elif episodeOneData['end'] is not None and secondes<episodeOneData['end']+3:
-                    episodeOneData['end'] = secondes
-                else:
-                    break
+                    ep2StartIndex = secondesEp2.index(frame1)
+                    if ep2StartIndex <= ep1StartIndex+5:
+                        episodeOneData['end'] = ep1StartIndex
 
 
             episode = Episodes.query.filter_by(slug=episodeFindPath).first()
@@ -255,7 +246,9 @@ def detectIntro(mainPath, libName, findPath, seasonName):
                 episodeEndInMM_SS = time.strftime("%M:%S", time.gmtime(episodeOneData['end']))
                 introDuration = episodeOneData['end'] - episodeOneData['start']
                 introDurationInMM_SS = time.strftime("%M:%S", time.gmtime(introDuration))
-                print(f"{colorama.Fore.RED}{seasonName}{colorama.Fore.RESET} - {colorama.Fore.BLUE}S{season.seasonNumber}{colorama.Fore.RESET} - {colorama.Fore.CYAN}E{episode.episodeNumber}{colorama.Fore.RESET} : [ {colorama.Fore.GREEN}Intro start: {episodeStartInMM_SS} ({episodeOneData['start']}s){colorama.Fore.RESET} - {colorama.Fore.YELLOW}Intro end: {episodeEndInMM_SS} ({episodeOneData['end']}s){colorama.Fore.RESET} ] - {colorama.Fore.LIGHTBLUE_EX}Duration: {introDurationInMM_SS} ({introDuration}s){colorama.Fore.RESET}")
+                timeEnd = time.time()
+                timeDuration = timeEnd - timeStart
+                print(f"In: {timeDuration} - {colorama.Fore.RED}{seasonName}{colorama.Fore.RESET} - {colorama.Fore.BLUE}S{season.seasonNumber}{colorama.Fore.RESET} - {colorama.Fore.CYAN}E{episode.episodeNumber}{colorama.Fore.RESET} : [ {colorama.Fore.GREEN}Intro start: {episodeStartInMM_SS} ({episodeOneData['start']}s){colorama.Fore.RESET} - {colorama.Fore.YELLOW}Intro end: {episodeEndInMM_SS} ({episodeOneData['end']}s){colorama.Fore.RESET} ] - {colorama.Fore.LIGHTBLUE_EX}Duration: {introDurationInMM_SS} ({introDuration}s){colorama.Fore.RESET}")
                 #db.session.commit()
 
 
@@ -271,32 +264,51 @@ from pydub import AudioSegment
 
 # Fonction pour extraire le flux audio des vidéos
 def extract_audio(video_file, audio_file):
-    command = f'ffmpeg -i "{video_file}" {audio_file}'
     command = [
         "ffmpeg",
         "-i",
         video_file,
-        audio_file
+        audio_file,
+        "-y"
     ]
-    subprocess.run(command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)       
     
 
 # Fonction pour comparer et trouver les séquences audio similaires
 def compare_audio(audio_file_1, audio_file_2, threshold):
-    audio_1 = AudioSegment.from_file(audio_file_1, "wav")
-    audio_2 = AudioSegment.from_file(audio_file_2, "wav")
+    print("Comparing audio files...")
+    audio_1 = AudioSegment.from_file(audio_file_1, "wav", frame_rate=44100, channels=2, sample_width=2)
+    audio_2 = AudioSegment.from_file(audio_file_2, "wav", frame_rate=44100, channels=2, sample_width=2)
     #remove the audio files
     os.remove(audio_file_1)
     os.remove(audio_file_2)
     audio_chunks_1 = audio_1[::1000]
     audio_chunks_2 = audio_2[::1000]
-    similar_chunks = []
-    for chunk in audio_chunks_1:
+    allIndexes = []
+    index1 = 0
+    index2 = 0
+    data = {
+        "start": 0,
+        "end": 0,
+    }
+    for chunk in list(audio_chunks_1):
         for chunk2 in list(audio_chunks_2):
+            index2 += 1
             if abs(chunk.dBFS - chunk2.dBFS) < threshold:
-                similar_chunks.append((list(audio_chunks_2).index(chunk2), chunk.duration_seconds))
-                break
-    return similar_chunks
+                #print(f"Similar chunk found at {index2}s ({time.strftime("%M:%S", time.gmtime(index2))}) and {index1}s ({time.strftime('%M:%S', time.gmtime(index1))})")
+                if data["end"] - index2 <= 4:
+                    data["end"] = index2
+                allIndexes.append(index2)
+
+    indexes = []
+    for element in allIndexes: 
+        for compare_element in allIndexes: 
+            if compare_element - element <= 4: 
+                indexes.append(compare_element) 
+    
+    data["start"] = min(indexes)
+
+    return data
 
 # Fonction principale
 def main(video_file_1, video_file_2, threshold):
@@ -305,28 +317,37 @@ def main(video_file_1, video_file_2, threshold):
     extract_audio(video_file_1, audio_file_1)
     extract_audio(video_file_2, audio_file_2)
     similar_chunks = compare_audio(audio_file_1, audio_file_2, threshold)
-    for i, duration in similar_chunks:
-        print(f"Séquence similaire trouvée à partir de la {i}ème seconde avec une durée de {duration} secondes.")
+    start = similar_chunks["start"]
+    end = similar_chunks["end"]
+    duration = end - start
+    durationMM_SS = time.strftime("%M:%S", time.gmtime(duration))
+    print(f"For: {video_file_1.split('/')[-1]} and {video_file_2.split('/')[-1]}", end=" - ")
+    print(f"Start: {start} - End: {end} - Duration: {duration}s ({durationMM_SS})")
+
+useImage = False
 
 # Exécuter la fonction principale
 if __name__ == "__main__":
-    with app.app_context():
-        allSeriesLibrary = Libraries.query.filter_by(libType="series").all()
-        for library in allSeriesLibrary:
-            allSeries = Series.query.filter_by(libraryName=library.libName).all()
-            for serie in allSeries:
-                allSeasons = Seasons.query.filter_by(serie=serie.id).all()
-                for season in allSeasons:
-                    allEpisodes = Episodes.query.filter_by(seasonId=season.seasonId).all()
-                    #order alphabetically
-                    allEpisodes.sort(key=lambda f: f.slug)
-                    
-                    for episode in range(0, len(allEpisodes)-1):
-                        episode1 = allEpisodes[episode]
-                        episode2 = allEpisodes[episode+1]
-                        basePath = f"{library.libFolder}".replace("\\", "/")
-                        episode1Path = f"{basePath}{episode1.slug}"
-                        episode2Path = f"{basePath}{episode2.slug}"
-                        threshold = 3.0 # Modifiez le seuil dBFS ici
-                        print(f"Calculating for {episode1.slug} and {episode2.slug}")
-                        main(episode1Path, episode2Path, threshold)
+    if not useImage:
+        with app.app_context():
+            allSeriesLibrary = Libraries.query.filter_by(libType="series").all()
+            for library in allSeriesLibrary:
+                allSeries = Series.query.filter_by(libraryName=library.libName).all()
+                for serie in allSeries:
+                    allSeasons = Seasons.query.filter_by(serie=serie.id).all()
+                    for season in allSeasons:
+                        allEpisodes = Episodes.query.filter_by(seasonId=season.seasonId).all()
+                        allEpisodesSlug = [episode.slug for episode in allEpisodes]
+                        allEpisodesSlug.sort(key=lambda f: int(re.sub("\D", "", f)))
+
+                        for episode in range(0, len(allEpisodesSlug)-1):
+                            episode1 = allEpisodesSlug[episode]
+                            episode2 = allEpisodesSlug[episode+1]
+                            basePath = f"{library.libFolder}".replace("\\", "/")
+                            episode1Path = f"{basePath}{episode1}"
+                            episode2Path = f"{basePath}{episode2}"
+                            threshold = 0.5
+                            main(episode1Path, episode2Path, threshold)
+    else:
+        with app.app_context():
+            listAllSeasons()
