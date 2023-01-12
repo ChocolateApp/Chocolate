@@ -54,7 +54,7 @@ This is what you have to do to get started with Chocolate :
 * Enjoy !
 
 #### For Docker
-* Execute `docker pull imprevisible/chocolate:latest`
+* Execute `docker pull imprevisible/chocolate`
 * Enjoy !
 
 ### Files organizations
