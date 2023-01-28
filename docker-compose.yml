@@ -7,6 +7,6 @@ services:
     ports:
       - 8500:8500
     volumes:
-      - /app:/chocolate
+      - ./app:/chocolate
 volumes:
   app:
