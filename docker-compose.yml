@@ -8,3 +8,5 @@ services:
       - 8500:8500
     volumes:
       - /app:/chocolate
+volumes:
+  app:
