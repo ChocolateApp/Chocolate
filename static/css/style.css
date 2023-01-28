@@ -253,12 +253,12 @@ form#searchForm:hover .form_field_search {
 
 .cover_movie,
 .cover_serie {
+    display: block;
     border-radius: 1rem;
     transition: 300ms transform;
-    display: block;
     width: 13vw;
+    height: 40vh;
     object-fit: cover;
-    aspect-ratio: 0.65;
 }
 
 .actorSerieTitle {
@@ -385,6 +385,12 @@ form#searchForm:hover .form_field_search {
 .igdbSecretDiv,
 .igdbIDDiv {
     padding: 2vh;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    text-align: end;
+    justify-content: flex-end;
 }
 
 .languageDiv {
@@ -392,10 +398,7 @@ form#searchForm:hover .form_field_search {
 }
 
 .librariesDiv {
-    text-align: center;
-    vertical-align: middle;
-    display: table-cell;
-    width: 27vw;
+    width: 20vw;
 }
 
 label[for="addLibraryButton"] {
@@ -637,7 +640,8 @@ input[type="radio"] {
 label[for="movies"],
 label[for="series"],
 label[for="tv"],
-label[for="games"] {
+label[for="games"],
+label[for="other"] {
     text-align: center;
 }
 
@@ -664,7 +668,6 @@ label[for="games"] {
 .createAccountButton {
     height: 10vh;
     width: 12vw;
-    margin-right: 5vw;
     text-decoration: none;
     z-index: 5;
     border-radius: 1.5vw;
@@ -685,17 +688,100 @@ label[for="games"] {
 }
 
 .saveSettingsForm {
-    margin-top: 50vh;
+    margin-top: 5vh;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    align-items: center;
     text-align: end;
-    position: absolute;
-    left: 40.5vw;
 }
 
 .createAccount {
     margin-top: 10vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     text-align: end;
-    position: absolute;
-    left: 40.5vw;
+    margin-left: 3vw;
+    width: 97vw;
+}
+
+.allLibraries {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-top: 3vh;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    align-content: center;
+    width: calc(97vw * 0.75);
+    margin-left: calc(((97vw * 0.75)/7) + 3vw);
+    row-gap: 4vh;
+}
+
+.settingsDiv {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.buttonsEditDelete {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+}
+
+.editLibButton,
+.deleteLibButton {
+    height: 7vh;
+    width: 8vw;
+    text-decoration: none;
+    z-index: 5;
+    border-radius: 1.5vw;
+    border: 0.2vw solid #ffffff;
+    cursor: pointer;
+    color: #ffffff;
+    font-size: 1.4vh;
+    padding: 2vh 0;
+    transition: 300ms;
+    background: 0 0;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    column-gap: 0.25vw;
+}
+
+.deleteLibButton {
+    color: white;
+    background: #c81d1d;
+    border: 0.2vw solid #c81d1d;
+}
+
+.editLibButton:hover,
+.deleteLibButton:hover {
+    background: white;
+    color: #1d1d1d;
+}
+
+.deleteLibButton:hover {
+    color: white;
+    background: #f22626;
+    border: 0.2vw solid #f22626;
+}
+
+.librarySetting {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    align-content: space-around;
+    justify-content: space-around;
+    align-items: stretch;
+    row-gap: 1vh;
+}
+
+.librarySetting>h1 {
+    text-align: center;
 }
 
 .form_field_create_account {
@@ -2316,7 +2402,7 @@ ion-icon[name="download-outline"] {
 #checkboxes label {
     display: flex;
     gap: 0.2vw;
-    color: black;
+    color: #1d1d1d;
     align-items: flex-end;
 }
 

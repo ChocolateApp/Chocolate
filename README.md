@@ -16,6 +16,7 @@
 ## About The Project
 Chocolate is an Open Source media manager.<br>
 It allows you to manage your media collection and organize it in a way that is easy to use and easy to search.<br>
+Pair your popcorn with Chocolate and enjoy your favorite movie!<br>
 It's a free software.<br>
 
 ### Built With
@@ -39,7 +40,7 @@ This is what you have to do to get started with Chocolate :
 ### Installation
 
 #### For Linux
-* Go to the [latest release](https://github.com/Impre-visible/Chocolate/releases/latest)
+* Go to the [latest release](https://github.com/ChocolateApp/Chocolate/releases/latest)
 * Download the latest installer named `install.sh`
 * Place it where you want
 * Run it
@@ -54,14 +55,28 @@ This is what you have to do to get started with Chocolate :
 * Enjoy !
 
 #### For Docker
-* Execute `docker pull imprevisible/chocolate`
+* Go to the [latest release](https://github.com/ChocolateApp/Chocolate/releases/latest)
+* Edit the `docker-compose.yml` file and add in volumes the path to your media
+* Execute `docker-compose up -d`
 * Enjoy !
 
 ### Files organizations
 
 #### For Movies :
 * Create a directory
-* Put all your movies in with a proper name, like "Batman Begins.mkv" instead of "Batman.Begins.H264.AAC.XxMOVIESxX.mkv"
+* Put all your movies in with a proper name, like "Batman Begins.mkv" instead of "Batman.Begins.H264.AAC.XxMOVIESxX.mkv", they can be in subdirectories (only one level, one movie per directory)
+```
+📂 Movies
+ ├── 📂 Batman Begins      # Perfect
+ │    └── Batman Begins.mkv
+ ├── Back to the Future.mkv
+ ├── Harry Potter and the Philosopher's Stone.mkv
+ │
+ ├── 📂 The Lord of the Rings    # Don't do that please (two movies in one directory !)
+ │    ├── The Lord of the Rings - The Fellowship of the Ring.mkv
+ │    └── The Lord of the Rings - The Two Towers.mkv
+```
+
 * Create a new library and select the directory you created with the specific type
 * It's done
 
@@ -87,7 +102,6 @@ This is what you have to do to get started with Chocolate :
  │         ├── The.Simpsons.EP.One.mkv
  │         ├── The.Simpsons.EP.Two.mkv
  │         └── The.Simpsons.EP.Three.mkv
-
 ```
 * Create a new library and select the directory you created with the specific type
 * It's done
@@ -178,6 +192,9 @@ Don't forget to give the project a star! Thanks again!
 - [ ] Dev a mobile/TV app with chromecasting, and download
 - [ ] Use Flask-PWA
 - [ ] Add all audio tracks
+- [ ] Translate the rescan buttons
+- [ ] Edit TV Shows
+- [ ] Edit libraries
 
 ### Tasks Done
 - [X] Increase the boot speed
@@ -203,6 +220,7 @@ Don't forget to give the project a star! Thanks again!
 - [X] Add TV with M3U playlist
 - [X] Added new type of library, "other", for files that are not movies, series, games, tv
 - [X] Add 2 buttons, one rescan the library, and the other one in the settings to rescan all the libraries
+- [X] Scan movies in subdirectory
 
 <!--LANGUAGES TO TRANSLATE -->
 ## Languages to translate

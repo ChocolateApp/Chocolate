@@ -97,6 +97,7 @@ window.onload = function() {
         movieID = href.split("/")[4]
         let currentTime = video.currentTime
         currentTime = parseInt(currentTime)
+        console.log(currentTime == lastPush+1)
         if (currentTime == lastPush+1) {
             fetch(`/setVuesTimeCode/`, {
                 method: 'POST',

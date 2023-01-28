@@ -14,7 +14,7 @@ from deep_translator import GoogleTranslator
 from time import mktime
 from PIL import Image
 from pypresence import Presence
-import requests, os, subprocess, configparser, socket, datetime, subprocess, socket, platform, GPUtil, json, time, sqlalchemy, warnings, re, zipfile, ast, git, pycountry, zlib
+import requests, os, subprocess, configparser, datetime, subprocess, platform, GPUtil, json, time, sqlalchemy, warnings, re, zipfile, ast, git, pycountry, zlib, socket
 
 start_time = mktime(time.localtime())
 
@@ -36,6 +36,7 @@ loginManager = LoginManager()
 loginManager.init_app(app)
 loginManager.login_view = 'login'
 langs_dict = GoogleTranslator().get_supported_languages(as_dict=True)
+
 
 class Users(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -331,6 +332,9 @@ if apiKeyTMDB == "Empty":
     print("Follow this tutorial to get your TMDB API Key : https://developers.themoviedb.org/3/getting-started/introduction")
 tmdb.api_key = config["APIKeys"]["TMDB"]
 tmdb.language = config["ChocolateSettings"]["language"]
+with open(os.path.join(dir, 'config.ini'), 'w') as configfile:
+    config.write(configfile)
+
 
 def searchGame(game, console):
     url = f"https://www.igdb.com/search_autocomplete_all?q={game.replace(' ', '%20')}"
@@ -451,9 +455,6 @@ allSeriesNotSorted = []
 allSeriesDict = {}
 allSeriesDictTemp = {}
 
-hostname = socket.gethostname()
-local_ip = socket.gethostbyname(hostname)
-config.set("ChocolateSettings", "localIP", local_ip)
 serverPort = config["ChocolateSettings"]["port"]
 configLanguage = config["ChocolateSettings"]["language"]
 with app.app_context():
@@ -519,15 +520,13 @@ def getMovies(libraryName):
     allMoviesNotSorted = []
     movie = Movie()
     path = Libraries.query.filter_by(libName=libraryName).first().libFolder
-    try:
-        os.chdir(path)
-    except OSError as e:
-        print("No movies found")
-        return
     filmFileList = []
-    movies = os.listdir(path)
+    try:
+        movies = os.listdir(path)
+    except:
+        return
     for movieFile in movies:
-        if os.path.isfile(f"{path}/{movieFile}") and not movieFile.endswith((".rar", ".zip", ".part")):
+        if not movieFile.endswith((".rar", ".zip", ".part")):
             filmFileList.append(movieFile)
 
     filmFileList.sort()
@@ -535,8 +534,10 @@ def getMovies(libraryName):
     for searchedFilm in filmFileList:
         if not isinstance(searchedFilm, str):
             continue
-        if not searchedFilm.endswith("/") and searchedFilm.endswith(("mp4", "mp4v", "mov", "avi", "flv", "wmv", "asf", "mpeg", "mpg", "mkv", "ts")):
+        if True:
             movieTitle = searchedFilm
+            if os.path.isdir(os.path.join(path, movieTitle)):
+                movieTitle = os.listdir(os.path.join(path, movieTitle))[0]
             originalMovieTitle = movieTitle
             size = len(movieTitle)
             movieTitle, extension = os.path.splitext(movieTitle)
@@ -555,10 +556,16 @@ def getMovies(libraryName):
                 movie = Movie()
                 try:
                     match = re.search(r'\((\d{4})\)$', movieTitle)
-                    if match:
-                        search = movie.search(movieTitle, year=match.group(1), adult=True)
-                    else:
-                        search = movie.search(movieTitle, adult=True)
+                    try:
+                        if match:
+                            search = movie.search(movieTitle, year=match.group(1), adult=True)
+                        else:
+                            search = movie.search(movieTitle, adult=True)
+                    except:
+                        if match:
+                            search = movie.search(movieTitle, year=match.group(1))
+                        else:
+                            search = movie.search(movieTitle)
                 except TMDbException:
                     print(TMDbException)
                     allMoviesNotSorted.append(search)
@@ -587,6 +594,10 @@ def getMovies(libraryName):
                     name = res.original_title
                 movieId = res.id
                 details = movie.details(movieId)
+                
+                start = ""
+                if os.path.isdir(os.path.join(path, searchedFilm)):
+                    start = f"{searchedFilm}\\"
 
                 movieCoverPath = f"https://image.tmdb.org/t/p/original{res.poster_path}"
                 banniere = f"https://image.tmdb.org/t/p/original{res.backdrop_path}"
@@ -601,9 +612,13 @@ def getMovies(libraryName):
                     os.remove(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.png")
                     movieCoverPath = f"/static/img/mediaImages/{rewritedName}_Cover.webp"
                 except:
-                    os.rename(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.png", f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.webp")
-                    movieCoverPath = "/static/img/broken.webp"
-                
+                    try:
+                        os.rename(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.png", f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.webp")
+                        movieCoverPath = "/static/img/broken.webp"
+                    except:
+                        os.remove(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.webp")
+                        os.rename(f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.png", f"{dirPath}/static/img/mediaImages/{rewritedName}_Cover.webp")
+                        movieCoverPath = f"/static/img/mediaImages/{rewritedName}_Cover.webp"
                 with open(f"{dirPath}/static/img/mediaImages/{rewritedName}_Banner.png", "wb") as f:
                     f.write(requests.get(banniere).content)
                 if res.backdrop_path == None:
@@ -674,7 +689,7 @@ def getMovies(libraryName):
                     date = "Unknown"
 
                 genre = res.genre_ids
-                video_path = f"{path}\{originalMovieTitle}"
+                video_path = f"{path}\{start}{originalMovieTitle}"
                 length = length_video(video_path)
                 length = str(datetime.timedelta(seconds=length))
                 length = length.split(":")
@@ -751,7 +766,8 @@ def getMovies(libraryName):
                 alternativesNames = list(dict.fromkeys(alternativesNames))
 
                 alternativesNames = ",".join(alternativesNames)
-                filmData = Movies(movieId, movieTitle, name, movieCoverPath, banniere, originalMovieTitle, description, note, date, json.dumps(movieGenre), str(duration), json.dumps(theCast), bandeAnnonceUrl, str(res["adult"]), libraryName=libraryName, alternativesNames=alternativesNames, vues=str({}))
+                slug = f"{start}{originalMovieTitle}"
+                filmData = Movies(movieId, movieTitle, name, movieCoverPath, banniere, slug, description, note, date, json.dumps(movieGenre), str(duration), json.dumps(theCast), bandeAnnonceUrl, str(res["adult"]), libraryName=libraryName, alternativesNames=alternativesNames, vues=str({}))
                 db.session.add(filmData)
                 db.session.commit()
         elif searchedFilm.endswith("/") == False:
@@ -760,7 +776,12 @@ def getMovies(libraryName):
     movies = Movies.query.filter_by(libraryName=libraryName).all()
     moviesPath = os.listdir(path)
     for movie in movies:
-        if movie.slug not in moviesPath:
+        slug = movie.slug
+        possibleDirSlug = slug.split("\\")[0:-1]
+        possibleDirSlug = "\\".join(possibleDirSlug)
+        if os.path.isdir(f"{path}\\{possibleDirSlug}"):
+            continue
+        if slug not in moviesPath:
             db.session.delete(movie)
             db.session.commit()
 
@@ -819,7 +840,7 @@ def getSeries(libraryName):
     allSeriesPath = Libraries.query.filter_by(libName=libraryName).first().libFolder
     try:
         allSeries = [name for name in os.listdir(allSeriesPath) if os.path.isdir(os.path.join(allSeriesPath, name)) and name.endswith((".rar", ".zip", ".part")) == False]
-    except OSError as e:
+    except:
         return
     allSeasonsAppelations = ["S"]
     allEpisodesAppelations = ["E"]
@@ -883,6 +904,7 @@ def getSeries(libraryName):
     
     for serie in allSeriesName:
         if not isinstance(serie, str):
+            print(f"Error : {serie} is not a string")
             continue
         index = allSeriesName.index(serie) + 1
         percentage = index * 100 / len(allSeriesName)
@@ -899,6 +921,7 @@ def getSeries(libraryName):
         try:
             serieModifiedTime = os.path.getmtime(f"{allSeriesPath}\\{originalSerieTitle}")
         except FileNotFoundError:
+            print(f"Cant find {originalSerieTitle}")
             continue
         try:
             search = show.search(serieTitle)
@@ -1072,11 +1095,22 @@ def getSeries(libraryName):
                     if not os.path.exists(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png"):
                         with open(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png", "wb") as f:
                             f.write(requests.get(seasonCoverPath).content)
-                        img = Image.open(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png")
-                        img = img.save(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.webp", "webp")
-                        os.remove(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png")
+                        try:
+                            img = Image.open(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png")
+                            img = img.save(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.webp", "webp")
+                            os.remove(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png")
+                            seasonCoverPath = f"/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.webp"
+                        except:
+                            with open(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png", "wb") as f:
+                                f.write(requests.get(seasonCoverPath).content)
+                            try:
+                                img = Image.open(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png")
+                                img = img.save(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.webp", "webp")
+                                os.remove(f"{dirPath}/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.png")
+                                seasonCoverPath = f"/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.webp"
+                            except:
+                                seasonCoverPath = f"/static/img/brokenImage.png"
 
-                    seasonCoverPath = f"/static/img/mediaImages/{rewritedName}S{seasonNumber}_Cover.webp"
 
                     allSeasonsUglyDict = os.listdir(f"{allSeriesPath}/{serie}")
                     try:
@@ -1193,13 +1227,12 @@ def getGames(libraryName):
     allGamesPath = Libraries.query.filter_by(libName=libraryName).first().libFolder
     try:
         allConsoles = [name for name in os.listdir(allGamesPath) if os.path.isdir(os.path.join(allGamesPath, name)) and name.endswith((".rar", ".zip", ".part")) == False]
-        for console in allConsoles:
-            if os.listdir(f"{allGamesPath}/{console}") == []:
-                allConsoles.remove(console)
-
-    except OSError as e:
-        print("No games found")
+    except:
         return
+    
+    for console in allConsoles:
+        if os.listdir(f"{allGamesPath}/{console}") == []:
+            allConsoles.remove(console)
     saidPS1 = False
     supportedConsoles = ['3DO', 'Amiga', 'Atari 2600', 'Atari 5200', 'Atari 7800', 'Atari Jaguar', 'Atari Lynx', 'GB', 'GBA', 'GBC', 'N64', 'NDS', 'NES', 'SNES', 'Neo Geo Pocket', 'PSX', 'Sega 32X', 'Sega CD', 'Sega Game Gear', 'Sega Master System', 'Sega Mega Drive', 'Sega Saturn', "PS1"]
     supportedFileTypes = [".zip", ".adf", ".adz", ".dms", ".fdi", ".ipf", ".hdf", ".lha", ".slave", ".info", ".cdd", ".nrg", ".mds", ".chd", ".uae", ".m3u", ".a26", ".a52", ".a78", ".j64", ".lnx", ".gb", ".gba", ".gbc", ".n64", ".nds", ".nes", ".ngp", ".psx", ".sfc", ".smc", ".smd", ".32x", ".cd", ".gg", ".md", ".sat", ".sms"]
@@ -1344,7 +1377,10 @@ def getGames(libraryName):
             
 def getOthersVideos(library):    
     allVideosPath = Libraries.query.filter_by(libName=library).first().libFolder
-    allVideos = os.listdir(allVideosPath)
+    try:
+        allVideos = os.listdir(allVideosPath)
+    except:
+        return
     supportedVideoTypes = [".mp4", ".webm", ".mkv"]
 
     allVideos = [ video for video in allVideos if os.path.splitext(video)[1] in supportedVideoTypes ]
@@ -1504,7 +1540,7 @@ def create_m3u8(movieId):
     response.headers.set("Content-Type", "application/x-mpegURL")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
-    response.headers.set("Access-Control-Allow-Origin", f"http://{local_ip}:{serverPort}")
+    response.headers.set("Access-Control-Allow-Origin", "*")
     response.headers.set(
         "Content-Disposition", "attachment", filename=f"{movieId}.m3u8"
     )
@@ -1540,7 +1576,7 @@ def create_m3u8_quality(quality, movieID):
     response.headers.set("Content-Type", "application/x-mpegURL")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
-    response.headers.set("Access-Control-Allow-Origin", f"http://{local_ip}:{serverPort}")
+    response.headers.set("Access-Control-Allow-Origin", "*")
     response.headers.set(
         "Content-Disposition", "attachment", filename=f"{movieID}.m3u8"
     )
@@ -1577,7 +1613,7 @@ def create_other_m3u8(hash):
     response.headers.set("Content-Type", "application/x-mpegURL")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
-    response.headers.set("Access-Control-Allow-Origin", f"http://{local_ip}:{serverPort}")
+    response.headers.set("Access-Control-Allow-Origin", "*")
     response.headers.set(
         "Content-Disposition", "attachment", filename=f"{hash}.m3u8"
     )
@@ -1614,7 +1650,7 @@ def create_other_m3u8_quality(quality, hash):
     response.headers.set("Content-Type", "application/x-mpegURL")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
-    response.headers.set("Access-Control-Allow-Origin", f"http://{local_ip}:{serverPort}")
+    response.headers.set("Access-Control-Allow-Origin", "*")
     response.headers.set(
         "Content-Disposition", "attachment", filename=f"{hash}.m3u8"
     )
@@ -1655,7 +1691,7 @@ def create_serie_m3u8(episodeId):
     response.headers.set("Content-Type", "application/x-mpegURL")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
-    response.headers.set("Access-Control-Allow-Origin", f"http://{local_ip}:{serverPort}")
+    response.headers.set("Access-Control-Allow-Origin", "*")
     response.headers.set("Content-Disposition", "attachment", filename=f"{episodeId}")
 
     return response
@@ -1693,7 +1729,7 @@ def create_serie_m3u8_quality(quality, episodeId):
     response.headers.set("Content-Type", "application/x-mpegURL")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
-    response.headers.set("Access-Control-Allow-Origin", f"http://{local_ip}:{serverPort}")
+    response.headers.set("Access-Control-Allow-Origin", "*")
     response.headers.set("Content-Disposition", "attachment", filename=f"{episodeId}")
 
     return response
@@ -1746,7 +1782,7 @@ def get_chunk_serie(episodeId, idx=0):
     response.headers.set("Content-Type", "video/MP2T")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
-    response.headers.set("Access-Control-Allow-Origin", f"http://{local_ip}:{serverPort}")
+    response.headers.set("Access-Control-Allow-Origin", "*")
     response.headers.set(
         "Content-Disposition", "attachment", filename=f"{episodeId}-{idx}.ts"
     )
@@ -1823,7 +1859,7 @@ def get_chunk_serie_quality(quality, episodeId, idx=0):
     response.headers.set("Content-Type", "video/MP2T")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
-    response.headers.set("Access-Control-Allow-Origin", f"http://{local_ip}:{serverPort}")
+    response.headers.set("Access-Control-Allow-Origin", "*")
     response.headers.set(
         "Content-Disposition", "attachment", filename=f"{episodeId}-{idx}.ts"
     )
@@ -1877,7 +1913,7 @@ def get_chunk(movieID, idx=0):
     response.headers.set("Content-Type", "video/MP2T")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
-    response.headers.set("Access-Control-Allow-Origin", f"http://{local_ip}:{serverPort}")
+    response.headers.set("Access-Control-Allow-Origin", "*")
     response.headers.set(
         "Content-Disposition", "attachment", filename=f"{movieID}-{idx}.ts"
     )
@@ -1950,7 +1986,7 @@ def get_chunk_quality(quality, movieID, idx=0):
     response.headers.set("Content-Type", "video/MP2T")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
-    response.headers.set("Access-Control-Allow-Origin", f"http://{local_ip}:{serverPort}")
+    response.headers.set("Access-Control-Allow-Origin", "*")
     response.headers.set(
         "Content-Disposition", "attachment", filename=f"{movieID}-{idx}.ts"
     )
@@ -1999,7 +2035,7 @@ def get_chunk_other(hash, idx=0):
     response.headers.set("Content-Type", "video/MP2T")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
-    response.headers.set("Access-Control-Allow-Origin", f"http://{local_ip}:{serverPort}")
+    response.headers.set("Access-Control-Allow-Origin", "*")
     response.headers.set(
         "Content-Disposition", "attachment", filename=f"{hash}-{idx}.ts"
     )
@@ -2066,7 +2102,7 @@ def get_chunk_other_quality(quality, hash, idx=0):
     response.headers.set("Content-Type", "video/MP2T")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
-    response.headers.set("Access-Control-Allow-Origin", f"http://{local_ip}:{serverPort}")
+    response.headers.set("Access-Control-Allow-Origin", "*")
     response.headers.set(
         "Content-Disposition", "attachment", filename=f"{hash}-{idx}.ts"
     )
@@ -2148,9 +2184,12 @@ def settings():
             allowDownloads = config["ChocolateSettings"]["allowdownload"]
             tmdbKey = config["APIKeys"]["tmdb"]
             igdbID = config["APIKeys"]["igdbid"]
-            igdbSecret = config["APIKeys"]["igdbsecret"]   
+            igdbSecret = config["APIKeys"]["igdbsecret"]
 
-            return render_template("settings.html", notSorted=allMoviesNotSorted, conditionIfOne=condition, serverPort=serverPort, allowDownloads=allowDownloads, tmdbKey=tmdbKey, igdbID=igdbID, igdbSecret=igdbSecret)
+            allLibraries = Libraries.query.filter().all()
+            allLibrariesDict = [ x.__dict__ for x in allLibraries ] 
+
+            return render_template("settings.html", notSorted=allMoviesNotSorted, conditionIfOne=condition, serverPort=serverPort, allowDownloads=allowDownloads, tmdbKey=tmdbKey, igdbID=igdbID, igdbSecret=igdbSecret, allLibraries=allLibrariesDict)
         else:
             return redirect(url_for("home"))
 
@@ -2362,7 +2401,7 @@ def getAllMovies(library):
 def createLib():
     theRequest = request.get_json()
     libName = theRequest["libName"]
-    libPath = theRequest["libPath"].replace("/", "\\")
+    libPath = theRequest["libPath"]
     libType = theRequest["libType"]
     libUsers = theRequest["libUsers"]
 
@@ -2377,7 +2416,7 @@ def createLib():
         "other": "desktop"
         }
 
-    libPath = libPath.replace("/", "\\")
+    libPath = libPath.replace("\\", "/")
 
     exists = Libraries.query.filter_by(libName=libName).first() is not None
     if not exists:
@@ -2387,6 +2426,61 @@ def createLib():
         return json.dumps({"error": "worked"})
     else:
         return json.dumps({"error": "The library already exists"})
+
+@app.route("/editLib/<libName>", methods=["POST"])
+def editLib(libName):
+    theRequest = request.get_json()
+    libPath = theRequest["libPath"]
+    libUsers = theRequest["libUsers"]
+    libType = theRequest["libType"]
+
+    if libUsers == "" or libUsers == None or libUsers == "undefined":
+        libUsers = None
+
+
+    libPath = libPath.replace("\\", "/")
+
+    lib = Libraries.query.filter_by(libName=libName).first()
+    lib.libFolder = libPath
+    lib.libType = libType
+    lib.availableFor = libUsers
+    db.session.commit()
+    lib = Libraries.query.filter_by(libName=libName).first()
+
+    return json.dumps({"error": "worked"})
+
+@app.route("/deleteLib/<libName>", methods=["POST"])
+def deleteLib(libName):
+    lib = Libraries.query.filter_by(libName=libName).first()
+    db.session.delete(lib)
+
+    libType = lib.libType
+
+    if libType == "movies":
+        allMovies = Movies.query.filter_by(libraryName=libName).all()
+        for movie in allMovies:
+            db.session.delete(movie)
+    elif libType == "series":
+        allSeries = Series.query.filter_by(libraryName=libName).all()
+        for serie in allSeries:
+            seasons = Seasons.query.filter_by(serie=serie.id).all()
+            for season in seasons:
+                episodes = Episodes.query.filter_by(seasonId=season.seasonId).all()
+                for episode in episodes:
+                    db.session.delete(episode)
+                db.session.delete(season)
+            db.session.delete(serie)
+    elif libType == "games":
+        allGames = Games.query.filter_by(libraryName=libName).all()
+        for game in allGames:
+            db.session.delete(game)
+    elif libType == "other":
+        allOther = OthersVideos.query.filter_by(libraryName=libName).all()
+        for other in allOther:
+            db.session.delete(other)
+
+    db.session.commit()
+    return redirect(url_for("settings"))
 
 @app.route("/getAllSeries/<library>", methods=["GET"])
 def getAllSeries(library):
@@ -3221,7 +3315,7 @@ def mainMovie(movieID):
     response.headers.set("Content-Type", "application/x-mpegURL")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
-    response.headers.set("Access-Control-Allow-Origin", f"http://{local_ip}:{serverPort}")
+    response.headers.set("Access-Control-Allow-Origin", "*")
     response.headers.set(
         "Content-Disposition", "attachment", filename=f"{movieID}.m3u8"
     )
@@ -3264,7 +3358,7 @@ def mainSerie(episodeID):
     response.headers.set("Content-Type", "application/x-mpegURL")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
-    response.headers.set("Access-Control-Allow-Origin", f"http://{local_ip}:{serverPort}")
+    response.headers.set("Access-Control-Allow-Origin", "*")
     response.headers.set(
         "Content-Disposition", "attachment", filename=f"{episodeID}.m3u8"
     )
@@ -3299,7 +3393,7 @@ def mainOther(otherHash):
     response.headers.set("Content-Type", "application/x-mpegURL")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
-    response.headers.set("Access-Control-Allow-Origin", f"http://{local_ip}:{serverPort}")
+    response.headers.set("Access-Control-Allow-Origin", "*")
     response.headers.set(
         "Content-Disposition", "attachment", filename=f"{otherHash}.m3u8"
     )
@@ -3533,7 +3627,7 @@ def audioMovie(trackId, movieId):
     response.headers.set("Content-Type", "application/x-mpegURL")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
-    response.headers.set("Access-Control-Allow-Origin", f"http://{local_ip}:{serverPort}")
+    response.headers.set("Access-Control-Allow-Origin", "*")
     response.headers.set(
         "Content-Disposition", "attachment", filename=f"{trackId}.m3u8"
     )
@@ -3573,7 +3667,7 @@ def audioSeries(trackId, episodeId):
     response.headers.set("Content-Type", "application/x-mpegURL")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
-    response.headers.set("Access-Control-Allow-Origin", f"http://{local_ip}:{serverPort}")
+    response.headers.set("Access-Control-Allow-Origin", "*")
     response.headers.set(
         "Content-Disposition", "attachment", filename=f"{trackId}.m3u8"
     )
@@ -3620,7 +3714,7 @@ def chunkAudio(movieId, trackId, chunkIndex):
     response.headers.set("Content-Type", "video/MP2T")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
-    response.headers.set("Access-Control-Allow-Origin", f"http://{local_ip}:{serverPort}")
+    response.headers.set("Access-Control-Allow-Origin", "*")
     response.headers.set(
         "Content-Disposition", "attachment", filename=f"{trackId}-{chunkIndex}.aac"
     )
@@ -3671,7 +3765,7 @@ def chunkAudioSerie(episodeId, trackId, chunkIndex):
     response.headers.set("Content-Type", "video/MP2T")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
-    response.headers.set("Access-Control-Allow-Origin", f"http://{local_ip}:{serverPort}")
+    response.headers.set("Access-Control-Allow-Origin", "*")
     response.headers.set(
         "Content-Disposition", "attachment", filename=f"{trackId}-{chunkIndex}.aac"
     )

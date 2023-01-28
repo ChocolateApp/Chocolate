@@ -33,9 +33,60 @@ function getCookie(name) {
     if (parts.length === 2) return parts.pop().split(';').shift();
 }
 
-function addLibrary(){
+function addLibrary() {
     const popupLibrary = document.getElementById("popupLibrary")
     popupLibrary.style.display = "block"
+}
+
+function editLib(libName) {
+    //get the div with the libName
+    let libDiv = document.getElementById(libName)
+    libTypeInput = libDiv.children[1]
+    libType = libTypeInput.value
+    libPathInput = libDiv.children[3]
+    libPath = libPathInput.value
+    allUsers = []
+    users = libDiv.children[4].children
+    for (user of users) {
+        //get the 4th child of the user div
+        userCheckbox = user.children[2]
+        if (userCheckbox.checked) {
+            allUsers.push(userCheckbox.getAttribute("username"))
+        }
+    }
+    allUsers = allUsers.join(",")
+    fetch(`/editLib/${libName}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        //set the form
+        body: JSON.stringify({
+            libType: libType,
+            libPath: libPath,
+            libUsers: allUsers
+        })
+    }).then(function() {
+        location.reload()
+    })
+}
+
+function deleteLib(libName) {
+    //create a popup to confirm the deletion
+    const popupLibrary = document.createElement("div")
+    document.body.appendChild(popupLibrary)
+    fetch(`/deleteLib/${libName}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        //set the form
+        body: JSON.stringify({
+            libName: libName
+        })
+    }).then(function() {
+        location.reload()
+    })
 }
 
 window.onload = function() {

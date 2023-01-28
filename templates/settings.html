@@ -85,23 +85,58 @@
     <input id="createAccountButton" type="submit" value='{{ g.language["createAccount"] }}' class="createAccountButton">
 </form>
 
-<form class="saveSettingsForm" action="" onsubmit="saveSettings(event)" method="post" id="saveSettingsForm">
+<div class="allLibraries">
+    {% for theLibrary in allLibraries %}
+    <div class="librarySetting" id="{{ theLibrary.libName }}">
+        <h1>{{ theLibrary.libName }}</h1>
+        <input list="libTypesList" name="libType" id="libType" class="libType form_field" value="{{ theLibrary.libType }}">
+        <datalist id="libTypesList">
+            <option value="movies">{{ g.language["movies"] }}</option>
+            <option value="series">{{ g.language["series"] }}</option>
+            <option value="games">{{ g.language["consoles"] }}</option>
+            <option value="tv">{{ g.language["tvChannels"] }}</option>
+            <option value="other">{{ g.language["other"] }}</option>
+        </datalist>
+        <input type="text" value="{{ theLibrary.libFolder }}" id="libPath" class="form_field_create_account">
+        <div id="users" class="users">{% for user in g.users %}
+            <div class="user">
+                <ion-icon name="person-outline"></ion-icon>
+                <span>{{ user.name }}</span> {% if theLibrary.availableFor == None %}
+                <input type="checkbox" id="userCheckbox" class="userCheckbox" username="{{ user.name }}">{% elif user.name in theLibrary.availableFor %}
+                <input type="checkbox" id="userCheckbox" class="userCheckbox" username="{{ user.name }}" checked> {% else %}
+                <input type="checkbox" id="userCheckbox" class="userCheckbox" username="{{ user.name }}"> {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <div id="buttonsEditDelete" class="buttonsEditDelete">
+            <button class="editLibButton" onclick="editLib( '{{ theLibrary.libName }}')">Save changes</button>
+            <button class="deleteLibButton" onclick="deleteLib( '{{ theLibrary.libName }}')">
+            <ion-icon name="trash-outline"></ion-icon>
+                Delete</button>
+        </div>
+    </div>
+    {% endfor %}
+
     <div class="librariesDiv">
         <label for="addLibraryButton">{{ g.language["createNewLib"] }} : </label>
         <button type="button" id="addLibraryButton" onclick="addLibrary()">
-            <ion-icon name="add-circle-outline" name="Create a new library"></ion-icon>
-        </button>
+        <ion-icon name="add-circle-outline" name="Create a new library"></ion-icon>
+    </button>
     </div>
-    <div class="rescanAllDiv">
-        <label for="rescanAllButton">Rescan all libraries : </label>
-        <button type="button" id="rescanAllButton" onclick="rescanAll()" class="rescanAllButton">
+</div>
+
+<form class="saveSettingsForm" action="" onsubmit="saveSettings(event)" method="post" id="saveSettingsForm">
+    <div class="settingsDiv">
+        <div class="rescanAllDiv">
+            <label for="rescanAllButton">Rescan all libraries : </label>
+            <button type="button" id="rescanAllButton" onclick="rescanAll()" class="rescanAllButton">
             <ion-icon name="refresh-outline" name="Rescan all libraries"></ion-icon>Rescan all libraries
         </button>
-    </div>
-    <div class="languageDiv">
-        <label for="language">{{ g.language["languages"] }} : </label>
-        <input type="search" name="language" id="language" list="languages" class="language form_field" value='{{ g.languageCode }}'>
-        <datalist id="languages">
+        </div>
+        <div class="languageDiv">
+            <label for="language">{{ g.language["languages"] }} : </label>
+            <input type="search" name="language" id="language" list="languages" class="language form_field" value='{{ g.languageCode }}'>
+            <datalist id="languages">
             <option value="AF">Afrikaans</option>
             <option value="SQ">Albanian</option>
             <option value="AM">Amharic</option>
@@ -200,21 +235,21 @@
             <option value="YO">Yoruba</option>
             <option value="ZU">Zulu</option>
         </datalist>
-    </div>
-    <div class="portInput">
-        <label for="port">{{ g.language["serverPort"] }} : </label>
-        <input type="number" name="port" id="port" class="port form_field" value="{{ serverPort }}"> </div>
-    <div class="tmdbKeyDiv">
-        <label for="tmdbKey">{{ g.language["tmdbApiKey"] }} : </label>
-        <input type="text" name="tmdbKey" id="tmdbKey" class="tmdbKey form_field" value="{{ tmdbKey }}">
-    </div>
-    <div class="igdbIDDiv">
-        <label for="igdbKey">{{ g.language["igdbIdKey"] }} : </label>
-        <input type="text" name="igdbID" id="igdbID" class="igdbKey form_field" value="{{ igdbID }}">
-    </div>
-    <div class="igdbSecretDiv">
-        <label for="igdbSecret">{{ g.language["igdbSecretKey"] }} : </label>
-        <input type="text" name="igdbSecret" id="igdbSecret" class="igdbSecret form_field" value="{{ igdbSecret }}"> </div>
+        </div>
+        <div class="portInput">
+            <label for="port">{{ g.language["serverPort"] }} : </label>
+            <input type="number" name="port" id="port" class="port form_field" value="{{ serverPort }}"> </div>
+        <div class="tmdbKeyDiv">
+            <label for="tmdbKey">{{ g.language["tmdbApiKey"] }} : </label>
+            <input type="text" name="tmdbKey" id="tmdbKey" class="tmdbKey form_field" value="{{ tmdbKey }}">
+        </div>
+        <div class="igdbIDDiv">
+            <label for="igdbKey">{{ g.language["igdbIdKey"] }} : </label>
+            <input type="text" name="igdbID" id="igdbID" class="igdbKey form_field" value="{{ igdbID }}">
+        </div>
+        <div class="igdbSecretDiv">
+            <label for="igdbSecret">{{ g.language["igdbSecretKey"] }} : </label>
+            <input type="text" name="igdbSecret" id="igdbSecret" class="igdbSecret form_field" value="{{ igdbSecret }}"> </div>
     </div>
     <div class="allowDownloadsDiv" id="allowDownloadsDiv" data-value="{{ allowDownloads }}">
         <label for="allowDownloadsLabel">{{ g.language["allowDownloads"] }} : </label>
@@ -224,6 +259,7 @@
         </label>
     </div>
     <input id="register" type="submit" value='{{ g.language["saveSettings"] }}' class="saveSettings">
+    </div>
 </form>
 
 {% if conditionIfOne %}
@@ -236,5 +272,5 @@
     </ul>
 </div>
 {% endif %}
-<script src="{{ url_for('static',filename='js/settings.js') }}" type="text/javascript"></script>
+<script src="{{ url_for( 'static',filename='js/settings.js' ) }}" type="text/javascript"></script>
 {% endblock %}
