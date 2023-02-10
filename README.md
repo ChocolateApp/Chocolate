@@ -18,7 +18,9 @@ Chocolate is an Open Source media manager.<br>
 It allows you to manage your media collection and organize it in a way that is easy to use and easy to search.<br>
 Pair your popcorn with Chocolate and enjoy your favorite movie!<br>
 It's a free software.<br>
-
+<p style="display: inline-flex;
+    align-items: center;">
+This product uses the TMDB API but is not endorsed or certified by TMDB | <img src="https://www.themoviedb.org/assets/2/v4/logos/v2/blue_square_1-5bdc75aaebeb75dc7ae79426ddd9be3b2be1e342510f8202baf6bffa71d7f5c4.svg" height="20px"></p><br>
 ### Built With
 
 Chocolate is actually made with this technologies:
@@ -48,16 +50,15 @@ This is what you have to do to get started with Chocolate :
 
 #### For Windows
 * No installer available actually
-* So download the source code and install the dependencies (requirements.txt and ffmpeg)
+* So download the source code and install the dependencies (requirements.txt, ffmpeg and winrar (only for cbr files so books))
+* For ffmpeg and winrar, you have to add them to your PATH
 
 #### For QNAP
 * Go here: [https://www.myqnap.org/product/chocolate81/](https://www.myqnap.org/product/chocolate81/)
 * Enjoy !
 
 #### For Docker
-* Go to the [latest release](https://github.com/ChocolateApp/Chocolate/releases/latest)
-* Edit the `docker-compose.yml` file and add in volumes the path to your media
-* Execute `docker-compose up -d`
+* Execute `docker pull imprevisible/chocolate`
 * Enjoy !
 
 ### Files organizations
@@ -115,6 +116,12 @@ This is what you have to do to get started with Chocolate :
   * Put in the bios file
 * It's done
 
+#### For Books :
+* Create a directory
+* Put all your books in with the name that you want
+* It's done
+```
+
 ### List of supported console :
   * Gameboy
   * Gameboy Color
@@ -135,6 +142,12 @@ This is what you have to do to get started with Chocolate :
 
 #### For Windows
 * Execute app.py
+
+#### For Docker
+* Execute :
+  * CMD : `docker run -d -v %cd%:/chocolate imprevisible/chocolate`
+  * Powershell : `docker run -d -v ${PWD}:/chocolate imprevisible/chocolate`
+  * Linux : `docker run -d -v $(pwd):/chocolate imprevisible/chocolate`
 
 ### Important Informations
 * At the first launch, Chocolate will be very fast if you don't renseign the path in config.ini.
@@ -181,11 +194,14 @@ Don't forget to give the project a star! Thanks again!
 - [ ] Order by title, year, release date, note, duration, done, watching, date of add, date of last view
 - [ ] Add watched movies, and series to TRAKT
 - [ ] Add movies, series, games without restarting the server
-- [ ] Add website UI to link with Radarr, Sonarr, Lidarr...
+- [ ] Add website UI to link with Radarr, Sonarr, Lidarr... (with pyarr/aiopyarr)
 - [ ] Add support to trakt
 - [ ] Use the GPU to encode videos if possible
 - [ ] Change season with the buttons
 - [ ] Add logs
+- [ ] Use arrow keys to change books pages
+- [ ] Design a UI for the path selection instead of a string
+- [ ] Use two pages for books on horizontal screen
 
 ### Work in progress
 - [ ] Detect series intro and skip them
@@ -193,8 +209,6 @@ Don't forget to give the project a star! Thanks again!
 - [ ] Use Flask-PWA
 - [ ] Add all audio tracks
 - [ ] Translate the rescan buttons
-- [ ] Edit TV Shows
-- [ ] Edit libraries
 
 ### Tasks Done
 - [X] Increase the boot speed
@@ -221,6 +235,10 @@ Don't forget to give the project a star! Thanks again!
 - [X] Added new type of library, "other", for files that are not movies, series, games, tv
 - [X] Add 2 buttons, one rescan the library, and the other one in the settings to rescan all the libraries
 - [X] Scan movies in subdirectory
+- [X] Edit libraries
+- [X] Added books (epub, pdf, cbz, cbr)
+- [X] Edit TV Shows
+- [X] Increased the search algorithms
 
 <!--LANGUAGES TO TRANSLATE -->
 ## Languages to translate
