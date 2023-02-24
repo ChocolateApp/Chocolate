@@ -209,6 +209,7 @@ Don't forget to give the project a star! Thanks again!
 - [ ] Add all audio tracks
 - [ ] Translate the rescan buttons
 - [ ] Add website UI to link with Radarr, Sonarr, Lidarr... (with pyarr/aiopyarr)
+- [ ] Move the UI to React
 
 ### Tasks Done
 - [X] Increase the boot speed
