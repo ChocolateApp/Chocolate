@@ -121,7 +121,6 @@ This is what you have to do to get started with Chocolate :
 * Create a directory
 * Put all your books in with the name that you want
 * It's done
-```
 
 ### List of supported console :
   * Gameboy
@@ -195,7 +194,6 @@ Don't forget to give the project a star! Thanks again!
 - [ ] Order by title, year, release date, note, duration, done, watching, date of add, date of last view
 - [ ] Add watched movies, and series to TRAKT
 - [ ] Add movies, series, games without restarting the server
-- [ ] Add website UI to link with Radarr, Sonarr, Lidarr... (with pyarr/aiopyarr)
 - [ ] Add support to trakt
 - [ ] Use the GPU to encode videos if possible
 - [ ] Change season with the buttons
@@ -210,6 +208,7 @@ Don't forget to give the project a star! Thanks again!
 - [ ] Use Flask-PWA
 - [ ] Add all audio tracks
 - [ ] Translate the rescan buttons
+- [ ] Add website UI to link with Radarr, Sonarr, Lidarr... (with pyarr/aiopyarr)
 
 ### Tasks Done
 - [X] Increase the boot speed
