@@ -50,9 +50,11 @@ This is what you have to do to get started with Chocolate :
 * Enjoy !
 
 #### For Windows
-* No installer available actually
-* So download the source code and install the dependencies (requirements.txt, ffmpeg and winrar (only for cbr files so books))
-* For ffmpeg and winrar, you have to add them to your PATH
+No installer available, either:
+* [Use Docker]( https://github.com/ChocolateApp/Chocolate#for-docker)
+* Install manually
+    * So download the source code and install the dependencies (requirements.txt, ffmpeg and winrar (only for cbr files so books))
+    * For ffmpeg and winrar, you have to add them to your PATH
 
 #### For QNAP
 * Go here: [https://www.myqnap.org/product/chocolate81/](https://www.myqnap.org/product/chocolate81/)
