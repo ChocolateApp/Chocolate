@@ -1,8 +1,16 @@
 
-import configparser, os, re, cv2, imagehash, time, colorama
-from PIL import Image
+import configparser
+import os
+import re
+import time
+
+import colorama
+import cv2
+import imagehash
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from PIL import Image
+
 app = Flask(__name__)
 config = configparser.ConfigParser()
 dir = os.path.dirname(__file__)
@@ -259,8 +267,11 @@ def listAllVideoFiles(seasonPath):
             episodes.append(episode)
     return episodes
 
-import os, subprocess
+import os
+import subprocess
+
 from pydub import AudioSegment
+
 
 # Fonction pour extraire le flux audio des vidéos
 def extract_audio(video_file, audio_file):

@@ -1,4 +1,5 @@
-import os, subprocess
+import os
+import subprocess
 
 # Définissez le chemin du dossier contenant les fichiers vidéos à réduire
 # par exemple :

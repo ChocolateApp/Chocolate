@@ -1,20 +1,40 @@
+import ast
+import configparser
+import datetime
+import json
+import os
+import platform
+import re
+import socket
+import subprocess
+import time
+import warnings
+import zipfile
+import zlib
 from sqlite3 import IntegrityError
-from flask import Flask, url_for, request, render_template, redirect, make_response, send_file, g
-from markupsafe import Markup
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import LoginManager, UserMixin, login_user, login_required, current_user, logout_user
-from flask_sqlalchemy import SQLAlchemy
-from flask_cors import CORS
-from tmdbv3api import TMDb, Movie, TV, Episode, Person
-from tmdbv3api.exceptions import TMDbException
-from videoprops import get_video_properties
-from Levenshtein import distance as lev
+from time import mktime
+
+import git
+import GPUtil
+import pycountry
+import requests
+import sqlalchemy
 from ask_lib import AskResult, ask
 from deep_translator import GoogleTranslator
-from time import mktime
+from flask import (Flask, g, make_response, redirect, render_template, request,
+                   send_file, url_for)
+from flask_cors import CORS
+from flask_login import (LoginManager, UserMixin, current_user, login_required,
+                         login_user, logout_user)
+from flask_sqlalchemy import SQLAlchemy
+from Levenshtein import distance as lev
+from markupsafe import Markup
 from PIL import Image
 from pypresence import Presence
-import requests, os, subprocess, configparser, datetime, subprocess, platform, GPUtil, json, time, sqlalchemy, warnings, re, zipfile, ast, git, pycountry, zlib, socket
+from tmdbv3api import TV, Episode, Movie, Person, TMDb
+from tmdbv3api.exceptions import TMDbException
+from videoprops import get_video_properties
+from werkzeug.security import check_password_hash, generate_password_hash
 
 start_time = mktime(time.localtime())
 
