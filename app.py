@@ -5,7 +5,6 @@ import os
 import platform
 import re
 import subprocess
-import time
 import warnings
 import zipfile
 import zlib
@@ -2936,7 +2935,7 @@ def login():
         accountPassword = request.get_json()["password"]
         user = Users.query.filter_by(name=accountName).first()
         token = f"Bearer {authToken}"
-        actualTimeInSeconds = int(time.time())
+        actualTimeInSeconds = int(time())
         allAuthTokens[token] = {"user": user.name, "time": actualTimeInSeconds}
         if user:
             if user.accountType == "Kid":
@@ -5069,7 +5068,7 @@ if __name__ == "__main__":
     if enabledRPC == "true":
         try:
             RPC.update(
-            state="Idling", details=f"The Universal MediaManager | v{chocolateVersion} ({lastCommitHash})", large_image="largeimage", large_text="Chocolate", buttons=[{"label": "Github", "url": "https://github.com/ChocolateApp/Chocolate"}], start=time.time())
+            state="Idling", details=f"The Universal MediaManager | v{chocolateVersion} ({lastCommitHash})", large_image="largeimage", large_text="Chocolate", buttons=[{"label": "Github", "url": "https://github.com/ChocolateApp/Chocolate"}], start=time())
         except:
             pass
 
