@@ -5,11 +5,11 @@
 <div style="font-style: italic; text-align: center;" markdown="1" align="center">
 
 [![wakatime](https://wakatime.com/badge/user/4cf4132a-4ced-411d-b714-67bdbdc84527/project/ecce3f45-dba9-4e4b-8f78-693c6d237d1c.svg)](https://wakatime.com/badge/user/4cf4132a-4ced-411d-b714-67bdbdc84527/project/ecce3f45-dba9-4e4b-8f78-693c6d237d1c)
-  [![GitHub release](https://img.shields.io/github/release/Impre-visible/Chocolate?include_prereleases=&sort=semver&color=blue)](https://github.com/Impre-visible/Chocolate/releases/)
-  [![GitHub stars](https://img.shields.io/github/stars/Impre-visible/Chocolate?style=social&label=Stars&color=blue)](https://github.com/Impre-visible/Chocolate)
-  [![GitHub watchers](https://img.shields.io/github/watchers/Impre-visible/Chocolate?style=social&label=Watchers&color=blue)](https://github.com/Impre-visible/Chocolate)
+  [![GitHub release](https://img.shields.io/github/release/ChocolateApp/Chocolate?include_prereleases=&sort=semver&color=blue)](https://github.com/ChocolateApp/Chocolate/releases/)
+  [![GitHub stars](https://img.shields.io/github/stars/ChocolateApp/Chocolate?style=social&label=Stars&color=blue)](https://github.com/ChocolateApp/Chocolate)
+  [![GitHub watchers](https://img.shields.io/github/watchers/ChocolateApp/Chocolate?style=social&label=Watchers&color=blue)](https://github.com/ChocolateApp/Chocolate)
   [![License](https://img.shields.io/badge/License-MIT-blue)](#license)
-  [![issues - Chocolate](https://img.shields.io/github/issues/Impre-visible/Chocolate)](https://github.com/Impre-visible/Chocolate/issues)
+  [![issues - Chocolate](https://img.shields.io/github/issues/ChocolateApp/Chocolate)](https://github.com/ChocolateApp/Chocolate/issues)
 
 </div>
 
@@ -66,45 +66,15 @@ This is what you have to do to get started with Chocolate :
 
 #### For Movies :
 * Create a directory
-* Put all your movies in with a proper name, like "Batman Begins.mkv" instead of "Batman.Begins.H264.AAC.XxMOVIESxX.mkv", they can be in subdirectories (only one level, one movie per directory)
-```
-📂 Movies
- ├── 📂 Batman Begins      # Perfect
- │    └── Batman Begins.mkv
- ├── Back to the Future.mkv
- ├── Harry Potter and the Philosopher's Stone.mkv
- │
- ├── 📂 The Lord of the Rings    # Don't do that please (two movies in one directory !)
- │    ├── The Lord of the Rings - The Fellowship of the Ring.mkv
- │    └── The Lord of the Rings - The Two Towers.mkv
-```
-
+* Put all your movies in (directly the files or in a subfolder)
 * Create a new library and select the directory you created with the specific type
 * It's done
 
 #### For Shows :
-* Create a directory
-* Create a directory for each shows
-* In this directory create directory for each seasons, if possible named them like that : "S1", "S2", "S26"
-* In this seasons directory put all épisodes files, and if possible named them like that : "E1.mkv", "E2.mp4", "E56.avi"
-* Precisions : Chocolate will ask you to rename files and directory if it don't understand, you can agree or disagree is proposition
-```
-📂 Shows
- ├── 📂 The Office           # Perfect
- │    ├── 📂 S1
- │    │    ├── E1.mkv
- │    │    ├── E2.mkv
- │    │    └── E3.mkv
- │    │
- │    └── 📂 S2
- │         └── E1.mkv
- │
- ├── 📂 The Simpsons        # Don't do that please
- │    └── 📂 Season 1
- │         ├── The.Simpsons.EP.One.mkv
- │         ├── The.Simpsons.EP.Two.mkv
- │         └── The.Simpsons.EP.Three.mkv
-```
+* Create a directory where you will put all your shows
+* Choose between two ways to organize your shows :
+  * One directory per show, with directories for each season, and files for each episode
+  * All files in one directory, for all shows, with a good name that can be analyzed 
 * Create a new library and select the directory you created with the specific type
 * It's done
 
@@ -144,16 +114,14 @@ This is what you have to do to get started with Chocolate :
 * Execute app.py
 
 #### For Docker
+/!\ The docker image has some problems, it's not working for now /!\
 * Execute :
   * CMD : `docker run -d -v %cd%:/chocolate imprevisible/chocolate`
   * Powershell : `docker run -d -v ${PWD}:/chocolate imprevisible/chocolate`
   * Linux : `docker run -d -v $(pwd):/chocolate imprevisible/chocolate`
 
 ### Important Informations
-* At the first launch, Chocolate will be very fast if you don't renseign the path in config.ini.
-* If you don't change all the paths. Go to the settings, and fill in the forms.
-* You can change a lot of settings directly on the website.
-* The default port is 8500.
+* The port of Chocolate is 8888.
 
 <!-- USAGE EXAMPLES -->
 ## Usage
@@ -181,7 +149,6 @@ Don't forget to give the project a star! Thanks again!
 - [ ] A docker image **URGENT**
 - [ ] Create a plugin system
 - [ ] Add the mobile ui of the video player
-- [ ] Add Books, PDF, Epub
 - [ ] Add Musics
 - [ ] Add a watchtogether system
 - [ ] Translate in multiple languages
@@ -191,9 +158,7 @@ Don't forget to give the project a star! Thanks again!
 - [ ] Custom intro
 - [ ] Add a system to search for subtitles (By using OpenSubtitles API [here](https://opensubtitles.stoplight.io/docs/opensubtitles-api/b1eb44d4c8502-open-subtitles-api) )
 - [ ] Send issues directly from the website
-- [ ] Order by title, year, release date, note, duration, done, watching, date of add, date of last view
 - [ ] Add watched movies, and series to TRAKT
-- [ ] Add movies, series, games without restarting the server
 - [ ] Add support to trakt
 - [ ] Use the GPU to encode videos if possible
 - [ ] Change season with the buttons
@@ -201,45 +166,15 @@ Don't forget to give the project a star! Thanks again!
 - [ ] Use arrow keys to change books pages
 - [ ] Design a UI for the path selection instead of a string
 - [ ] Use two pages for books on horizontal screen
+- [ ] Package on chocolatey
+- [ ] NFO support
+- [ ] Allow support of PosgreSQL/MySQL
 
 ### Work in progress
 - [ ] Detect series intro and skip them
 - [ ] Dev a mobile/TV app with chromecasting, and download
-- [ ] Use Flask-PWA
 - [ ] Add all audio tracks
 - [ ] Translate the rescan buttons
-- [ ] Add website UI to link with Radarr, Sonarr, Lidarr... (with pyarr/aiopyarr)
-- [ ] Move the UI to React
-
-### Tasks Done
-- [X] Increase the boot speed
-- [X] Added the Consoles on the main page
-- [X] Replace JSON by a DB
-- [X] Converted all images to webp
-- [X] Create a local account system for child and members of the family/friends
-- [X] Patch few bugs like :
-  - [X] Actors page
-  - [X] Popup of the first and random show
-- [X] Add Games
-- [X] Add shows, tv programs
-- [X] Enable or not RPC for Discord
-- [X] Add multiple quality vidéos
-- [X] Vue systeme by account instead of computer
-- [X] Add the loading everywhere
-- [X] Repair the RPC System (added a button for the github)
-- [X] Create a systeme of library
-- [X] Increase the search system
-- [X] Upgrade the responsive
-- [X] Edit movie metadata directly on the website
-- [X] Add a download button
-- [X] Add TV with M3U playlist
-- [X] Added new type of library, "other", for files that are not movies, series, games, tv
-- [X] Add 2 buttons, one rescan the library, and the other one in the settings to rescan all the libraries
-- [X] Scan movies in subdirectory
-- [X] Edit libraries
-- [X] Added books (epub, pdf, cbz, cbr)
-- [X] Edit TV Shows
-- [X] Increased the search algorithms
 
 <!--LANGUAGES TO TRANSLATE -->
 ## Languages to translate
@@ -354,7 +289,7 @@ Impre'visible#2576 - [@romeo_chevrier](https://twitter.com/romeo_chevrier) - imp
 ## Acknowledgments
 
 If you like this project, please consider giving me a star ⭐ to support my work and the futures update of this project. 
-[![stars - Chocolate](https://img.shields.io/github/stars/Impre-visible/Chocolate?style=social)](https://github.com/Impre-visible/Chocolate)
+[![stars - Chocolate](https://img.shields.io/github/stars/ChocolateApp/Chocolate?style=social)](https://github.com/ChocolateApp/Chocolate)
 
 This tool was made by Impre-visible, some features needed the help of several volunteers, that I thank, you can contact them on this server : [Dev'Area](https://discord.gg/hTmbFePH)
 
