@@ -1,3 +1,24 @@
+import configparser
+import datetime
+import json
+import os
+import platform
+import re
+import subprocess
+import time
+import warnings
+import zipfile
+import zlib
+import requests
+import rarfile
+import pycountry
+import PyPDF2
+import base64
+import io
+import git
+import GPUtil
+import sqlalchemy
+
 from sqlite3 import IntegrityError
 from flask import Flask, url_for, request, redirect, make_response, send_file, g, abort, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -11,16 +32,15 @@ from videoprops import get_video_properties
 from Levenshtein import distance as lev
 from ask_lib import AskResult, ask
 from deep_translator import GoogleTranslator
-from time import mktime
+from time import mktime, localtime, time
 from PIL import Image
 from pypresence import Presence
 from uuid import uuid4
 from unidecode import unidecode
 from pyarr import RadarrAPI, SonarrAPI, LidarrAPI, ReadarrAPI
 from guessit import guessit
-import requests, os, subprocess, configparser, datetime, subprocess, platform, GPUtil, json, time, sqlalchemy, warnings, re, zipfile, ast, git, pycountry, zlib, zipfile, rarfile, io, PyPDF2, base64
 
-start_time = mktime(time.localtime())
+start_time = mktime(localtime())
 
 with warnings.catch_warnings():
    warnings.simplefilter("ignore", category = sqlalchemy.exc.SAWarning)
@@ -1928,12 +1948,12 @@ def checkLogin():
     if token not in allAuthTokens.keys():
         return jsonify(False)
 
-    actualTime = time.time()
+    actualTime = time()
     tokenTime = allAuthTokens[token]["time"]
     ecart = actualTime - tokenTime
     if ecart > 3600:
         return jsonify(False)
-    allAuthTokens[token]["time"] = time.time()
+    allAuthTokens[token]["time"] = time()
     return jsonify(True)
     
 @app.route("/checkAccType", methods=["POST"])
