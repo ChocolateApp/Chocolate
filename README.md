@@ -4,7 +4,7 @@
 
 <div style="font-style: italic; text-align: center;" markdown="1" align="center">
 
-[![wakatime](https://wakatime.com/badge/user/4cf4132a-4ced-411d-b714-67bdbdc84527/project/ecce3f45-dba9-4e4b-8f78-693c6d237d1c.svg)](https://wakatime.com/badge/user/4cf4132a-4ced-411d-b714-67bdbdc84527/project/ecce3f45-dba9-4e4b-8f78-693c6d237d1c)
+  ![wakatime](https://wakatime.com/badge/user/4cf4132a-4ced-411d-b714-67bdbdc84527/project/ecce3f45-dba9-4e4b-8f78-693c6d237d1c.svg)
   [![GitHub release](https://img.shields.io/github/release/ChocolateApp/Chocolate?include_prereleases=&sort=semver&color=blue)](https://github.com/ChocolateApp/Chocolate/releases/)
   [![GitHub stars](https://img.shields.io/github/stars/ChocolateApp/Chocolate?style=social&label=Stars&color=blue)](https://github.com/ChocolateApp/Chocolate)
   [![GitHub watchers](https://img.shields.io/github/watchers/ChocolateApp/Chocolate?style=social&label=Watchers&color=blue)](https://github.com/ChocolateApp/Chocolate)
