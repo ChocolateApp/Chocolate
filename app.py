@@ -39,26 +39,17 @@ from unidecode import unidecode
 from pyarr import RadarrAPI, SonarrAPI, LidarrAPI, ReadarrAPI
 from guessit import guessit
 
+from chocolate import create_app, db, loginManager
+
 start_time = mktime(localtime())
 
 with warnings.catch_warnings():
    warnings.simplefilter("ignore", category = sqlalchemy.exc.SAWarning)
 
-app = Flask(__name__)
-app.secret_key = "ChocolateDBPassword"
-
-CORS(app, supports_credentials=True, resources={r"/*": {"origins": "*"}})
+app = create_app()
 
 dirPath = os.getcwd()
 dirPath = os.path.dirname(__file__).replace("\\", "/")
-app.config["SQLALCHEMY_DATABASE_URI"] = f'sqlite:///{dirPath}/database.db'
-app.config['MAX_CONTENT_LENGTH'] = 4096 * 4096
-app.config['UPLOAD_FOLDER'] = f"{dirPath}/static/img/"
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-db = SQLAlchemy(app)
-loginManager = LoginManager()
-loginManager.init_app(app)
-loginManager.login_view = 'login'
 langs_dict = GoogleTranslator().get_supported_languages(as_dict=True)
 allAuthTokens = {}
 
