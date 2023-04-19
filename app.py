@@ -23,11 +23,9 @@ import requests
 import sqlalchemy
 from ask_lib import AskResult, ask
 from deep_translator import GoogleTranslator
-from flask import (Flask, abort, g, jsonify, make_response, redirect, request,
+from flask import (abort, g, jsonify, make_response, redirect, request,
                    send_file, url_for)
-from flask_cors import CORS
-from flask_login import LoginManager, UserMixin
-from flask_sqlalchemy import SQLAlchemy
+from flask_login import UserMixin
 from guessit import guessit
 from Levenshtein import distance as lev
 from PIL import Image
@@ -549,10 +547,9 @@ websitesTrailers = {
 
 
 def getMovies(libraryName):
-    
-
-    allMoviesNotSorted = []
     movie = Movie()
+    
+    allMoviesNotSorted = []
     path = Libraries.query.filter_by(libName=libraryName).first().libFolder
     filmFileList = []
     try:
@@ -563,6 +560,9 @@ def getMovies(libraryName):
         if not movieFile.endswith((".rar", ".zip", ".part")):
             filmFileList.append(movieFile)
 
+    if not is_connected():
+        return
+            
     movies = Movies.query.filter_by(libraryName=libraryName).all()
     moviesPath = os.listdir(path)
     for movie in movies:
@@ -610,8 +610,8 @@ def getMovies(libraryName):
             print(loading, end="\r", flush=True)
             slug = searchedFilm
             exists = Movies.query.filter_by(slug=slug).first() is not None
+            
             if not exists:
-                movie = Movie()
                 try:
                     search = movie.search(movieTitle, adult=True)
                 except Exception as e:
@@ -960,6 +960,11 @@ def getSeries(libraryName):
     for series in allSeries:
         allSeriesName.append(series)
     
+    if not is_connected():
+        return
+    
+    show = TV()
+
     for serie in allSeriesName:
         if not isinstance(serie, str):
             #print(f"Error : {serie} is not a string")
@@ -973,7 +978,6 @@ def getSeries(libraryName):
         loading = f"{str(int(percentage)).rjust(3)}% | [\33[32m{loadingFirstPart} \33[31m{loadingSecondPart}\33[0m] | {serie} | {index}/{len(allSeriesName)}                              "
         print("\033[?25l", end="")
         print(loading, end="\r", flush=True)
-        show = TV()
         serieTitle = serie
         originalSerieTitle = serieTitle
         try:
@@ -1278,6 +1282,7 @@ def getSeries(libraryName):
             series = TV()
             show = series.search(title)
             res = show[0]
+            serie = res.name
             serieId = res.id
             details = series.details(serieId)
             seasonId = details.seasons[season-1].id
@@ -1395,12 +1400,7 @@ def getSeries(libraryName):
                 seasonDescription = season.overview
                 seasonPoster = season.poster_path
 
-                try:
-                    seasonModifiedTime = os.path.getmtime(f"{allSeriesPath}/{serie}/S{seasonNumber}")
-                    savedModifiedTime = Seasons.query.filter_by(seasonId=seasonId).first().seasonModifiedTime
-                except AttributeError as e:
-                    seasonModifiedTime = os.path.getmtime(f"{allSeriesPath}/{serie}/S{seasonNumber}")
-                    savedModifiedTime = 0
+                savedModifiedTime = 0
 
                 seasonCoverPath = (f"https://image.tmdb.org/t/p/original{seasonPoster}")
                 if not os.path.exists(f"{dirPath}/static/img/mediaImages/{seasonId}_Cover.png"):
@@ -5011,6 +5011,13 @@ def downloadMovie(movieId):
     moviePath = f"{libraryPath}/{moviePath}"
     return send_file(moviePath, as_attachment=True)
 
+def is_connected():
+    try:
+        requests.get("https://ww.google.com/").status_code
+        return True
+    except:
+        return False
+
 @app.route("/downloadEpisode/<episodeId>")
 def downloadEpisode(episodeId):
     config = configparser.ConfigParser()
@@ -5068,5 +5075,5 @@ if __name__ == "__main__":
         allSeriesDict = {}
         for u in db.session.query(Series).all():
             allSeriesDict[u.name] = u.__dict__
-       
+    print(is_connected())
     app.run(host="0.0.0.0", port="8888")
