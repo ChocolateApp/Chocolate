@@ -1,5 +1,7 @@
+import base64
 import configparser
 import datetime
+import io
 import json
 import os
 import platform
@@ -8,36 +10,35 @@ import subprocess
 import warnings
 import zipfile
 import zlib
-import requests
-import rarfile
-import pycountry
-import PyPDF2
-import base64
-import io
+from sqlite3 import IntegrityError
+from time import localtime, mktime, time
+from uuid import uuid4
+
 import git
 import GPUtil
+import pycountry
+import PyPDF2
+import rarfile
+import requests
 import sqlalchemy
-
-from sqlite3 import IntegrityError
-from flask import Flask, url_for, request, redirect, make_response, send_file, g, abort, jsonify
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import LoginManager, UserMixin
-from flask_sqlalchemy import SQLAlchemy
-from flask_cors import CORS
-from tmdbv3api import TMDb, Movie, TV, Episode, Person, Find
-from tmdbv3api.as_obj import AsObj
-from tmdbv3api.exceptions import TMDbException
-from videoprops import get_video_properties
-from Levenshtein import distance as lev
 from ask_lib import AskResult, ask
 from deep_translator import GoogleTranslator
-from time import mktime, localtime, time
-from PIL import Image
-from pypresence import Presence
-from uuid import uuid4
-from unidecode import unidecode
-from pyarr import RadarrAPI, SonarrAPI, LidarrAPI, ReadarrAPI
+from flask import (Flask, abort, g, jsonify, make_response, redirect, request,
+                   send_file, url_for)
+from flask_cors import CORS
+from flask_login import LoginManager, UserMixin
+from flask_sqlalchemy import SQLAlchemy
 from guessit import guessit
+from Levenshtein import distance as lev
+from PIL import Image
+from pyarr import LidarrAPI, RadarrAPI, ReadarrAPI, SonarrAPI
+from pypresence import Presence
+from tmdbv3api import TV, Episode, Find, Movie, Person, TMDb
+from tmdbv3api.as_obj import AsObj
+from tmdbv3api.exceptions import TMDbException
+from unidecode import unidecode
+from videoprops import get_video_properties
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from chocolate import create_app, db, loginManager
 
