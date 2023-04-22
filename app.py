@@ -325,8 +325,8 @@ class Libraries(db.Model):
         return f"<Libraries {self.libName}>"
 
 with app.app_context():
-    db.create_all()
     try:
+        db.create_all()
         db.init_app(app)
     except:
         pass
@@ -2653,31 +2653,51 @@ def get_chunk_other_quality(quality, hash, idx=0):
 
     return response
 
-@app.route("/chunkCaption/<subtitleType>/<index>/<movieID>.vtt", methods=["GET"])
-def chunkCaption(movieID, subtitleType, index):
-    subtitleType = subtitleType.lower()
+@app.route("/chunkCaption/<index>/<movieID>.vtt", methods=["GET"])
+def chunkCaption(movieID, index):
     movie = Movies.query.filter_by(id=movieID).first()
     slug = movie.slug
     library = movie.libraryName
     theLibrary = Libraries.query.filter_by(libName=library).first()
     path = theLibrary.libFolder
     video_path = f"{path}/{slug}"
-    if subtitleType == "srt":
-        extractCaptionsCommand = [
-            "ffmpeg", "-hide_banner", "-loglevel", "error", "-i", video_path, "-map", f"0:{index}", "-f", "webvtt", "pipe:1",
-        ]
-        extractCaptions = subprocess.run(extractCaptionsCommand, stdout=subprocess.PIPE)
+    extractCaptionsCommand = [
+        "ffmpeg", "-hide_banner", "-loglevel", "error", "-i", video_path, "-map", f"0:{index}", "-f", "webvtt", "pipe:1",
+    ]
+    extractCaptions = subprocess.run(extractCaptionsCommand, stdout=subprocess.PIPE)
 
-        extractCaptionsResponse = make_response(extractCaptions.stdout)
-        extractCaptionsResponse.headers.set("Content-Type", "text/VTT")
-        extractCaptionsResponse.headers.set(
-            "Content-Disposition", "attachment", filename=f"{subtitleType}/{index}/{movieID}.vtt"
-        )
+    extractCaptionsResponse = make_response(extractCaptions.stdout)
+    extractCaptionsResponse.headers.set("Content-Type", "text/VTT")
+    extractCaptionsResponse.headers.set(
+        "Content-Disposition", "attachment", filename=f"{index}/{movieID}.vtt"
+    )
 
-        return extractCaptionsResponse
-    return "Not supported"
+    return extractCaptionsResponse
         
-            
+@app.route("/captionMovie/<movieID>_<id>.m3u8", methods=["GET"])
+def captionMovieByIDToM3U8(movieID, id):
+    movie = Movies.query.filter_by(id=movieID).first()
+    duration = movie.duration
+    duration = sum(x * int(t) for x, t in zip([3600, 60, 1], duration.split(":")))
+    text = f"""
+#EXTM3U
+#EXT-X-TARGETDURATION:887
+#EXT-X-VERSION:3
+#EXT-X-MEDIA-SEQUENCE:1
+#EXT-X-PLAYLIST-TYPE:VOD
+#EXTINF:{float(duration)+1},
+/chunkCaption/{id}/{movieID}.vtt
+#EXT-X-ENDLIST
+    """
+    response = make_response(text)
+    response.headers.set("Content-Type", "application/x-mpegURL")
+    response.headers.set("Access-Control-Allow-Origin", "*")
+    response.headers.set("Accept-Encoding", "*")
+    response.headers.set(
+        "Content-Disposition", "attachment", filename=f"{movieID}_{id}.m3u8"
+    )
+    
+    return response
 
 @app.route("/getSettings", methods=["GET"])
 def getSettings():
@@ -4449,6 +4469,7 @@ def mainMovie(movieID):
     width = int(videoProperties["width"])
     m3u8File = f"""#EXTM3U\n\n"""
     #m3u8File += generateAudioMovie(movieID)
+    m3u8File += generateCaptionMovie(movieID)
     qualities = [144, 240, 360, 480, 720, 1080]
     file = []
     for quality in qualities:
@@ -4620,7 +4641,7 @@ def generateCaptionSerie(episodeId):
         if subtitleType.lower() != "pgs":
             allCaptions.append(
                 {
-                    "index": index,         "languageCode": language,         "language": newLanguage,         "url": f"/chunkCaptionSerie/{language}/{index}/{episodeId}.vtt",         "name": titleName,     }
+                    "index": index, "languageCode": language, "language": newLanguage, "url": f"/chunkCaptionSerie/{language}/{index}/{episodeId}.vtt", "name": titleName}
             )
     return allCaptions
 
@@ -4640,11 +4661,12 @@ def generateCaptionMovie(movieID):
         "-select_streams",
         "s",
         "-show_entries",
-        "stream=index:stream_tags=language,title",
+        "stream=index,codec_name:stream_tags=language,title,handler_name,codec_name",
         "-of",
         "csv=p=0",
-        slug,
+        slug
     ]
+
     captionPipe = subprocess.Popen(captionCommand, stdout=subprocess.PIPE)
     try:
         slug = slug.split("\\")[-1]
@@ -4654,27 +4676,27 @@ def generateCaptionMovie(movieID):
     captionResponse = captionPipe.stdout.read().decode("utf-8")
     captionResponse = captionResponse.split("\n")
     captionResponse.pop()
+    
+    print(f"Captions: {captionResponse}")
+
     allCaptions = []
     for line in captionResponse:
         line = line.rstrip()
-        language = line.split(",")[1]
-        try:
-            newLanguage = pycountry.languages.get(alpha_2=language).name
-        except:
-            try:
-                newLanguage = pycountry.languages.get(alpha_3=language).name
-            except:
-                newLanguage = language
         index = line.split(",")[0]
-        titleName = line.split(",")[2]
-        if titleName.lower() == "full":
-            titleName = f"{newLanguage} Full"
-        allCaptions.append(
-            {
-                "index": index,     "languageCode": language,     "language": newLanguage,     "url": f"/chunkCaption/vtt/{index}/{movieID}.vtt",     "name": titleName, }
-        )
+        type = line.split(",")[1]
+        language = line.split(",")[2]
+        titleName = line.split(",")[3]
 
-    return allCaptions
+        if type != "subrip":
+            continue
+
+        allCaptions.append({"index": index, "languageCode": language, "language": titleName, "url": f"/captionMovie/{movieID}_{index}.m3u8", "name": titleName})
+    string = ""
+
+    for caption in allCaptions:
+        string += f'#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",NAME="{caption["language"]}",DEFAULT=NO,FORCED=NO,URI="{caption["url"]}",LANGUAGE="{caption["languageCode"]}"\n'
+
+    return string
 
 def generateAudioMovie(movieID):
     moviePath = Movies.query.filter_by(id=movieID).first().slug
@@ -4765,13 +4787,8 @@ def generateAudioSerie(episodeID):
 @app.route("/audioMovie/<movieId>/<trackId>")
 def audioMovie(trackId, movieId):
     movie = Movies.query.filter_by(id=movieId).first()
-    library = movie.libraryName
-    theLibrary = Libraries.query.filter_by(libName=library).first()
-    path = theLibrary.libFolder
-    moviePath = movie.slug
-    moviePath = moviePath.replace("\\", "/")
-    slug = f"{path}\{moviePath}"
-    duration = length_video(slug)
+    duration = movie.duration
+    duration = int(duration.split(":")[0]) * 3600 + int(duration.split(":")[1]) * 60 + int(duration.split(":")[2])
 
     file = f"""#EXTM3U
 #EXT-X-MEDIA-SEQUENCE:0
@@ -4847,42 +4864,43 @@ def chunkAudio(movieId, trackId, chunkIndex):
     theLibrary = Libraries.query.filter_by(libName=library).first()
     path = theLibrary.libFolder
     video_path = f"{path}/{slug}"
-    end = chunkIndex-1
-    if end < 10:
-        end = "0"+str(end)
-    end2 = chunkIndex
-    if end2 < 10:
-        end2 = "0"+str(end2)
         
-    time_start = "0"+str(datetime.timedelta(seconds=seconds))+"."+str(end)
-    time_end = "0"+str(datetime.timedelta(seconds=seconds + CHUNK_LENGTH))+"."+str(end2)
+    time_start = "0"+str(datetime.timedelta(seconds=seconds))
+    time_end = "0"+str(datetime.timedelta(seconds=seconds + CHUNK_LENGTH))
+    print(f"Time start: {time_start} - Time end: {time_end} - Total: {seconds} - Chunk: {chunkIndex}")
     logLevelValue = "error"
     command = [
         "ffmpeg",
         "-loglevel",
         logLevelValue,
+        "-accurate_seek",
         "-ss",
         time_start,
-        "-i",
-        video_path,
         "-to",
         time_end,
+        "-t",
+        str(CHUNK_LENGTH),
+        "-i",
+        video_path,
         "-c:a",
         "aac",
-        "-vn",
+        "-b:a",
+        "128k",
         "-ac",
         "4",
+        "-vn",
         "-map",
         f"0:{trackId}",
         "-f",
         "adts",
         "pipe:1",
     ]
+    print(" ".join(command))
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
 
     response = make_response(pipe.stdout.read())
     response.headers.set("Content-Type", "video/MP2T")
-    response.headers.set("Range", "bytes=0-4095")
+    response.headers.set("Range", "bytes=0-8192")
     response.headers.set("Accept-Encoding", "*")
     response.headers.set("Access-Control-Allow-Origin", "*")
     response.headers.set(
