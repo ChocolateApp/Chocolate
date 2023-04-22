@@ -14,7 +14,7 @@
 </div>
 
 ## About The Project
-Chocolate is an Open Source media manager.<br>
+Chocolate is a free and Open Source media manager.<br>
 It allows you to manage your media collection and organize it in a way that is easy to use and easy to search.<br>
 Pair your popcorn with Chocolate and enjoy your favorite movie!<br>
 It's a free software.<br>
@@ -307,7 +307,7 @@ This tool was made with ❤ and ☕ by Impre-visible.
 
 <div style="display: flex; align-items: center;">
   <span>This work is licensed under a </span>
-  <a href="http://creativecommons.org/licenses/by-sa/4.0/" style="margin-left:5px;display: flex; align-items: center;">
-    <img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/LicenceCCBYSA/licenceccbysa1.svg" alt="Creative Commons Attribution-ShareAlike 4.0 International License">
+  <a href="https://www.gnu.org/licenses/gpl-3.0.html" style="margin-left:5px;display: flex; align-items: center;">
+    <img src="https://img.shields.io/badge/License-GPL%20v3-blue.svg" alt="GNU GENERAL PUBLIC LICENSE">
   </a>
 </div>
