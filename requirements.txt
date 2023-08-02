@@ -2,7 +2,7 @@ ask_lib==1.1.0
 colorama==0.4.5
 deep_translator==1.10.1
 fitz==0.0.1.dev2
-Flask==2.2.2
+Flask==2.2.5
 Flask_Cors==3.0.10
 flask_login==0.6.2
 flask_sqlalchemy==3.0.3
