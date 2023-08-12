@@ -46,6 +46,9 @@ from .utils.utils import path_join, generate_log, check_authorization, user_in_l
 app = create_app()
 dir_path = get_dir_path()
 
+with app.app_context():
+    DB.create_all()
+
 log = logging.getLogger("werkzeug")
 log.setLevel(logging.DEBUG)
 
@@ -59,7 +62,6 @@ langs_dict = GoogleTranslator().get_supported_languages(as_dict=True)
 @LOGIN_MANAGER.user_loader
 def load_user(id):
     return Users.query.get(int(id))
-
 
 try:
     repo = git.Repo(search_parent_directories=True)
