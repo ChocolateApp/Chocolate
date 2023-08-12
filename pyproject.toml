@@ -1,0 +1,46 @@
+[project]
+name = "Chocolate"
+version = "7.0.0"
+description = "Chocolate is a modern media manager written in Python"
+authors = [
+    {name = "Imprevisible", email = "impr.visible@gmail.com"},
+]
+dependencies = [
+    "colorama==0.4.5",
+    "deep-translator==1.10.1",
+    "fitz==0.0.1.dev2",
+    "Flask==2.2.2",
+    "Flask-Cors==3.0.10",
+    "flask-login==0.6.2",
+    "flask-sqlalchemy==3.0.3",
+    "get-video-properties==0.1.1",
+    "GitPython==3.1.31",
+    "GPUtil==1.4.0",
+    "guessit==3.7.1",
+    "ImageHash==4.3.1",
+    "opencv-python==4.5.5.64",
+    "Pillow==9.5.0",
+    "pyarr==5.0.0",
+    "pycountry==22.3.5",
+    "PyMuPDF==1.21.1",
+    "PyPDF2==3.0.1",
+    "pypresence==4.2.1",
+    "python-Levenshtein==0.20.9",
+    "rarfile==4.0",
+    "SQLAlchemy==1.4.45",
+    "tmdbv3api @ git+https://github.com/Impre-visible/tmdbv3api.git@master",
+    "Unidecode==1.3.6",
+    "Werkzeug==2.2.2",
+    "deezer-python>=6.1.0",
+    "tinytag>=1.9.0",
+    "argparse>=1.4.0",
+    "logging>=0.4.9.6",
+]
+requires-python = ">=3.10"
+readme = "README.md"
+license = {text = "GPL3.0"}
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
