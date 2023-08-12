@@ -12,11 +12,6 @@ from flask_login import LoginManager
 
 from tmdbv3api import TMDb
 
-from .routes.users import users_bp
-from .routes.settings import settings_bp
-from .routes.libraries import libraries_bp
-from .routes.arr import arr_bp
-
 DB = SQLAlchemy()
 LOGIN_MANAGER = LoginManager()
 all_auth_tokens = {}
@@ -24,7 +19,7 @@ DB_PATH = ""
 CONFIG_PATH = ""
 
 parser = argparse.ArgumentParser("Chocolate")
-parser.add_argument("--config", help="Path to the config file (a .ini file)"
+parser.add_argument("--config", help="Path to the config file (a .ini file)")
 parser.add_argument("--db", help="Path to the database file (a .db file)")
 
 ARGUMENTS = parser.parse_args()
@@ -89,6 +84,11 @@ def create_app():
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["DIR_PATH"] = dir_path
     app.config["JSON_AS_ASCII"] = False
+
+    from .routes.users import users_bp
+    from .routes.settings import settings_bp
+    from .routes.libraries import libraries_bp
+    from .routes.arr import arr_bp
     
     app.register_blueprint(users_bp)
     app.register_blueprint(settings_bp)
