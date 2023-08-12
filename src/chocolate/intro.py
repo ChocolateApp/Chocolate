@@ -3,6 +3,7 @@ import configparser, os, re, cv2, imagehash, time, colorama
 from PIL import Image
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+
 app = Flask(__name__)
 config = configparser.ConfigParser()
 dir = os.path.dirname(__file__)
