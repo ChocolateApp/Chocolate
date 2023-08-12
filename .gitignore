@@ -165,3 +165,7 @@ cython_debug/
 src/chocolate/static/img/mediaImages/*
 src/chocolate/static/img/avatars/*
 !src/chocolate/static/img/avatars/defaultUserProfilePic.png
+
+src/chocolate/*.db
+src/chocolate/*.ini
+!src/chocolate/empty_config.ini
