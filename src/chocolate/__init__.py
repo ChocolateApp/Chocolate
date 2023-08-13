@@ -9,10 +9,12 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_login import LoginManager
+from flask_migrate import Migrate
 
 from tmdbv3api import TMDb
 
 DB = SQLAlchemy()
+MIGRATE = Migrate()
 LOGIN_MANAGER = LoginManager()
 all_auth_tokens = {}
 
@@ -89,6 +91,7 @@ def create_app():
     app.register_blueprint(arr_bp)
 
     DB.init_app(app)
+    MIGRATE.init_app(app, DB)
     LOGIN_MANAGER.init_app(app)
     LOGIN_MANAGER.login_view = "login"
     
