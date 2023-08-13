@@ -42,16 +42,12 @@
     "tmdb_api_key": "TMDB API ključ",
     "igdb_id_key": "IGDB ID ključ",
     "igdb_secret_key": "IGDB tajni ključ",
-    "radarr_adress": "Radarr Adresa",
     "radarr_folder": "Radarr Mapa",
     "radarr_api_key": "Radarr API ključ",
-    "sonarr_adress": "Sonarr Adresa",
     "sonarr_folder": "Sonarr Mapa",
     "sonarr_api_key": "Sonarr API ključ",
-    "readarr_adress": "Readarr Adresa",
     "readarr_folder": "Readarr Mapa",
     "readarr_api_key": "Readarr API ključ",
-    "lidarr_adress": "Lidarr Adresa",
     "lidarr_folder": "Lidarr Mapa",
     "lidarr_api_key": "Lidarr API ključ",
     "save_settings": "Spremi postavke",
@@ -59,5 +55,9 @@
     "dont_understand": "Ne razumijem",
     "login": "Prijavite se",
     "select_movie_second_text": "Ako ne pronađete film, pokušajte promijeniti naziv datoteke",
-    "select_movie_text": "Odaberite pravi film za %d %s"
+    "select_movie_text": "Odaberite pravi film za %d %s",
+    "radarr_address": "Radarr Adresa",
+    "sonarr_address": "Sonarr Adresa",
+    "readarr_address": "Readarr Adresa",
+    "lidarr_address": "Lidarr Adresa"
 }

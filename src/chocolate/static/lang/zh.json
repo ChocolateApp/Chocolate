@@ -43,16 +43,12 @@
     "tmdb_api_key": "TMDB API 密钥",
     "igdb_id_key": "IGDB ID 密钥",
     "igdb_secret_key": "IGDB 秘密密钥",
-    "radarr_adress": "Radarr地址",
     "radarr_folder": "Radarr文件夹",
     "radarr_api_key": "Radarr API密钥",
-    "sonarr_adress": "Sonarr地址",
     "sonarr_folder": "Sonarr文件夹",
     "sonarr_api_key": "Sonarr API密钥",
-    "readarr_adress": "Readarr地址",
     "readarr_folder": "Readarr文件夹",
     "readarr_api_key": "Readarr API密钥",
-    "lidarr_adress": "Lidarr地址",
     "lidarr_folder": "Lidarr文件夹",
     "lidarr_api_key": "Lidarr API密钥",
     "save_settings": "保存设置",
@@ -60,5 +56,9 @@
     "dont_understand": "我不明白",
     "login": "登录",
     "games_console": "游戏 %d",
-    "select_movie_text": "为 %d 选择正确的电影 %s"
+    "select_movie_text": "为 %d 选择正确的电影 %s",
+    "radarr_address": "Radarr地址",
+    "sonarr_address": "Sonarr地址",
+    "readarr_address": "Readarr地址",
+    "lidarr_address": "Lidarr地址"
 }

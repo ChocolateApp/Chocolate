@@ -171,3 +171,4 @@ src/chocolate/*.ini
 !src/chocolate/empty_config.ini
 src/chocolate/send_languages_to_weblate.py
 src/chocolate/intro.py
+src/chocolate/convert.py

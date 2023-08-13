@@ -42,16 +42,12 @@
     "tmdb_api_key": "TMDB API-Schlüssel",
     "igdb_id_key": "IGDB-ID-Schlüssel",
     "igdb_secret_key": "IGDB Geheimer Schlüssel",
-    "radarr_adress": "Radarr-Adresse",
     "radarr_folder": "Radarr-Ordner",
     "radarr_api_key": "Radarr-API-Schlüssel",
-    "sonarr_adress": "Sonarr-Adresse",
     "sonarr_folder": "Sonarr-Ordner",
     "sonarr_api_key": "Sonarr-API-Schlüssel",
-    "readarr_adress": "Readarr-Adresse",
     "readarr_folder": "Readarr-Ordner",
     "readarr_api_key": "Readarr-API-Schlüssel",
-    "lidarr_adress": "Lidarr-Adresse",
     "lidarr_folder": "Lidarr-Ordner",
     "lidarr_api_key": "Lidarr-API-Schlüssel",
     "save_settings": "Einstellungen speichern",
@@ -59,5 +55,9 @@
     "dont_understand": "Ich verstehe nicht",
     "login": "Anmeldung",
     "users": "Nutzer",
-    "select_movie_text": "Wähle den richtigen Film für %d in %s"
+    "select_movie_text": "Wähle den richtigen Film für %d in %s",
+    "radarr_address": "Radarr-Adresse",
+    "sonarr_address": "Sonarr-Adresse",
+    "readarr_address": "Readarr-Adresse",
+    "lidarr_address": "Lidarr-Adresse"
 }

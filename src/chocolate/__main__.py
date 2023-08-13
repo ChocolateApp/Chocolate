@@ -298,6 +298,13 @@ def language_file():
         
     with open(f"{dir_path}/static/lang/{language.lower()}.json", "r", encoding="utf-8") as f:
         language = json.load(f)
+
+    with open(f"{dir_path}/static/lang/EN.json", "r", encoding="utf-8") as f:
+        en = json.load(f)
+    
+    for key in en:
+        if key not in language:
+            language[key] = en[key]
         
     return jsonify(language)
 

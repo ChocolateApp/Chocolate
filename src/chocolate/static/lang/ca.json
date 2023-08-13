@@ -42,16 +42,12 @@
     "tmdb_api_key": "Clau API TMDB",
     "igdb_id_key": "Clau ID IGDB",
     "igdb_secret_key": "Clau secreta IGDB",
-    "radarr_adress": "Adreça Radarr",
     "radarr_folder": "Carpeta Radarr",
     "radarr_api_key": "Clau API Radarr",
-    "sonarr_adress": "Adreça Sonarr",
     "sonarr_folder": "Carpeta Sonarr",
     "sonarr_api_key": "Clau API Sonarr",
-    "readarr_adress": "Adreça Readarr",
     "readarr_folder": "Carpeta Readarr",
     "readarr_api_key": "Clau API Readarr",
-    "lidarr_adress": "Adreça Lidarr",
     "lidarr_folder": "Carpeta Lidarr",
     "lidarr_api_key": "Clau API Lidarr",
     "save_settings": "Desa la configuració",
@@ -59,5 +55,9 @@
     "dont_understand": "No entenc",
     "login": "Iniciar sessió",
     "select_movie_second_text": "Si no trobeu la pel·lícula, proveu de canviar el nom del fitxer",
-    "select_movie_text": "Seleccioneu la pel·lícula correcta per a %d %s"
+    "select_movie_text": "Seleccioneu la pel·lícula correcta per a %d %s",
+    "radarr_address": "Adreça Radarr",
+    "sonarr_address": "Adreça Sonarr",
+    "readarr_address": "Adreça Readarr",
+    "lidarr_address": "Adreça Lidarr"
 }
