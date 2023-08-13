@@ -169,3 +169,4 @@ src/chocolate/static/img/avatars/*
 src/chocolate/*.db
 src/chocolate/*.ini
 !src/chocolate/empty_config.ini
+src/chocolate/send_languages_to_weblate.py

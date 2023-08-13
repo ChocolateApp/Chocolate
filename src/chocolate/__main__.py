@@ -15,6 +15,7 @@ import GPUtil
 import pycountry
 import requests
 import sqlalchemy
+import ebooklib
 
 from time import localtime, mktime, time
 from uuid import uuid4
@@ -23,17 +24,15 @@ from flask import (
     abort,
     jsonify,
     make_response,
-    redirect,
     request,
     send_file,
-    url_for,
     render_template,
 )
 from guessit import guessit
-from Levenshtein import distance as lev
 from PIL import Image
+from ebooklib import epub
 from pypresence import Presence
-from tmdbv3api import TV, Find, Movie, Person, TMDb, Search
+from tmdbv3api import TV, Movie, Person, TMDb, Search
 from tmdbv3api.as_obj import AsObj
 from unidecode import unidecode
 from videoprops import get_video_properties
@@ -207,6 +206,11 @@ def after_request(response):
 
     return response
 
+@app.route("/")
+@app.route("/<path:path>")
+def index(path=None):
+    return render_template("index.html")
+
 @app.route("/check_login", methods=["POST"])
 def check_login():
     global all_auth_tokens
@@ -285,23 +289,17 @@ def gpuname() -> str:
         raise ValueError("No GPUs detected in the system")
     return gpus[0].name
 
-
-@app.route("/setTokenToActualTime/<token>")
-def set_token_to_actual_time(token):
-    global all_auth_tokens
-    all_auth_tokens[f"Bearer {token}"]["time"] -= 3600
-    return jsonify(True)
-
-
-@app.route("/languageFile")
+@app.route("/language_file")
 def language_file():
     language = config["ChocolateSettings"]["language"]
-    # open language.json
-    with open(f"{dir_path}/static/lang/languages.json", "r", encoding="utf-8") as f:
-        language_dict = json.load(f)
-    # if language not in languageDict use EN
-    all_language = language_dict[language] if language in language_dict else language_dict["EN"]
-    return jsonify(all_language)
+    # if language not in the supported languages, or the file contain {}, return EN
+    if not os.path.isfile(f"{dir_path}/static/lang/{language.lower()}.json") or "{}" in open(f"{dir_path}/static/lang/{language.lower()}.json", "r", encoding="utf-8").read():
+        language = "EN"
+        
+    with open(f"{dir_path}/static/lang/{language.lower()}.json", "r", encoding="utf-8") as f:
+        language = json.load(f)
+        
+    return jsonify(language)
 
 
 @app.route("/video_movie/<movie_id>.m3u8", methods=["GET"])
@@ -2226,7 +2224,7 @@ def book_url_page(id, page):
     if book is None:
         abort(404)
     book = book.__dict__
-    book_type = book["bookType"]
+    book_type = book["book_type"]
     book_slug = book["slug"]
     available = ["PDF", "CBZ", "CBR", "EPUB"]
     if book_type in available:
@@ -2266,40 +2264,40 @@ def book_url_page(id, page):
                         return send_file(image_stream, mimetype="image/jpeg")
 
         elif book_type == "EPUB":
-            import fitz
-
-            pdf_doc = fitz.open(book_slug)
-            page = pdf_doc[int(page)]
-            pix = page.get_pixmap()
-            # Créer un objet io.BytesIO pour stocker l'image en mémoire
-            image_stream = io.BytesIO()
-            pix.save(image_stream, format="JPEG")
-            # Retourner le contenu de l'image
-            image_stream.seek(0)
-            return send_file(image_stream, mimetype="image/jpeg")
+            book = epub.read_epub(book_slug)
+            item = book.get_items()[int(page)]
+            for idx, item in enumerate(book.get_items()):
+                print(idx, page)
+                if idx == int(page):
+                    content = item.get_content()
+                    image_stream = io.BytesIO(content)
+                    image_stream.seek(0)
+                    return send_file(image_stream, mimetype="image/jpeg")
 
     abort(404, "Book type not supported")
 
 
 @app.route("/book_data/<id>")
 def book_data(id):
-    book_slug = Books.query.filter_by(id=id).first().__dict__
-    del book_slug["_sa_instance_state"]
-    book_slug = book_slug["book_type"]
-    book_slug = book_slug["slug"]
+    book = Books.query.filter_by(id=id).first().__dict__
+    del book["_sa_instance_state"]
+    book_type = book["book_type"]
+    book_slug = book["slug"]
     nb_pages = 0
-    if book_slug == "PDF":
+    if book_type == "PDF":
         with open(book_slug, "rb") as pdf_file:
             pdf_reader = PyPDF2.PdfReader(pdf_file)
             nb_pages = len(pdf_reader.pages)
-    elif book_slug == "CBZ":
+    elif book_type == "CBZ":
         with zipfile.ZipFile(book_slug, "r") as zip:
             nb_pages = len(zip.namelist())
-    elif book_slug == "CBR":
+    elif book_type == "CBR":
         with rarfile.RarFile(book_slug, "r") as rar:
             nb_pages = len(rar.infolist())
-    book_slug["nb_pages"] = nb_pages
-    return jsonify(book_slug)
+    elif book_type == "EPUB":
+        nb_pages = len(epub.read_epub(book_slug).get_items())
+    book["nb_pages"] = nb_pages
+    return jsonify(book)
 
 
 @app.route("/download_other/<video_hash>")

@@ -1100,7 +1100,7 @@ def getSeries(library_name):
                             elif "episode_title" in guess:
                                 episodeIndex = guess["episode_title"]
                             elif "season" in guess and len(guess["season"]) == 2:
-                                temp, episodeIndex = guess["season"]
+                                episodeIndex = guess["season"][1]
                             else:
                                 episodeIndex = guess["season"]
 

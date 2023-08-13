@@ -8,7 +8,6 @@ authors = [
 dependencies = [
     "colorama==0.4.5",
     "deep-translator==1.10.1",
-    "fitz==0.0.1.dev2",
     "Flask==2.2.2",
     "Flask-Cors==3.0.10",
     "flask-login==0.6.2",
@@ -35,6 +34,7 @@ dependencies = [
     "tinytag>=1.9.0",
     "argparse>=1.4.0",
     "logging>=0.4.9.6",
+    "EbookLib>=0.18",
 ]
 requires-python = ">=3.10"
 readme = "README.md"
