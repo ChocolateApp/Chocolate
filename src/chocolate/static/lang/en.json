@@ -69,5 +69,9 @@
     "rescan": "Rescan",
     "rescan_lib": "Rescan Library",
     "rescan_all_lib": "Rescan All Libraries",
-    "select": "Select"
+    "select": "Select",
+    "albums": "Albums",
+    "artists": "Artists",
+    "singles": "Singles",
+    "playlists": "Playlists"
 }

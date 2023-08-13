@@ -37,7 +37,7 @@ from tmdbv3api.as_obj import AsObj
 from unidecode import unidecode
 from videoprops import get_video_properties
 
-from . import create_app, get_dir_path, DB, LOGIN_MANAGER, tmdb, config, all_auth_tokens
+from . import create_app, get_dir_path, DB, LOGIN_MANAGER, tmdb, config, all_auth_tokens, ARGUMENTS
 from .tables import *
 from . import scans
 from .utils.utils import path_join, generate_log, check_authorization, user_in_lib
@@ -2384,21 +2384,13 @@ def get_tv(tv_name, id):
         else:
             next_id = None
 
-        return jsonify(
-            {
+        return jsonify({
                 "channel_url": the_line,
                 "channel_name": channel_name,
                 "previous_id": previous_id,
                 "next_id": next_id,
-            },
-            ensure_ascii=False,
-            default=str,
-        )
-    return jsonify(
-        {"channel_url": "", "channel_name": "", "error": "Channel not found"},
-        ensure_ascii=False,
-        default=str,
-    )
+            })
+    return jsonify({"channel_url": "", "channel_name": "", "error": "Channel not found"})
 
 
 @app.route("/get_channels/<channels>")
@@ -3467,26 +3459,27 @@ if __name__ == "__main__":
             pass
 
     with app.app_context():
-        libraries = Libraries.query.all()
-        libraries = [library.__dict__ for library in libraries]
-        libraries = sorted(libraries, key=lambda k: k["lib_name"].lower())
-        libraries = sorted(libraries, key=lambda k: k["lib_type"].lower())
-        
-        for library in libraries:
-            if library["lib_type"] == "series":
-                scans.getSeries(library["lib_name"])
-            elif library["lib_type"] == "movies":
-                scans.getMovies(library["lib_name"])
-            elif library["lib_type"] == "consoles":
-                scans.getGames(library["lib_name"])
-            elif library["lib_type"] == "others":
-                scans.getOthersVideos(library["lib_name"])
-            elif library["lib_type"] == "books":
-                scans.getBooks(library["lib_name"])
-            elif library["lib_type"] == "musics":
-                scans.getMusics(library["lib_name"])
+        if not ARGUMENTS.no_scans:
+            libraries = Libraries.query.all()
+            libraries = [library.__dict__ for library in libraries]
+            libraries = sorted(libraries, key=lambda k: k["lib_name"].lower())
+            libraries = sorted(libraries, key=lambda k: k["lib_type"].lower())
+            
+            for library in libraries:
+                if library["lib_type"] == "series":
+                    scans.getSeries(library["lib_name"])
+                elif library["lib_type"] == "movies":
+                    scans.getMovies(library["lib_name"])
+                elif library["lib_type"] == "consoles":
+                    scans.getGames(library["lib_name"])
+                elif library["lib_type"] == "others":
+                    scans.getOthersVideos(library["lib_name"])
+                elif library["lib_type"] == "books":
+                    scans.getBooks(library["lib_name"])
+                elif library["lib_type"] == "musics":
+                    scans.getMusics(library["lib_name"])
 
-    print()
+            print()
     print("\033[?25h", end="")
 
     enabled_rpc = config["ChocolateSettings"]["discordrpc"]

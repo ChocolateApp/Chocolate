@@ -19,6 +19,7 @@ all_auth_tokens = {}
 parser = argparse.ArgumentParser("Chocolate")
 parser.add_argument("--config", help="Path to the config file (a .ini file)")
 parser.add_argument("--db", help="Path to the database file (a .db file)")
+parser.add_argument("--no-scans", help="Disable startup scans", action="store_true")
 
 ARGUMENTS = parser.parse_args()
 

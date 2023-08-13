@@ -5,7 +5,6 @@ import rarfile
 import zipfile
 import zlib
 import ast
-import configparser
 import datetime
 import json
 import sqlalchemy
@@ -13,6 +12,7 @@ import re
 import subprocess
 import shutil
 import io
+import uuid
 
 from guessit import guessit
 from Levenshtein import distance as lev
@@ -23,7 +23,7 @@ from PIL import Image
 from tinytag import TinyTag
 from deep_translator import GoogleTranslator
 
-from . import DB, get_dir_path, tmdb, config
+from . import DB, get_dir_path, config
 from .tables import *
 
 dir_path = get_dir_path()
@@ -353,10 +353,10 @@ def IGDBRequest(url, console):
                     platforms = []
 
                     for i in game_platforms:
-                        print(i)
                         if "abbreviation" not in i:
                             platforms.append(i["alternative_name"])
-                        platforms.append(i["abbreviation"])
+                        else:
+                            platforms.append(i["abbreviation"])
 
                     real_console_name = {
                         "GB": "Game Boy",
@@ -527,8 +527,8 @@ def getMovies(library_name):
                 if os.path.isdir(os.path.join(path, searchedFilm)):
                     start = f"{searchedFilm}/"
 
-                movieCoverPath = f"https://image.tmDB.org/t/p/original{res['poster_path']}"
-                banniere = f"https://image.tmDB.org/t/p/original{res['backdrop_path']}"
+                movieCoverPath = f"https://image.tmdb.org/t/p/original{res['poster_path']}"
+                banniere = f"https://image.tmdb.org/t/p/original{res['backdrop_path']}"
                 real_title, extension = os.path.splitext(originalMovieTitle)
 
                 with open(f"{dir_path}/static/img/mediaImages/{movie_id}_Cover.png", "wb") as f:
@@ -549,8 +549,8 @@ def getMovies(library_name):
                 with open(f"{dir_path}/static/img/mediaImages/{movie_id}_Banner.png", "wb") as f:
                     f.write(requests.get(banniere).content)
                 if res["backdrop_path"] == None:
-                    banniere = f"https://image.tmDB.org/t/p/original{details.backdrop_path}"
-                    if banniere != "https://image.tmDB.org/t/p/originalNone":
+                    banniere = f"https://image.tmdb.org/t/p/original{details.backdrop_path}"
+                    if banniere != "https://image.tmdb.org/t/p/originalNone":
                         with open(f"{dir_path}/static/img/mediaImages/{movie_id}_Banner.png", "wb") as f:
                             f.write(requests.get(banniere).content)
                     else:
@@ -903,8 +903,8 @@ def getSeries(library_name):
         name = res["name"]
         serieName = name
         if not exists:
-            serie_cover_path = f"https://image.tmDB.org/t/p/original{res['poster_path']}"
-            banniere = f"https://image.tmDB.org/t/p/original{res['backdrop_path']}"
+            serie_cover_path = f"https://image.tmdb.org/t/p/original{res['poster_path']}"
+            banniere = f"https://image.tmdb.org/t/p/original{res['backdrop_path']}"
             if not os.path.exists(f"{dir_path}/static/img/mediaImages/{serie_id}_Cover.png"):
                 with open(f"{dir_path}/static/img/mediaImages/{serie_id}_Cover.png", "wb") as f:
                     f.write(requests.get(serie_cover_path).content)
@@ -964,7 +964,7 @@ def getSeries(library_name):
             for actor in cast:
                 actorName = actor.name.replace("/", "")
                 actor_id = actor.id
-                actorImage = f"https://image.tmDB.org/t/p/original{actor.profile_path}"
+                actorImage = f"https://image.tmdb.org/t/p/original{actor.profile_path}"
                 image = f"/static/img/mediaImages/Actor_{actor_id}.png"
                 if not os.path.exists(f"{dir_path}/static/img/mediaImages/Actor_{actor_id}.webp"):
                     try:
@@ -1049,7 +1049,7 @@ def getSeries(library_name):
                     # number of episodes in the season
                     savedModifiedTime = 0
                     if not exists or (seasonModifiedTime != savedModifiedTime):
-                        season_cover_path = (f"https://image.tmDB.org/t/p/original{seasonPoster}")
+                        season_cover_path = (f"https://image.tmdb.org/t/p/original{seasonPoster}")
                         if not os.path.exists(f"{dir_path}/static/img/mediaImages/{season_id}_Cover.png"):
                             with open(f"{dir_path}/static/img/mediaImages/{season_id}_Cover.png", "wb") as f:
                                 f.write(requests.get(season_cover_path).content)
@@ -1117,7 +1117,7 @@ def getSeries(library_name):
                                     episode_id = episodeInfo["id"]
                                     realEpisodeName = episodeInfo["name"]
 
-                                coverEpisode = f"https://image.tmDB.org/t/p/original{episodeInfo['still_path']}"
+                                coverEpisode = f"https://image.tmdb.org/t/p/original{episodeInfo['still_path']}"
 
                                 if not os.path.exists(f"{dir_path}/static/img/mediaImages/{season_id}_{episode_id}_Cover.webp"):
                                     with open(f"{dir_path}/static/img/mediaImages/{season_id}_{episode_id}_Cover.png", "wb") as f:
@@ -1209,10 +1209,10 @@ def getSeries(library_name):
             season_id = None
 
             if (nbEpisodes <= defaultNbOfEpisodes and nbSeasons <= defaultNbOfSeasons):
-                for seasonTMDB in details.seasons:
-                    if str(seasonTMDB.season_number) == str(seasonIndex):
-                        season_id = seasonTMDB.id
-                        season_api = seasonTMDB
+                for seasontmdb in details.seasons:
+                    if str(seasontmdb.season_number) == str(seasonIndex):
+                        season_id = seasontmdb.id
+                        season_api = seasontmdb
                         break
             elif len(episodeGroups) > 0:
                 print(f"Episode groups: {episodeGroups}")
@@ -1232,17 +1232,17 @@ def getSeries(library_name):
                         season_api = seasonsInfo[seasonIndex-1]
                         season_id = season_api["id"]
             else:
-                for seasonTMDB in details.seasons:
-                    if str(seasonTMDB.season_number) == str(seasonIndex):
-                        season_id = seasonTMDB.id
-                        season_api = seasonTMDB
+                for seasontmdb in details.seasons:
+                    if str(seasontmdb.season_number) == str(seasonIndex):
+                        season_id = seasontmdb.id
+                        season_api = seasontmdb
                         break
 
             serieExists = Series.query.filter_by(id=serie_id).first() is not None
             if not serieExists:
                 name = res.name
-                serie_cover_path = f"https://image.tmDB.org/t/p/original{res.poster_path}"
-                banniere = f"https://image.tmDB.org/t/p/original{res.backdrop_path}"
+                serie_cover_path = f"https://image.tmdb.org/t/p/original{res.poster_path}"
+                banniere = f"https://image.tmdb.org/t/p/original{res.backdrop_path}"
                 if not os.path.exists(f"{dir_path}/static/img/mediaImages/{serie_id}_Cover.png"):
                     with open(f"{dir_path}/static/img/mediaImages/{serie_id}_Cover.png", "wb") as f:
                         f.write(requests.get(serie_cover_path).content)
@@ -1302,7 +1302,7 @@ def getSeries(library_name):
                 for actor in cast:
                     actorName = actor.name.replace("/", "")
                     actor_id = actor.id
-                    actorImage = f"https://image.tmDB.org/t/p/original{actor.profile_path}"
+                    actorImage = f"https://image.tmdb.org/t/p/original{actor.profile_path}"
                     if not os.path.exists(f"{dir_path}/static/img/mediaImages/Actor_{actor_id}.webp"):
                         with open(f"{dir_path}/static/img/mediaImages/Actor_{actor_id}.png", "wb") as f:
                             f.write(requests.get(actorImage).content)
@@ -1350,7 +1350,7 @@ def getSeries(library_name):
 
                 savedModifiedTime = 0
 
-                season_cover_path = (f"https://image.tmDB.org/t/p/original{seasonPoster}")
+                season_cover_path = (f"https://image.tmdb.org/t/p/original{seasonPoster}")
                 if not os.path.exists(f"{dir_path}/static/img/mediaImages/{season_id}_Cover.png"):
                     with open(f"{dir_path}/static/img/mediaImages/{season_id}_Cover.png", "wb") as f:
                         f.write(requests.get(season_cover_path).content)
@@ -1407,7 +1407,7 @@ def getSeries(library_name):
                     episode_id = episodeInfo["id"]
                     realEpisodeName = episodeInfo["name"]
 
-                coverEpisode = f"https://image.tmDB.org/t/p/original{episodeInfo.still_path}"
+                coverEpisode = f"https://image.tmdb.org/t/p/original{episodeInfo.still_path}"
 
                 if not os.path.exists(f"{dir_path}/static/img/mediaImages/{season_id}_{episode_id}_Cover.webp"):
                     with open(f"{dir_path}/static/img/mediaImages/{season_id}_{episode_id}_Cover.png", "wb") as f:
@@ -1503,9 +1503,8 @@ def getGames(library_name):
         allFiles = os.listdir(f"{allGamesPath}/{console}")
         for file in allFiles:
             # get all games in the db
-            allGamesInDB = Games.query.all()
-            allGamesInDB = [
-                game.slug for game in allGamesInDB if game.library_name == library_name]
+            allGamesInDB = Games.query.filter_by(library_name=library_name, console=console).all()
+            allGamesInDB = [game.slug for game in allGamesInDB]
             numberOfGamesInDB = len(allGamesInDB)
             numberOfGamesInFolder = len(allFiles)
             if numberOfGamesInDB < numberOfGamesInFolder:
@@ -1531,17 +1530,30 @@ def getGames(library_name):
 
                     if gameIGDB != None and gameIGDB != {} and not exists:
                         gameName = gameIGDB["title"]
-                        gameRealTitle = newFileName
                         gameCover = gameIGDB["cover"]
                         gameDescription = gameIGDB["description"]
                         gameNote = gameIGDB["note"]
                         gameDate = gameIGDB["date"]
                         gameGenre = gameIGDB["genre"]
                         game_id = gameIGDB["id"]
-                        gameConsole = console
-                        game = Games(console=gameConsole, id=game_id, title=gameName, real_title=gameRealTitle, cover=gameCover, description=gameDescription, note=gameNote, date=gameDate, genre=gameGenre, slug=gameSlug, library_name=library_name)
-                        DB.session.add(game)
-                        DB.session.commit()
+                    else:
+                        gameName = file
+                        gameCover = "/static/img/broken.webp"
+                        gameDescription = ""
+                        gameNote = 0
+                        gameDate = ""
+                        gameGenre = ""
+                        game_id = str(uuid.uuid4())
+                        
+
+                    gameRealTitle = newFileName
+                    gameConsole = console
+                        
+                    game = Games(console=gameConsole, id=game_id, title=gameName, real_title=gameRealTitle, cover=gameCover, description=gameDescription, note=gameNote, date=gameDate, genre=gameGenre, slug=gameSlug, library_name=library_name)
+                    DB.session.add(game)
+                    DB.session.commit()
+                        
+
                 elif console == "PS1" and file.endswith(".cue") and exists == None:
                     if saidPS1 == False:
                         print(f"You need to zip all our .bin files and the .cue file in one .zip file to being able to play it")
