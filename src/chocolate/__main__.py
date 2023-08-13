@@ -2794,7 +2794,7 @@ def search_movies(library, search):
         genre = movie.genre.lower()
         alternatives_names = movie.alternatives_names.lower()
         value_used = [title, real_title, slug, cast, date, genre, alternatives_names]
-        value_points = [2, 2, 2, 1, 0.5, 0.5, 1]
+        value_points = [2, 4, 3, 1, 0.5, 0.5, 1.5]
         for term in search_terms:
             for value in value_used:
                 index = value_used.index(value)
