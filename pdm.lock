@@ -6,7 +6,7 @@ groups = ["default"]
 cross_platform = true
 static_urls = false
 lock_version = "4.3"
-content_hash = "sha256:129314e607fa3fdc160c279a4421b4e375b7abbe490794fa3efb5002b10d1081"
+content_hash = "sha256:1e3e256f0821a3f6e5ab26fae1f19773f6b026b8b772f4a0683c679b85e1e731"
 
 [[package]]
 name = "alembic"
@@ -927,13 +927,14 @@ files = [
 
 [[package]]
 name = "tmdbv3api"
-version = "1.7.7"
-git = "https://github.com/Impre-visible/tmdbv3api.git"
-ref = "master"
-revision = "d90aa1aed74b7b5d77abec6c81ef657ba4c97176"
+version = "1.9.0"
 summary = "A lightweight Python library for The Movie Database (TMDb) API."
 dependencies = [
     "requests",
+]
+files = [
+    {file = "tmdbv3api-1.9.0-py3-none-any.whl", hash = "sha256:2bcd8c6e8902397860715a71045f200ecc3ee06804ecf786cb4c1e09b2deeba8"},
+    {file = "tmdbv3api-1.9.0.tar.gz", hash = "sha256:504c5da6b99c4516ff160a01576112d097f209c0534f943c15c4b56cbd92c33b"},
 ]
 
 [[package]]

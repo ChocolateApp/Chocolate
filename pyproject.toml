@@ -27,7 +27,6 @@ dependencies = [
     "python-Levenshtein==0.20.9",
     "rarfile==4.0",
     "SQLAlchemy==1.4.45",
-    "tmdbv3api @ git+https://github.com/Impre-visible/tmdbv3api.git@master",
     "Unidecode==1.3.6",
     "Werkzeug==2.2.2",
     "deezer-python>=6.1.0",
@@ -36,6 +35,7 @@ dependencies = [
     "logging>=0.4.9.6",
     "EbookLib>=0.18",
     "flask-migrate>=4.0.4",
+    "tmdbv3api>=1.9.0",
 ]
 requires-python = ">=3.10"
 readme = "README.md"
