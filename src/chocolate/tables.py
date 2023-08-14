@@ -451,3 +451,9 @@ class LatestEpisodeWatched(DB.Model):
     
     def __repr__(self) -> str:
         return f"<LatestEpisodeWatched {self.user_id}>"
+
+class InviteCodes(DB.Model):
+    code = DB.Column(DB.String(255), primary_key=True)
+
+    def __repr__(self) -> str:
+        return f"<InviteCode {self.code}>"

@@ -292,7 +292,7 @@ def gpuname() -> str:
 @app.route("/language_file")
 def language_file():
     language = config["ChocolateSettings"]["language"]
-    # if language not in the supported languages, or the file contain {}, return EN
+
     if not os.path.isfile(f"{dir_path}/static/lang/{language.lower()}.json") or "{}" in open(f"{dir_path}/static/lang/{language.lower()}.json", "r", encoding="utf-8").read():
         language = "EN"
         
@@ -1020,8 +1020,7 @@ def get_all_movies(library):
     user = Users.query.filter_by(name=username).first()
 
     movies_list = [movie.__dict__ for movie in movies]
-    # get the user from the database
-    # get the user type
+
     user_type = user.account_type
     for movie in movies_list:
         del movie["_sa_instance_state"]
@@ -1048,7 +1047,6 @@ def get_all_books(library):
 
     user = Users.query.filter_by(name=username).first()
 
-    user_type = user.account_type
     for book in books_list:
         del book["_sa_instance_state"]
 
@@ -1067,9 +1065,7 @@ def get_all_playlists(library):
     user = Users.query.filter_by(name=username).first()
     user_id = user.id
 
-    playlists = Playlist.query.filter(
-        Playlist.user_id.like(f"%{user_id}%"), Playlist.library_name == library
-    ).all()
+    playlists = Playlist.query.filter(Playlist.user_id.like(f"%{user_id}%"), Playlist.library_name == library).all()
     playlists_list = [playlist.__dict__ for playlist in playlists]
 
     for playlist in playlists_list:
@@ -1213,10 +1209,7 @@ def get_playlist_tracks(playlist_id):
     user_id = user.id
     tracks_list = []
     if playlist_id != "0":
-        # tracks = Playlist.query.filter(Playlist.user_id.like(f"%{user_id}%"), id=playlist_id).first()
-        tracks = Playlist.query.filter(
-            Playlist.user_id.like(f"%{user_id}%"), Playlist.id == playlist_id
-        ).first()
+        tracks = Playlist.query.filter(Playlist.user_id.like(f"%{user_id}%"), Playlist.id == playlist_id).first()
         tracks = tracks.tracks.split(",")
         for track in tracks:
             track = Track.query.filter_by(id=track).first().__dict__
@@ -1362,7 +1355,6 @@ def generate_playlist_cover(id):
         cover = track.cover
         return cover
     elif type(id) == list:
-        # prends les 4 premiers, si y en a moins ajoute le premier, le deuxieme, etc
         tracks = []
         id_to_append = 0
         for i in range(4):
@@ -1378,7 +1370,7 @@ def generate_playlist_cover(id):
 
             covers.append(dir_path + track.cover)
 
-        # fusionne les 4 covers en une image, dans chaque coin, enregistre et renvoie l'url
+
         im1 = Image.open(covers[0])
         im2 = Image.open(covers[1])
         im3 = Image.open(covers[2])
@@ -2241,10 +2233,8 @@ def book_url_page(id, page):
             pdf_doc = fitz.open(book_slug)
             page = pdf_doc[int(page)]
             pix = page.get_pixmap()
-            # Créer un objet io.BytesIO pour stocker l'image en mémoire
             image_stream = io.BytesIO()
             pix.save(image_stream, format="JPEG")
-            # Retourner le contenu de l'image
             image_stream.seek(0)
             return send_file(image_stream, mimetype="image/jpeg")
 
@@ -2253,9 +2243,7 @@ def book_url_page(id, page):
                 image_file = zip.namelist()[int(page)]
                 if image_file.endswith((".jpg", ".jpeg", ".png")):
                     with zip.open(image_file) as image:
-                        # Créer un objet io.BytesIO pour stocker l'image en mémoire
                         image_stream = io.BytesIO(image.read())
-                        # Retourner le contenu de l'image
                         image_stream.seek(0)
                         return send_file(image_stream, mimetype="image/jpeg")
 
@@ -2264,9 +2252,7 @@ def book_url_page(id, page):
                 image_file = rar.infolist()[int(page)]
                 if image_file.filename.endswith((".jpg", ".jpeg", ".png")):
                     with rar.open(image_file) as image:
-                        # Créer un objet io.BytesIO pour stocker l'image en mémoire
                         image_stream = io.BytesIO(image.read())
-                        # Retourner le contenu de l'image
                         image_stream.seek(0)
                         return send_file(image_stream, mimetype="image/jpeg")
 
@@ -2403,7 +2389,6 @@ def get_channels(channels):
         abort(404, "Library not found")
     lib_folder = channels.lib_folder
 
-    # open the m3u file
     try:
         with open(lib_folder, "r", encoding="utf-8") as f:
             m3u = f.readlines()
@@ -2411,12 +2396,12 @@ def get_channels(channels):
         lib_folder = lib_folder.replace("\\", "/")
         m3u = requests.get(lib_folder).text
         m3u = m3u.split("\n")
-    # remove the first line
+        
     m3u.pop(0)
     while m3u[0] == "\n":
         m3u.pop(0)
 
-    # get the channels by getting 2 lines at a time
+
     channels = []
     for i in m3u:
         if not i.startswith(("#EXTINF", "http")):
@@ -2448,9 +2433,8 @@ def get_channels(channels):
             else:
                 broken_path = ""
                 data["logo"] = broken_path
-                # print(data["logo"])
+                
             channels.append(data)
-    # order the channels by name
     channels = sorted(channels, key=lambda k: k["name"].lower())
     return jsonify(channels)
 
@@ -2465,7 +2449,7 @@ def search_tv(library, search):
     if not library:
         abort(404, "Library not found")
     lib_folder = library.lib_folder
-    # open the m3u file
+    
     try:
         with open(lib_folder, "r", encoding="utf-8") as f:
             m3u = f.readlines()
@@ -2473,12 +2457,11 @@ def search_tv(library, search):
         lib_folder = lib_folder.replace("\\", "/")
         m3u = requests.get(lib_folder).text
         m3u = m3u.split("\n")
-    # remove the first line
+        
     m3u.pop(0)
     while m3u[0] == "\n":
         m3u.pop(0)
 
-    # get the channels by getting 2 lines at a time
     channels = []
     for i in m3u:
         if not i.startswith(("#EXTINF", "http")):
@@ -2510,12 +2493,10 @@ def search_tv(library, search):
             else:
                 broken_path = ""
                 data["logo"] = broken_path
-                # print(data["logo"])
+                
             channels.append(data)
-    # order the channels by name
+            
     channels = sorted(channels, key=lambda k: k["name"].lower())
-
-    # search the channels
 
     search = search.lower()
     search_terms = search.split(" ")
@@ -2909,9 +2890,6 @@ def search_books(library, search):
     for book in books:
         del book["_sa_instance_state"]
 
-    user_type = user.account_type
-
-    # reorder by title
     books = sorted(books, key=lambda k: k["title"].lower())
     return jsonify(books)
 

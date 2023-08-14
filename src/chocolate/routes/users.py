@@ -71,11 +71,11 @@ def create_account():
     account_password = body["password"]
     account_type_input = body["type"]
 
-    file_base64 = body["profil_picture"]
     profil_picture = f"/static/img/{account_name}.webp"
-    if file_base64 == "" or file_base64 == None:
+    if "profil_picture" not in body:
         profil_picture = "/static/img/avatars/defaultUserProfilePic.png"
     else:
+        file_base64 = body["profil_picture"]
         if file_base64.startswith("data:image"):
             file_base64 = file_base64.split(",", 1)[1]
 
@@ -227,7 +227,6 @@ def get_profil_picture(id):
         profil_picture = f"/static/img/avatars/defaultUserProfilePic.png"
     return send_file(dir_path + profil_picture)
 
-#allow preflight requests
 @users_bp.route("/is_admin", methods=["GET"])
 def is_admin():
     authorization = request.headers.get("Authorization")
@@ -237,3 +236,24 @@ def is_admin():
         return jsonify(True)
     else:
         return jsonify(False)
+
+@users_bp.route("/invite_exist/<hash>", methods=["GET"])
+def invite_exist(hash):
+    can = InviteCodes.query.filter_by(code=hash).first() != None
+    return jsonify(can)
+
+@users_bp.route("/create_invite", methods=["POST"])
+def create_invite():
+    authorization = request.headers.get("Authorization")
+    check_authorization(request, authorization)
+    user = Users.query.filter_by(name=all_auth_tokens[authorization]["user"]).first()
+
+    if user.account_type != "Admin":
+        abort(401, "Unauthorized")
+        
+    body = request.get_json()
+    code = body["code"]
+    new_invite = InviteCodes(code=code)
+    DB.session.add(new_invite)
+    DB.session.commit()
+    return jsonify({"code": code})
