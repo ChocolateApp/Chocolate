@@ -685,7 +685,7 @@ def getMovies(library_name):
 
                 alternatives_names = ",".join(alternatives_names)
                 slug = f"{start}{originalMovieTitle}"
-                filmData = Movies(movie_id, movieTitle, name, movieCoverPath, banniere, slug, description, note, date, json.dumps(movieGenre), str(duration), json.dumps(theCast), bande_annonce_url, str(res["adult"]), library_name=library_name, alternatives_names=alternatives_names)
+                filmData = Movies(id=movie_id, title=movieTitle, real_title=name, cover=movieCoverPath, banner=banniere, slug=slug, description=description, note=note, date=date, genre=json.dumps(movieGenre), duration=str(duration), cast=json.dumps(theCast), bande_annonce_url=bande_annonce_url, adult=str(res["adult"]), library_name=library_name, alternatives_names=alternatives_names)
                 DB.session.add(filmData)
                 DB.session.commit()
         else:
