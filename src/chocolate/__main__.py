@@ -15,7 +15,7 @@ import GPUtil
 import pycountry
 import requests
 import sqlalchemy
-import ebooklib
+import natsort
 
 from time import localtime, mktime, time
 from uuid import uuid4
@@ -36,6 +36,7 @@ from tmdbv3api import TV, Movie, Person, TMDb, Search
 from tmdbv3api.as_obj import AsObj
 from unidecode import unidecode
 from videoprops import get_video_properties
+from operator import itemgetter
 
 from . import create_app, get_dir_path, DB, LOGIN_MANAGER, tmdb, config, all_auth_tokens, ARGUMENTS
 from .tables import *
@@ -1030,7 +1031,14 @@ def get_all_movies(library):
             if movie["adult"] == "True":
                 movies_list.remove(movie)
 
-    movies_list = sorted(movies_list, key=lambda k: k["real_title"].lower())
+    used_keys = ["real_title", "banner", "cover", "description", "id", "note", "duration"]
+
+    for movie in movies_list:
+        for key in list(movie.keys()):
+            if key not in used_keys:
+                del movie[key]
+
+    movies_list = natsort.natsorted(movies_list, key=itemgetter(*['real_title']))
 
     return jsonify(movies_list)
 
@@ -1050,7 +1058,7 @@ def get_all_books(library):
     for book in books_list:
         del book["_sa_instance_state"]
 
-    books_list = sorted(books_list, key=lambda k: k["title"].lower())
+    books_list = natsort.natsorted(books_list, key=itemgetter(*['title']))
 
     return jsonify(books_list)
 
@@ -1071,7 +1079,7 @@ def get_all_playlists(library):
     for playlist in playlists_list:
         del playlist["_sa_instance_state"]
 
-    playlists_list = sorted(playlists_list, key=lambda k: k["name"].lower())
+    playlists_list = natsort.natsorted(playlists_list, key=itemgetter(*['name']))
 
     liked_music = MusicLiked.query.filter_by(user_id=user_id, liked="true").all()
     musics = ""
@@ -1106,8 +1114,9 @@ def get_all_albums(library):
 
     for album in albums_list:
         del album["_sa_instance_state"]
+    
+    albums_list = natsort.natsorted(albums_list, key=itemgetter(*['name']))
 
-    albums_list = sorted(albums_list, key=lambda k: k["name"].lower())
 
     return jsonify(albums_list)
 
@@ -1124,7 +1133,7 @@ def get_all_artists(library):
     for artist in artists_list:
         del artist["_sa_instance_state"]
 
-    artists_list = sorted(artists_list, key=lambda k: k["name"].lower())
+    artists_list = natsort.natsorted(artists_list, key=itemgetter(*['name']))
 
     return jsonify(artists_list)
 
@@ -1152,7 +1161,7 @@ def get_all_tracks(library):
         except:
             track["artist_name"] = None
 
-    tracks_list = sorted(tracks_list, key=lambda k: k["name"].lower())
+    tracks_list = natsort.natsorted(tracks_list, key=itemgetter(*['name']))
 
     return jsonify(tracks_list)
 
@@ -1544,18 +1553,26 @@ def get_all_series(library):
     series_list = [serie.__dict__ for serie in series]
 
     user_type = user.account_type
-    for serie in series_list:
-        del serie["_sa_instance_state"]
 
     if user_type in ["Kid", "Teen"]:
         for serie in series_list:
             if serie["adult"] == "True":
                 series_list.remove(serie)
 
+    fusionned_lib = LibrariesMerge.query.filter_by(parent_lib=library).all()
+    fusionned_lib = [child.child_lib for child in fusionned_lib]
+
+    for lib in fusionned_lib:
+        series = Series.query.filter_by(library_name=lib).all()
+        series_list += [serie.__dict__ for serie in series]
+    
+    for serie in series_list:
+        del serie["_sa_instance_state"]
+
     for serie in series_list:
         serie["seasons"] = get_seasons(serie["id"])
 
-    series_list = sorted(series_list, key=lambda k: k["original_name"].lower())
+    series_list = natsort.natsorted(series_list, key=itemgetter(*['original_name']))
 
     return jsonify(series_list)
 
@@ -2164,7 +2181,7 @@ def get_episodes(season_id):
         del the_episode["_sa_instance_state"]
         episodes_list.append(the_episode)
 
-    episodes_list = sorted(episodes_list, key=sort_by_episode_number)
+    episodes_list = natsort.natsorted(episodes_list, key=itemgetter(*['episode_number']))
 
     data = {
         "episodes": episodes_list,
@@ -2435,7 +2452,8 @@ def get_channels(channels):
                 data["logo"] = broken_path
                 
             channels.append(data)
-    channels = sorted(channels, key=lambda k: k["name"].lower())
+
+    channels = natsort.natsorted(channels, key=itemgetter(*['name']))
     return jsonify(channels)
 
 
@@ -2495,8 +2513,8 @@ def search_tv(library, search):
                 data["logo"] = broken_path
                 
             channels.append(data)
-            
-    channels = sorted(channels, key=lambda k: k["name"].lower())
+
+    channels = natsort.natsorted(channels, key=itemgetter(*['name']))
 
     search = search.lower()
     search_terms = search.split(" ")
@@ -2890,7 +2908,7 @@ def search_books(library, search):
     for book in books:
         del book["_sa_instance_state"]
 
-    books = sorted(books, key=lambda k: k["title"].lower())
+    books = natsort.natsorted(books, key=itemgetter(*['title']))
     return jsonify(books)
 
 
@@ -3440,9 +3458,10 @@ if __name__ == "__main__":
         if not ARGUMENTS.no_scans:
             libraries = Libraries.query.all()
             libraries = [library.__dict__ for library in libraries]
-            libraries = sorted(libraries, key=lambda k: k["lib_name"].lower())
-            libraries = sorted(libraries, key=lambda k: k["lib_type"].lower())
-            
+
+            libraries = natsort.natsorted(libraries, key=itemgetter(*['lib_name']))
+            libraries = natsort.natsorted(libraries, key=itemgetter(*['lib_type']))
+
             for library in libraries:
                 if library["lib_type"] == "series":
                     scans.getSeries(library["lib_name"])
