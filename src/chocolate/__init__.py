@@ -21,6 +21,7 @@ all_auth_tokens = {}
 parser = argparse.ArgumentParser("Chocolate")
 parser.add_argument("--config", help="Path to the config file (a .ini file)")
 parser.add_argument("--db", help="Path to the database file (a .db file)")
+parser.add_argument("--images", help="Path to the images folder (a folder)")
 parser.add_argument("--no-scans", help="Disable startup scans", action="store_true")
 
 ARGUMENTS = parser.parse_args()
@@ -29,14 +30,17 @@ paths = {
     "Windows": {
         "config": f"{os.getenv('APPDATA')}/Chocolate/config.ini",
         "db": f"{os.getenv('APPDATA')}/Chocolate/database.db",
+        "images": f"{os.getenv('APPDATA')}/Chocolate/images",
     },
     "Linux": {
         "config": "/var/chocolate/config.ini",
         "db": "/var/chocolate/database.db",
+        "images": "/var/chocolate/images/",
     },
     "Darwin": {
         "config": f"{os.getenv('HOME')}/Library/Application Support/Chocolate/config.ini",
         "db": f"{os.getenv('HOME')}/Library/Application Support/Chocolate/database.db",
+        "images": f"{os.getenv('HOME')}/Library/Application Support/Chocolate/images/",
     },
 }
 
@@ -45,10 +49,18 @@ OPERATING_SYSTEM = platform.system()
 if OPERATING_SYSTEM not in paths:
     raise UnsupportedSystemDefaultPath(f"No known default file path for the config / database on your operating system ({OPERATING_SYSTEM}). Please use --config and --database path or create a pull request to add your system to the one supported by Chocolate")
 
-
 CONFIG_PATH = ARGUMENTS.config or paths[OPERATING_SYSTEM]["config"]
 CONFIG_PATH = CONFIG_PATH.replace("\\", "/")
+
 DB_PATH = ARGUMENTS.db or paths[OPERATING_SYSTEM]["db"]
+DB_PATH = DB_PATH.replace("\\", "/")
+
+IMAGES_PATH = ARGUMENTS.images or paths[OPERATING_SYSTEM]["images"]
+IMAGES_PATH = IMAGES_PATH.replace("\\", "/")
+if IMAGES_PATH.endswith("/"):
+    IMAGES_PATH = IMAGES_PATH[:-1]
+
+
 
 class ChocolateException(Exception):
     """Base class for exceptions in Chocolate"""
@@ -66,6 +78,11 @@ def create_app():
     else:
         dir_path = pathlib.Path(__package__).parent
         TEMPLATE_FOLDER = f"{dir_path}/templates"
+
+    if not os.path.isdir(IMAGES_PATH):
+        os.mkdir(IMAGES_PATH)
+    if not os.path.isdir(f"{IMAGES_PATH}/avatars"):
+        os.mkdir(f"{IMAGES_PATH}/avatars")
             
     app = Flask(__name__, static_folder=f"{dir_path}/static",
                 template_folder=TEMPLATE_FOLDER)

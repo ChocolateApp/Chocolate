@@ -59,8 +59,8 @@ class Series(DB.Model):
     description = DB.Column(DB.String(2550))
     cast = DB.Column(DB.String(255))
     bande_annonce_url = DB.Column(DB.String(255))
-    serie_cover_path = DB.Column(DB.String(255))
-    banniere = DB.Column(DB.String(255))
+    cover = DB.Column(DB.String(255))
+    banner = DB.Column(DB.String(255))
     note = DB.Column(DB.String(255))
     date = DB.Column(DB.String(255))
     serie_modified_time = DB.Column(DB.Float)
@@ -80,12 +80,12 @@ class Seasons(DB.Model):
     episodes_number = DB.Column(DB.String(255))
     season_name = DB.Column(DB.String(255))
     season_description = DB.Column(DB.Text)
-    season_cover_path = DB.Column(DB.String(255))
+    cover = DB.Column(DB.String(255))
     modified_date = DB.Column(DB.Float)
     number_of_episode_in_folder = DB.Column(DB.Integer)
 
     def __repr__(self) -> str:
-        return f"<Seasons {self.serie} {self.season_number}>"
+        return f"<Seasons {self.serie} {self.season_id}>"
 
 
 class Episodes(DB.Model):
@@ -101,7 +101,7 @@ class Episodes(DB.Model):
     intro_end = DB.Column(DB.Float)
 
     def __repr__(self) -> str:
-        return f"<Episodes {self.season_id} {self.episodeNumber}>"
+        return f"<Episodes {self.season_id} {self.episode_number}>"
 
 
 class Games(DB.Model):
@@ -145,9 +145,9 @@ class Books(DB.Model):
         return f"<Books {self.title}>"
 
 
-class Artist(DB.Model):
+class Artists(DB.Model):
     """
-    Artist model
+    Artists model
 
     ...
 
@@ -169,12 +169,12 @@ class Artist(DB.Model):
     library_name = DB.Column(DB.String(255))
 
     def __repr__(self) -> str:
-        return f"<Artist {self.name}>"
+        return f"<Artists {self.name}>"
 
 
-class Album(DB.Model):
+class Albums(DB.Model):
     """
-    Album model
+    Albums model
 
     ...
 
@@ -204,12 +204,12 @@ class Album(DB.Model):
     library_name = DB.Column(DB.String(255))
 
     def __repr__(self) -> str:
-        return f"<Album {self.name}>"
+        return f"<Albums {self.name}>"
 
 
-class Track(DB.Model):
+class Tracks(DB.Model):
     """
-    Track model
+    Tracks model
 
     ...
 
@@ -242,10 +242,10 @@ class Track(DB.Model):
     library_name = DB.Column(DB.String(255))
 
     def __repr__(self) -> str:
-        return f"<Track {self.name}>"
+        return f"<Tracks {self.name}>"
 
 
-class Playlist(DB.Model):
+class Playlists(DB.Model):
     """
     Playlist model
 

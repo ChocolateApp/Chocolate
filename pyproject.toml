@@ -21,7 +21,6 @@ dependencies = [
     "Pillow==9.5.0",
     "pyarr==5.0.0",
     "pycountry==22.3.5",
-    "PyMuPDF==1.21.1",
     "PyPDF2==3.0.1",
     "pypresence==4.2.1",
     "python-Levenshtein==0.20.9",
@@ -37,6 +36,7 @@ dependencies = [
     "flask-migrate>=4.0.4",
     "tmdbv3api>=1.9.0",
     "natsort>=8.4.0",
+    "PyMuPdf>=1.22.5",
 ]
 requires-python = ">=3.10"
 readme = "README.md"
@@ -45,4 +45,3 @@ license = {text = "GPL3.0"}
 [build-system]
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"
-

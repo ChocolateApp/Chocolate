@@ -45,9 +45,12 @@ def generate_log(request, component):
     else:
         if "password" in data:
             data["password"] = "********"
+        if "image" in data:
+            data["image"] = "Image as a base64 (to long)"
         message = (
             f"Request {method} at {path} from {username} with data: {json.dumps(data)}"
         )
+    
 
     log("INFO", component, message)
 

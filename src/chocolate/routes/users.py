@@ -7,7 +7,7 @@ from PIL import Image
 from flask import Blueprint, jsonify, request, abort, send_file
 from werkzeug.security import generate_password_hash
 
-from chocolate import DB, get_dir_path, all_auth_tokens
+from chocolate import DB, get_dir_path, all_auth_tokens, IMAGES_PATH
 from chocolate.tables import *
 from ..utils.utils import check_authorization, generate_log
 
@@ -23,7 +23,7 @@ def get_all_users():
     for user in all_users:
         profil_picture = user.profil_picture
         if not os.path.exists(dir_path + profil_picture):
-            profil_picture = f"/static/img/avatars/defaultUserProfilePic.png"
+            profil_picture = "/static/img/avatars/defaultUserProfilePic.png"
         user_dict = {
             "name": user.name,
             "profil_picture": profil_picture,
@@ -71,7 +71,7 @@ def create_account():
     account_password = body["password"]
     account_type_input = body["type"]
 
-    profil_picture = f"/static/img/{account_name}.webp"
+    profil_picture = f"{IMAGES_PATH}/avatars/{account_name}.webp"
     if "profil_picture" not in body:
         profil_picture = "/static/img/avatars/defaultUserProfilePic.png"
     else:
@@ -79,7 +79,7 @@ def create_account():
         if file_base64.startswith("data:image"):
             file_base64 = file_base64.split(",", 1)[1]
 
-        full_path = dir_path + profil_picture
+        full_path = profil_picture
 
         image_data = base64.b64decode(file_base64)
 
@@ -206,8 +206,8 @@ def delete_account():
 def get_profil(id):
     user = Users.query.filter_by(id=id).first()
     profil_picture = user.profil_picture
-    if not os.path.exists(dir_path + profil_picture):
-        profil_picture = f"/static/img/avatars/defaultUserProfilePic.png"
+    if not os.path.exists(profil_picture):
+        profil_picture = "/static/img/avatars/defaultUserProfilePic.png"
     user_dict = {
         "name": user.name,
         "profil_picture": profil_picture,
@@ -219,13 +219,12 @@ def get_profil(id):
 @users_bp.route("/get_profil_picture/<id>")
 def get_profil_picture(id):
     user = Users.query.filter_by(id=id).first()
-    if not user:
-        profil_picture = f"/static/img/avatars/defaultUserProfilePic.png"
+    if not user or not os.path.exists(profil_picture) or user.profil_picture == None:
+        profil_picture = "/static/img/avatars/defaultUserProfilePic.png"
     else:
         profil_picture = user.profil_picture
-    if not os.path.exists(dir_path + profil_picture):
-        profil_picture = f"/static/img/avatars/defaultUserProfilePic.png"
-    return send_file(dir_path + profil_picture)
+
+    return send_file(profil_picture)
 
 @users_bp.route("/is_admin", methods=["GET"])
 def is_admin():

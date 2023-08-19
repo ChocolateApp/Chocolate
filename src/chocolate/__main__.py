@@ -38,7 +38,7 @@ from unidecode import unidecode
 from videoprops import get_video_properties
 from operator import itemgetter
 
-from . import create_app, get_dir_path, DB, LOGIN_MANAGER, tmdb, config, all_auth_tokens, ARGUMENTS
+from . import create_app, get_dir_path, DB, LOGIN_MANAGER, tmdb, config, all_auth_tokens, ARGUMENTS, IMAGES_PATH, write_config
 from .tables import *
 from . import scans
 from .utils.utils import path_join, generate_log, check_authorization, user_in_lib
@@ -95,8 +95,8 @@ if enabled_rpc == "true":
     except Exception as e:
         enabled_rpc == "false"
         config.set("ChocolateSettings", "discordrpc", "false")
-        with open(path_join(dir_path, "config.ini"), "w") as conf:
-            config.write(conf)
+        write_config(config)
+
 searched_films = []
 all_movies_not_sorted = []
 searched_series = []
@@ -1073,7 +1073,7 @@ def get_all_playlists(library):
     user = Users.query.filter_by(name=username).first()
     user_id = user.id
 
-    playlists = Playlist.query.filter(Playlist.user_id.like(f"%{user_id}%"), Playlist.library_name == library).all()
+    playlists = Playlists.query.filter(Playlists.user_id.like(f"%{user_id}%"), Playlists.library_name == library).all()
     playlists_list = [playlist.__dict__ for playlist in playlists]
 
     for playlist in playlists_list:
@@ -1109,7 +1109,7 @@ def get_all_albums(library):
     check_authorization(request, token, library)
     generate_log(request, "SUCCESS")
 
-    albums = Album.query.filter_by(library_name=library).all()
+    albums = Albums.query.filter_by(library_name=library).all()
     albums_list = [album.__dict__ for album in albums]
 
     for album in albums_list:
@@ -1127,7 +1127,7 @@ def get_all_artists(library):
     check_authorization(request, token, library)
     generate_log(request, "SUCCESS")
 
-    artists = Artist.query.filter_by(library_name=library).all()
+    artists = Artists.query.filter_by(library_name=library).all()
     artists_list = [artist.__dict__ for artist in artists]
 
     for artist in artists_list:
@@ -1144,19 +1144,19 @@ def get_all_tracks(library):
     check_authorization(request, token, library)
     generate_log(request, "SUCCESS")
 
-    tracks = Track.query.filter_by(library_name=library).all()
+    tracks = Tracks.query.filter_by(library_name=library).all()
     tracks_list = [track.__dict__ for track in tracks]
 
     for track in tracks_list:
         del track["_sa_instance_state"]
         try:
-            album_name = Album.query.filter_by(id=track["album_id"]).first().name
+            album_name = Albums.query.filter_by(id=track["album_id"]).first().name
             track["album_name"] = album_name
         except:
             track["album_name"] = None
 
         try:
-            artist_name = Artist.query.filter_by(id=track["artist_id"]).first().name
+            artist_name = Artists.query.filter_by(id=track["artist_id"]).first().name
             track["artist_name"] = artist_name
         except:
             track["artist_name"] = None
@@ -1180,11 +1180,11 @@ def get_album_tracks(album_id):
     user = Users.query.filter_by(name=user).first()
     user_id = user.id
 
-    tracks = Track.query.filter_by(album_id=album_id).all()
+    tracks = Tracks.query.filter_by(album_id=album_id).all()
     tracks_list = [track.__dict__ for track in tracks]
 
-    artist = Artist.query.filter_by(id=tracks_list[0]["artist_id"]).first().name
-    album = Album.query.filter_by(id=tracks_list[0]["album_id"]).first().name
+    artist = Artists.query.filter_by(id=tracks_list[0]["artist_id"]).first().name
+    album = Albums.query.filter_by(id=tracks_list[0]["album_id"]).first().name
 
     for track in tracks_list:
         del track["_sa_instance_state"]
@@ -1218,10 +1218,10 @@ def get_playlist_tracks(playlist_id):
     user_id = user.id
     tracks_list = []
     if playlist_id != "0":
-        tracks = Playlist.query.filter(Playlist.user_id.like(f"%{user_id}%"), Playlist.id == playlist_id).first()
+        tracks = Playlists.query.filter(Playlists.user_id.like(f"%{user_id}%"), Playlists.id == playlist_id).first()
         tracks = tracks.tracks.split(",")
         for track in tracks:
-            track = Track.query.filter_by(id=track).first().__dict__
+            track = Tracks.query.filter_by(id=track).first().__dict__
 
             del track["_sa_instance_state"]
 
@@ -1234,12 +1234,12 @@ def get_playlist_tracks(playlist_id):
                 track["liked"] = False
 
             if "album_id" in track:
-                album = Album.query.filter_by(id=track["album_id"]).first()
+                album = Albums.query.filter_by(id=track["album_id"]).first()
                 if album:
                     track["album_name"] = album.name
 
             if "artist_id" in track:
-                artist = Artist.query.filter_by(id=track["artist_id"]).first()
+                artist = Artists.query.filter_by(id=track["artist_id"]).first()
                 if artist:
                     track["artist_name"] = artist.name
 
@@ -1247,7 +1247,7 @@ def get_playlist_tracks(playlist_id):
     else:
         likes = MusicLiked.query.filter_by(user_id=user_id, liked="true").all()
         for like in likes:
-            track = Track.query.filter_by(id=like.music_id).first().__dict__
+            track = Tracks.query.filter_by(id=like.music_id).first().__dict__
 
             del track["_sa_instance_state"]
 
@@ -1258,11 +1258,11 @@ def get_playlist_tracks(playlist_id):
             track["liked_at"] = music_like.liked_at
 
             if "album_id" in track:
-                album = Album.query.filter_by(id=track["album_id"]).first()
+                album = Albums.query.filter_by(id=track["album_id"]).first()
                 track["album_name"] = album.name
 
             if "artist_id" in track:
-                artist = Artist.query.filter_by(id=track["artist_id"]).first()
+                artist = Artists.query.filter_by(id=track["artist_id"]).first()
                 track["artist_name"] = artist.name
 
             tracks_list.append(track)
@@ -1332,18 +1332,18 @@ def create_playlist():
     track_id = body["track_id"]
     library = body["library"]
 
-    exists = Playlist.query.filter_by(
+    exists = Playlists.query.filter_by(
         name=name, user_id=user_id, library_name=library
     ).first()
     if exists:
         return jsonify({"status": "error", "error": "Playlist already exists"})
-    track = Track.query.filter_by(id=track_id).first()
+    track = Tracks.query.filter_by(id=track_id).first()
     duration = 0
     cover = track.cover
     cover = generate_playlist_cover(track_id)
     if not cover:
         cover = "ahaha"
-    playlist = Playlist(
+    playlist = Playlists(
         name=name,
         user_id=user_id,
         tracks=f"{track_id}",
@@ -1360,7 +1360,7 @@ def create_playlist():
 def generate_playlist_cover(id):
     if type(id) == str or type(id) == int:
         id = int(id)
-        track = Track.query.filter_by(id=id).first()
+        track = Tracks.query.filter_by(id=id).first()
         cover = track.cover
         return cover
     elif type(id) == list:
@@ -1375,9 +1375,9 @@ def generate_playlist_cover(id):
 
         covers = []
         for track in tracks:
-            track = Track.query.filter_by(id=track).first()
+            track = Tracks.query.filter_by(id=track).first()
 
-            covers.append(dir_path + track.cover)
+            covers.append(track.cover)
 
 
         im1 = Image.open(covers[0])
@@ -1401,8 +1401,13 @@ def generate_playlist_cover(id):
         im.paste(im3, (0, 100))
         im.paste(im4, (100, 100))
 
-        cover = f"/static/img/mediaImages/Playlist_{uuid4()}.webp"
-        im.save(dir_path + cover, "WEBP")
+        cover = f"{IMAGES_PATH}/Playlist_{uuid4()}.webp"
+        exist = os.path.exists(cover)
+        while exist:
+            cover = f"{IMAGES_PATH}/Playlist_{uuid4()}.webp"
+            exist = os.path.exists(cover)
+        im.save(cover, "WEBP")
+
 
         return cover
 
@@ -1414,7 +1419,7 @@ def add_track_to_playlist():
     playlist_id = body["playlist_id"]
     track_id = body["track_id"]
 
-    playlist = Playlist.query.filter_by(id=playlist_id).first()
+    playlist = Playlists.query.filter_by(id=playlist_id).first()
     if playlist.tracks == "":
         playlist.tracks = track_id
     else:
@@ -1430,7 +1435,7 @@ def add_track_to_playlist():
 
 @app.route("/get_track/<id>")
 def get_track(id):
-    track = Track.query.filter_by(id=id).first().slug
+    track = Tracks.query.filter_by(id=id).first().slug
 
     return send_file(track)
 
@@ -1439,11 +1444,11 @@ def get_track(id):
 def get_album(album_id):
     generate_log(request, "SUCCESS")
 
-    album = Album.query.filter_by(id=album_id).first()
+    album = Albums.query.filter_by(id=album_id).first()
     album_dict = album.__dict__
     del album_dict["_sa_instance_state"]
 
-    artist = Artist.query.filter_by(id=album_dict["artist_id"]).first().name
+    artist = Artists.query.filter_by(id=album_dict["artist_id"]).first().name
     album_dict["artist_name"] = artist
 
     return jsonify(album_dict)
@@ -1458,7 +1463,7 @@ def get_playlist(playlist_id):
     user_id = user.id
 
     if playlist_id != "0":
-        playlist = Playlist.query.filter_by(id=playlist_id).first()
+        playlist = Playlists.query.filter_by(id=playlist_id).first()
         playlist_dict = playlist.__dict__
         del playlist_dict["_sa_instance_state"]
     else:
@@ -1484,7 +1489,7 @@ def get_playlist(playlist_id):
 def get_artist(artist_id):
     generate_log(request, "SUCCESS")
 
-    artist = Artist.query.filter_by(id=artist_id).first()
+    artist = Artists.query.filter_by(id=artist_id).first()
     artist_dict = artist.__dict__
     del artist_dict["_sa_instance_state"]
 
@@ -1496,7 +1501,7 @@ def get_artist_albums(artist_id):
     token = request.headers.get("Authorization")
     generate_log(request, "SUCCESS")
 
-    albums = Album.query.filter_by(artist_id=artist_id).all()
+    albums = Albums.query.filter_by(artist_id=artist_id).all()
     albums_list = [album.__dict__ for album in albums]
 
     for album in albums_list:
@@ -1509,19 +1514,19 @@ def get_artist_albums(artist_id):
 def get_artist_tracks(artist_id):
     generate_log(request, "SUCCESS")
 
-    tracks = Track.query.filter_by(artist_id=artist_id).all()
+    tracks = Tracks.query.filter_by(artist_id=artist_id).all()
     tracks_list = [track.__dict__ for track in tracks]
 
     for track in tracks_list:
         del track["_sa_instance_state"]
         try:
-            album_name = Album.query.filter_by(id=track["album_id"]).first().name
+            album_name = Albums.query.filter_by(id=track["album_id"]).first().name
             track["album_name"] = album_name
         except:
             pass
 
         try:
-            artist_name = Artist.query.filter_by(id=track["artist_id"]).first().name
+            artist_name = Artists.query.filter_by(id=track["artist_id"]).first().name
             track["artist_name"] = artist_name
         except:
             pass
@@ -1770,26 +1775,26 @@ def edit_movie(id, library):
         character_name = cast.character
         actor_id = cast.id
         actor_image = f"https://www.themoviedb.org/t/p/w600_and_h900_bestv2{cast.profile_path}"
-        if not os.path.exists(f"{dir_path}/static/img/mediaImages/Actor_{actor_id}.webp"):
+        if not os.path.exists(f"{IMAGES_PATH}/Actor_{actor_id}.webp"):
             with open(
-                f"{dir_path}/static/img/mediaImages/Actor_{actor_id}.png", "wb"
+                f"{IMAGES_PATH}/Actor_{actor_id}.png", "wb"
             ) as f:
                 f.write(requests.get(actor_image).content)
             try:
                 img = Image.open(
-                    f"{dir_path}/static/img/mediaImages/Actor_{actor_id}.png"
+                    f"{IMAGES_PATH}/Actor_{actor_id}.png"
                 )
                 img = img.save(
-                    f"{dir_path}/static/img/mediaImages/Actor_{actor_id}.webp", "webp"
+                    f"{IMAGES_PATH}/Actor_{actor_id}.webp", "webp"
                 )
-                os.remove(f"{dir_path}/static/img/mediaImages/Actor_{actor_id}.png")
+                os.remove(f"{IMAGES_PATH}/Actor_{actor_id}.png")
             except Exception as e:
                 os.rename(
-                    f"{dir_path}/static/img/mediaImages/Actor_{actor_id}.png",
-                    f"{dir_path}/static/img/mediaImages/Actor_{actor_id}.webp",
+                    f"{IMAGES_PATH}/Actor_{actor_id}.png",
+                    f"{IMAGES_PATH}/Actor_{actor_id}.webp",
                 )
 
-        actor_image = f"/static/img/mediaImages/Actor_{actor_id}.webp"
+        actor_image = f"{IMAGES_PATH}/Actor_{actor_id}.webp"
         actor = [cast.name, character_name, actor_image, cast.id]
         if actor not in the_cast:
             the_cast.append(actor)
@@ -1810,7 +1815,7 @@ def edit_movie(id, library):
             )
             DB.session.add(actor)
             DB.session.commit()
-        elif exists and str(the_movie.id) not in Actors.query.filter_by(actor_id=cast.id).first().actor_programs:
+        elif exists and str(the_movie.id) not in str(Actors.query.filter_by(actor_id=cast.id).first().actor_programs).split(" "):
             actor = Actors.query.filter_by(actor_id=cast.id).first()
             actor.actor_programs = f"{actor.actor_programs} {the_movie.id}"
             DB.session.commit()
@@ -1819,62 +1824,62 @@ def edit_movie(id, library):
     the_movie.cast = the_cast
 
     movie_cover_path = f"https://image.tmdb.org/t/p/original{movie_info.poster_path}"
-    banniere = f"https://image.tmdb.org/t/p/original{movie_info.backdrop_path}"
+    banner = f"https://image.tmdb.org/t/p/original{movie_info.backdrop_path}"
 
     try:
-        os.remove(f"{dir_path}/static/img/mediaImages/{new_movie_id}_cover.webp")
+        os.remove(f"{IMAGES_PATH}/{new_movie_id}_cover.webp")
     except FileNotFoundError:
         pass
     try:
-        os.remove(f"{dir_path}/static/img/mediaImages/{new_movie_id}_cover.png")
+        os.remove(f"{IMAGES_PATH}/{new_movie_id}_cover.png")
     except FileNotFoundError:
         pass
-    with open(f"{dir_path}/static/img/mediaImages/{new_movie_id}_cover.png", "wb") as f:
+    with open(f"{IMAGES_PATH}/{new_movie_id}_cover.png", "wb") as f:
         f.write(requests.get(movie_cover_path).content)
     try:
-        img = Image.open(f"{dir_path}/static/img/mediaImages/{new_movie_id}_cover.png")
-        img.save(f"{dir_path}/static/img/mediaImages/{new_movie_id}_cover.webp", "webp")
-        os.remove(f"{dir_path}/static/img/mediaImages/{new_movie_id}_cover.png")
-        movie_cover_path = f"/static/img/mediaImages/{new_movie_id}_cover.webp"
+        img = Image.open(f"{IMAGES_PATH}/{new_movie_id}_cover.png")
+        img.save(f"{IMAGES_PATH}/{new_movie_id}_cover.webp", "webp")
+        os.remove(f"{IMAGES_PATH}/{new_movie_id}_cover.png")
+        movie_cover_path = f"{IMAGES_PATH}/{new_movie_id}_cover.webp"
     except:
         os.rename(
-            f"{dir_path}/static/img/mediaImages/{new_movie_id}_cover.png",
-            f"{dir_path}/static/img/mediaImages/{new_movie_id}_cover.webp",
+            f"{IMAGES_PATH}/{new_movie_id}_cover.png",
+            f"{IMAGES_PATH}/{new_movie_id}_cover.webp",
         )
         movie_cover_path = "/static/img/broken.webp"
     try:
-        os.remove(f"{dir_path}/static/img/mediaImages/{new_movie_id}_Banner.webp")
+        os.remove(f"{IMAGES_PATH}/{new_movie_id}_Banner.webp")
     except FileNotFoundError:
         pass
     with open(
-        f"{dir_path}/static/img/mediaImages/{new_movie_id}_Banner.png", "wb"
+        f"{IMAGES_PATH}/{new_movie_id}_Banner.png", "wb"
     ) as f:
-        f.write(requests.get(banniere).content)
+        f.write(requests.get(banner).content)
     if movie_info.backdrop_path == None:
-        banniere = f"https://image.tmdb.org/t/p/original{movie_info.backdrop_path}"
-        if banniere != "https://image.tmdb.org/t/p/originalNone":
+        banner = f"https://image.tmdb.org/t/p/original{movie_info.backdrop_path}"
+        if banner != "https://image.tmdb.org/t/p/originalNone":
             with open(
-                f"{dir_path}/static/img/mediaImages/{new_movie_id}_Banner.png", "wb"
+                f"{IMAGES_PATH}/{new_movie_id}_Banner.png", "wb"
             ) as f:
-                f.write(requests.get(banniere).content)
+                f.write(requests.get(banner).content)
         else:
-            banniere = "/static/img/broken.webp"
+            banner = "/static/img/broken.webp"
     try:
-        img = Image.open(f"{dir_path}/static/img/mediaImages/{new_movie_id}_Banner.png")
+        img = Image.open(f"{IMAGES_PATH}/{new_movie_id}_Banner.png")
         img.save(
-            f"{dir_path}/static/img/mediaImages/{new_movie_id}_Banner.webp", "webp"
+            f"{IMAGES_PATH}/{new_movie_id}_Banner.webp", "webp"
         )
-        os.remove(f"{dir_path}/static/img/mediaImages/{new_movie_id}_Banner.png")
-        banniere = f"/static/img/mediaImages/{new_movie_id}_Banner.webp"
+        os.remove(f"{IMAGES_PATH}/{new_movie_id}_Banner.png")
+        banner = f"{IMAGES_PATH}/{new_movie_id}_Banner.webp"
     except:
         os.rename(
-            f"{dir_path}/static/img/mediaImages/{new_movie_id}_Banner.png",
-            f"{dir_path}/static/img/mediaImages/{new_movie_id}_Banner.webp",
+            f"{IMAGES_PATH}/{new_movie_id}_Banner.png",
+            f"{IMAGES_PATH}/{new_movie_id}_Banner.webp",
         )
-        banniere = "/static/img/brokenBanner.webp"
+        banner = "/static/img/brokenBanner.webp"
 
     the_movie.cover = movie_cover_path
-    the_movie.banner = banniere
+    the_movie.banner = banner
     DB.session.commit()
 
     return jsonify({"status": "success"})
@@ -1944,61 +1949,61 @@ def edit_serie(id, library):
         res = details
 
         name = details.name
-        serie_cover_path = f"https://image.tmdb.org/t/p/original{res.poster_path}"
-        banniere = f"https://image.tmdb.org/t/p/original{res.backdrop_path}"
+        cover = f"https://image.tmdb.org/t/p/original{res.poster_path}"
+        banner = f"https://image.tmdb.org/t/p/original{res.backdrop_path}"
         if not os.path.exists(
-            f"{dir_path}/static/img/mediaImages/{serie_id}_Cover.webp"
+            f"{IMAGES_PATH}/{serie_id}_Cover.webp"
         ):
             with open(
-                f"{dir_path}/static/img/mediaImages/{serie_id}_Cover.png", "wb"
+                f"{IMAGES_PATH}/{serie_id}_Cover.png", "wb"
             ) as f:
-                f.write(requests.get(serie_cover_path).content)
+                f.write(requests.get(cover).content)
 
-            img = Image.open(f"{dir_path}/static/img/mediaImages/{serie_id}_Cover.png")
+            img = Image.open(f"{IMAGES_PATH}/{serie_id}_Cover.png")
             img = img.save(
-                f"{dir_path}/static/img/mediaImages/{serie_id}_Cover.webp", "webp"
+                f"{IMAGES_PATH}/{serie_id}_Cover.webp", "webp"
             )
-            os.remove(f"{dir_path}/static/img/mediaImages/{serie_id}_Cover.png")
+            os.remove(f"{IMAGES_PATH}/{serie_id}_Cover.png")
         else:
-            os.remove(f"{dir_path}/static/img/mediaImages/{serie_id}_Cover.webp")
+            os.remove(f"{IMAGES_PATH}/{serie_id}_Cover.webp")
             with open(
-                f"{dir_path}/static/img/mediaImages/{serie_id}_Cover.png", "wb"
+                f"{IMAGES_PATH}/{serie_id}_Cover.png", "wb"
             ) as f:
-                f.write(requests.get(serie_cover_path).content)
+                f.write(requests.get(cover).content)
 
-            img = Image.open(f"{dir_path}/static/img/mediaImages/{serie_id}_Cover.png")
+            img = Image.open(f"{IMAGES_PATH}/{serie_id}_Cover.png")
             img = img.save(
-                f"{dir_path}/static/img/mediaImages/{serie_id}_Cover.webp", "webp"
+                f"{IMAGES_PATH}/{serie_id}_Cover.webp", "webp"
             )
-            os.remove(f"{dir_path}/static/img/mediaImages/{serie_id}_Cover.png")
+            os.remove(f"{IMAGES_PATH}/{serie_id}_Cover.png")
 
         if not os.path.exists(
-            f"{dir_path}/static/img/mediaImages/{serie_id}_Banner.webp"
+            f"{IMAGES_PATH}/{serie_id}_Banner.webp"
         ):
             with open(
-                f"{dir_path}/static/img/mediaImages/{serie_id}_Banner.png", "wb"
+                f"{IMAGES_PATH}/{serie_id}_Banner.png", "wb"
             ) as f:
-                f.write(requests.get(banniere).content)
+                f.write(requests.get(banner).content)
 
-            img = Image.open(f"{dir_path}/static/img/mediaImages/{serie_id}_Banner.png")
+            img = Image.open(f"{IMAGES_PATH}/{serie_id}_Banner.png")
             img = img.save(
-                f"{dir_path}/static/img/mediaImages/{serie_id}_Banner.webp", "webp"
+                f"{IMAGES_PATH}/{serie_id}_Banner.webp", "webp"
             )
-            os.remove(f"{dir_path}/static/img/mediaImages/{serie_id}_Banner.png")
+            os.remove(f"{IMAGES_PATH}/{serie_id}_Banner.png")
         else:
-            os.remove(f"{dir_path}/static/img/mediaImages/{serie_id}_Banner.webp")
+            os.remove(f"{IMAGES_PATH}/{serie_id}_Banner.webp")
             with open(
-                f"{dir_path}/static/img/mediaImages/{serie_id}_Banner.png", "wb"
+                f"{IMAGES_PATH}/{serie_id}_Banner.png", "wb"
             ) as f:
-                f.write(requests.get(banniere).content)
-            img = Image.open(f"{dir_path}/static/img/mediaImages/{serie_id}_Banner.png")
+                f.write(requests.get(banner).content)
+            img = Image.open(f"{IMAGES_PATH}/{serie_id}_Banner.png")
             img = img.save(
-                f"{dir_path}/static/img/mediaImages/{serie_id}_Banner.webp", "webp"
+                f"{IMAGES_PATH}/{serie_id}_Banner.webp", "webp"
             )
-            os.remove(f"{dir_path}/static/img/mediaImages/{serie_id}_Banner.png")
+            os.remove(f"{IMAGES_PATH}/{serie_id}_Banner.png")
 
-        banniere = f"/static/img/mediaImages/{serie_id}_Banner.webp"
-        serie_cover_path = f"/static/img/mediaImages/{serie_id}_Cover.webp"
+        banner = f"{IMAGES_PATH}/{serie_id}_Banner.webp"
+        cover = f"{IMAGES_PATH}/{serie_id}_Cover.webp"
         description = res["overview"]
         note = res.vote_average
         date = res.first_air_date
@@ -2037,34 +2042,34 @@ def edit_serie(id, library):
             actor_id = actor.id
             actor_image = f"https://image.tmdb.org/t/p/original{actor.profile_path}"
             if not os.path.exists(
-                f"{dir_path}/static/img/mediaImages/Actor_{actor_id}.webp"
+                f"{IMAGES_PATH}/Actor_{actor_id}.webp"
             ):
                 with open(
-                    f"{dir_path}/static/img/mediaImages/Actor_{actor_id}.png", "wb"
+                    f"{IMAGES_PATH}/Actor_{actor_id}.png", "wb"
                 ) as f:
                     f.write(requests.get(actor_image).content)
                 img = Image.open(
-                    f"{dir_path}/static/img/mediaImages/Actor_{actor_id}.png"
+                    f"{IMAGES_PATH}/Actor_{actor_id}.png"
                 )
                 img = img.save(
-                    f"{dir_path}/static/img/mediaImages/Actor_{actor_id}.webp", "webp"
+                    f"{IMAGES_PATH}/Actor_{actor_id}.webp", "webp"
                 )
-                os.remove(f"{dir_path}/static/img/mediaImages/Actor_{actor_id}.png")
+                os.remove(f"{IMAGES_PATH}/Actor_{actor_id}.png")
             else:
-                os.remove(f"{dir_path}/static/img/mediaImages/Actor_{actor_id}.webp")
+                os.remove(f"{IMAGES_PATH}/Actor_{actor_id}.webp")
                 with open(
-                    f"{dir_path}/static/img/mediaImages/Actor_{actor_id}.png", "wb"
+                    f"{IMAGES_PATH}/Actor_{actor_id}.png", "wb"
                 ) as f:
                     f.write(requests.get(actor_image).content)
                 img = Image.open(
-                    f"{dir_path}/static/img/mediaImages/Actor_{actor_id}.png"
+                    f"{IMAGES_PATH}/Actor_{actor_id}.png"
                 )
                 img = img.save(
-                    f"{dir_path}/static/img/mediaImages/Actor_{actor_id}.webp", "webp"
+                    f"{IMAGES_PATH}/Actor_{actor_id}.webp", "webp"
                 )
-                os.remove(f"{dir_path}/static/img/mediaImages/Actor_{actor_id}.png")
+                os.remove(f"{IMAGES_PATH}/Actor_{actor_id}.png")
 
-            actor_image = f"/static/img/mediaImages/Actor_{actor_id}.webp"
+            actor_image = f"{IMAGES_PATH}/Actor_{actor_id}.webp"
             actor_character = actor.character
             actor.profile_path = str(actor_image)
             this_actor = [
@@ -2109,8 +2114,8 @@ def edit_serie(id, library):
         the_serie.description = description
         the_serie.cast = new_cast
         the_serie.bande_annonce_url = bande_annonce_url
-        the_serie.serie_cover_path = serie_cover_path
-        the_serie.banniere = banniere
+        the_serie.cover = cover
+        the_serie.banner = banner
         the_serie.note = note
         the_serie.date = date
         the_serie.serie_modified_time = serie_modified_time
@@ -2538,16 +2543,16 @@ def search_tv(library, search):
 
 @app.route("/search_tracks/<library>/<search>")
 def search_tracks(library, search):
-    tracks = Track.query.filter_by(library_name=library).all()
+    tracks = Tracks.query.filter_by(library_name=library).all()
 
     search = search.lower()
     search_terms = search.split(" ")
     search_results = []
 
     for track in tracks:
-        artist = Artist.query.filter_by(id=track.artist_id).first().name.lower()
+        artist = Artists.query.filter_by(id=track.artist_id).first().name.lower()
         if track.album_id:
-            album = Album.query.filter_by(id=track.album_id).first().name.lower()
+            album = Albums.query.filter_by(id=track.album_id).first().name.lower()
         else:
             album = ""
         count = 0
@@ -2573,14 +2578,14 @@ def search_tracks(library, search):
 
 @app.route("/search_albums/<library>/<search>")
 def search_albums(library, search):
-    albums = Album.query.filter_by(library_name=library).all()
+    albums = Albums.query.filter_by(library_name=library).all()
 
     search = search.lower()
     search_terms = search.split(" ")
     search_results = []
 
     for album in albums:
-        artist = Artist.query.filter_by(id=album.artist_id).first().name.lower()
+        artist = Artists.query.filter_by(id=album.artist_id).first().name.lower()
         name = album.name.lower()
         count = 0
         for term in search_terms:
@@ -2602,7 +2607,7 @@ def search_albums(library, search):
 
 @app.route("/search_artists/<library>/<search>")
 def search_artists(library, search):
-    artists = Artist.query.filter_by(library_name=library).all()
+    artists = Artists.query.filter_by(library_name=library).all()
 
     search = search.lower()
     search_terms = search.split(" ")
@@ -2628,7 +2633,7 @@ def search_artists(library, search):
 
 @app.route("/search_playlists/<library>/<search>")
 def search_playlists(library, search):
-    playlists = Playlist.query.filter_by(library_name=library).all()
+    playlists = Playlists.query.filter_by(library_name=library).all()
 
     search = search.lower()
     search_terms = search.split(" ")
@@ -2642,7 +2647,7 @@ def search_playlists(library, search):
             if term in name:
                 count += 1
             for track in tracks:
-                track = Track.query.filter_by(id=track).first().name.lower()
+                track = Tracks.query.filter_by(id=track).first().name.lower()
                 if term in track:
                     count += 1
         if count > 0:
@@ -3356,7 +3361,7 @@ def generate_caption_movie(movie_id):
 
     return string
 
-@app.route("/get_actor_data/<actorId>", methods=["GET", "POST"])
+@app.route("/get_actor_data/<actor_id>", methods=["GET", "POST"])
 def get_actor_data(actor_id):
     if actor_id == "undefined":
         abort(404)
@@ -3380,14 +3385,14 @@ def get_actor_data(actor_id):
 
     actor_data = {
         "actor_name": actor.name,
-        "actorImage": actor.actorImage,
-        "actorDescription": actor.actorDescription,
-        "actorBirthday": actor.actorBirthDate,
-        "actorBirthplace": actor.actorBirthPlace,
-        "actorMovies": movies_data,
-        "actorSeries": series_data,
+        "actor_image": f"/actor_image/{actor_id}",
+        "actor_description": actor.actor_description,
+        "actor_birthday": actor.actor_birth_date,
+        "actor_birthplace": actor.actor_birth_place,
+        "actor_movies": movies_data,
+        "actor_series": series_data,
     }
-    return jsonify(actor_data, default=lambda o: o.__dict__)
+    return jsonify(actor_data)
 
 
 @app.route("/get_this_episode_data/<episode_id>", methods=["GET", "POST"])
@@ -3433,6 +3438,111 @@ def download_episode(episode_id):
     episode_path = f"{library_path}/{episode.slug}"
     return send_file(episode_path, as_attachment=True)
 
+@app.route("/movie_cover/<id>")
+def movie_cover(id):
+    movie = Movies.query.filter_by(id=id).first()
+    movie_cover = movie.cover
+    return send_file(movie_cover, as_attachment=True)
+
+@app.route("/movie_banner/<id>")
+def movie_banner(id):
+    movie = Movies.query.filter_by(id=id).first()
+    movie_banner = movie.banner
+    return send_file(movie_banner, as_attachment=True)
+
+@app.route("/serie_cover/<id>")
+def serie_cover(id):
+    serie = Series.query.filter_by(id=id).first()
+    serie_cover = serie.cover
+    return send_file(serie_cover, as_attachment=True)
+
+@app.route("/serie_banner/<id>")
+def serie_banner(id):
+    serie = Series.query.filter_by(id=id).first()
+    serie_banner = serie.banner
+    return send_file(serie_banner, as_attachment=True)
+
+@app.route("/season_cover/<id>")
+def season_cover(id):
+    season = Seasons.query.filter_by(season_id=id).first()
+    season_cover = season.cover
+    return send_file(season_cover, as_attachment=True)
+
+@app.route("/episode_cover/<id>")
+def episode_cover(id):
+    episode = Episodes.query.filter_by(episode_id=id).first()
+    episode_cover = episode.episode_cover_path
+    return send_file(episode_cover, as_attachment=True)
+
+@app.route("/other_cover/<id>")
+def other_cover(id):
+    other = OthersVideos.query.filter_by(video_hash=id).first()
+    other_cover = other.banner
+    return send_file(other_cover, as_attachment=True)
+
+@app.route("/book_cover/<id>")
+def book_cover(id):
+    book = Books.query.filter_by(id=id).first()
+    book_cover = book.cover
+    return send_file(book_cover, as_attachment=True)
+
+@app.route("/actor_image/<id>")
+def actor_image(id):
+    actor = Actors.query.filter_by(actor_id=id).first()
+    actor_image = actor.actor_image
+    if not actor or not os.path.exists(actor_image):
+        ext_to_ext = {
+            ".png": ".webp",
+            ".webp": ".png",
+        }
+        name, extension = os.path.splitext(actor_image)
+        new_extension = ext_to_ext[extension]
+        actor_image = f"{name}{new_extension}"
+        if not os.path.exists(actor_image):
+            actor.actor_image = f"{dir_path}/static/img/avatars/defaultUserProfilePic.png"
+            DB.session.commit()
+            return send_file(f"{dir_path}/static/img/avatars/defaultUserProfilePic.png", as_attachment=True)
+        else:
+            actor.actor_image = actor_image
+            DB.session.commit()
+    return send_file(actor_image, as_attachment=True)
+
+@app.route("/artist_image/<id>")
+def artist_image(id):
+    artist = Artists.query.filter_by(id=id).first()
+    artist_image = artist.cover
+    return send_file(artist_image, as_attachment=True)
+
+@app.route("/album_cover/<id>")
+def album_cover(id):
+    album = Albums.query.filter_by(id=id).first()
+    album_cover = album.cover
+    return send_file(album_cover, as_attachment=True)
+
+@app.route("/playlist_cover/<id>")
+def playlist_cover(id):
+    if id != "0":
+        playlist = Playlists.query.filter_by(id=id).first()
+        playlist_cover = playlist.cover
+    else:
+        playlist_cover = f"{dir_path}/static/img/likes.webp"
+    return send_file(playlist_cover, as_attachment=True)
+
+@app.route("/track_cover/<id>")
+def track_cover(id):
+    track = Tracks.query.filter_by(id=id).first()
+    track_cover = track.cover
+    return send_file(track_cover, as_attachment=True)
+
+@app.route("/user_image/<id>")
+def user_image(id):
+    user = Users.query.filter_by(id=id).first()
+    user_image = user.profil_picture
+
+    if user == None or not os.path.exists(user_image):
+        return send_file(f"{dir_path}/static/img/avatars/defaultUserProfilePic.png", as_attachment=True)
+    
+    return send_file(user_image, as_attachment=True)
 
 if __name__ == "__main__":
     enabled_rpc = config["ChocolateSettings"]["discordrpc"]
