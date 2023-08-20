@@ -469,29 +469,23 @@ def getMovies(library_name):
             exists = Movies.query.filter_by(slug=slug).first() is not None
 
             if not exists:
-                try:
-                    search = Search().movies(movieTitle, adult=True)
-                except Exception as e:
-                    search = Search().movies(movieTitle)
-                search = transformToDict(search.results)
-                if search == {}:
-                    guessedData = guessit(originalMovieTitle)
-                    guessedTitle = guessedData["title"]
+                guessedData = guessit(originalMovieTitle)
+                guessedTitle = guessedData["title"]
 
-                    if "part" in guessedData:
-                        guessedTitle = f"{guessedTitle} Part {guessedData['part']}"
+                if "part" in guessedData:
+                    guessedTitle = f"{guessedTitle} Part {guessedData['part']}"
 
 
-                    if "year" in guessedData:
-                        try:
-                            search = Search().movies(guessedTitle, year=guessedData["year"], adult=True)
-                        except:
-                            search = Search().movies(guessedTitle, year=guessedData["year"])
-                    else:
-                        try:
-                            search = Search().movies(guessedTitle, adult=True)
-                        except:
-                            search = Search().movies(guessedTitle)
+                if "year" in guessedData:
+                    try:
+                        search = Search().movies(guessedTitle, year=guessedData["year"], adult=True)
+                    except:
+                        search = Search().movies(guessedTitle, year=guessedData["year"])
+                else:
+                    try:
+                        search = Search().movies(guessedTitle, adult=True)
+                    except:
+                        search = Search().movies(guessedTitle)
 
                 search = transformToDict(search)
 
@@ -506,13 +500,13 @@ def getMovies(library_name):
                     bestMatch = search[0]
                 if config["ChocolateSettings"]["askwhichmovie"] == "false" or len(search) == 1:
                     for i in range(len(search)):
-                        if (lev(movieTitle, search[i]["title"]) < lev(movieTitle, bestMatch["title"])
+                        if (lev(guessedTitle, search[i]["title"]) < lev(guessedTitle, bestMatch["title"])
                                 and bestMatch["title"] not in film_file_list):
                             bestMatch = search[i]
-                        elif (lev(movieTitle, search[i]["title"]) == lev(movieTitle, bestMatch["title"])
+                        elif (lev(guessedTitle, search[i]["title"]) == lev(guessedTitle, bestMatch["title"])
                               and bestMatch["title"] not in film_file_list):
                             bestMatch = bestMatch
-                        if (lev(movieTitle, bestMatch["title"]) == 0
+                        if (lev(guessedTitle, bestMatch["title"]) == 0
                                 and bestMatch["title"] not in film_file_list):
                             break
 
@@ -602,7 +596,7 @@ def getMovies(library_name):
                         actor = Actors.query.filter_by(actor_id=cast.id).first()
                         actor.actor_programs = f"{actor.actor_programs} {movie_id}"
                         DB.session.commit()
-                theCast = theCast
+                theCast = ",".join([str(i) for i in theCast])
                 try:
                     date = datetime.datetime.strptime(date, "%Y-%m-%d").strftime("%d/%m/%Y")
                 except ValueError as e:
@@ -645,6 +639,7 @@ def getMovies(library_name):
                 movieGenre = []
                 for genre_id in genre:
                     movieGenre.append(genre_list[genre_id])
+                movieGenre = ",".join(movieGenre)
 
                 bandeAnnonce = details.videos.results
                 bande_annonce_url = ""
@@ -684,9 +679,8 @@ def getMovies(library_name):
                 alternatives_names = list(dict.fromkeys(alternatives_names))
 
                 alternatives_names = ",".join(alternatives_names)
-                theCast = ",".join([str(i) for i in theCast])
                 slug = f"{start}{originalMovieTitle}"
-                filmData = Movies(id=movie_id, title=movieTitle, real_title=name, cover=movieCoverPath, banner=banner, slug=slug, description=description, note=note, date=date, genre=json.dumps(movieGenre), duration=str(duration), cast=theCast, bande_annonce_url=bande_annonce_url, adult=str(res["adult"]), library_name=library_name, alternatives_names=alternatives_names)
+                filmData = Movies(id=movie_id, title=movieTitle, real_title=name, cover=movieCoverPath, banner=banner, slug=slug, description=description, note=note, date=date, genre=movieGenre, duration=str(duration), cast=theCast, bande_annonce_url=bande_annonce_url, adult=str(res["adult"]), library_name=library_name, alternatives_names=alternatives_names)
                 DB.session.add(filmData)
                 DB.session.commit()
         else:
@@ -960,6 +954,7 @@ def getSeries(library_name):
             genreList = []
             for genre in serieGenre:
                 genreList.append(str(genre.name))
+            genreList = ",".join(genreList)
             newCast = []
             cast = list(cast)[:5]
             for actor in cast:
@@ -999,7 +994,6 @@ def getSeries(library_name):
 
             newCast = newCast[:5]
             newCast = ",".join([str(i) for i in newCast])
-            genreList = json.dumps(genreList)
             isAdult = str(details["adult"])
             serieObject = Series(id=serie_id, name=name, original_name=originalSerieTitle, genre=genreList, duration=duration, description=description, cast=newCast, bande_annonce_url=bande_annonce_url, cover=cover, banner=banner, note=note, date=date, serie_modified_time=serie_modified_time, adult=isAdult, library_name=library_name)
             DB.session.add(serieObject)
@@ -1104,10 +1098,11 @@ def getSeries(library_name):
                                 episodeIndex = guess["season"][1]
                             elif "season" in guess:
                                 episodeIndex = guess["season"]
+                            elif "title" in guess:
+                                episodeIndex = guess["title"]
                             else:
-                                print(f"Can't find the episode index of {episodeName}, data: {guess}")
+                                print(f"Can't find the episode index of {episodeName}, data: {guess}, slug: {slug}")
                                 continue
-
                             exists = Episodes.query.filter_by(episode_number=episodeIndex, season_id=season_id).first() is not None
                             if not exists:
                                 if type(season_id) == int or season_id.isnumeric():
@@ -1300,6 +1295,7 @@ def getSeries(library_name):
                 genreList = []
                 for genre in serieGenre:
                     genreList.append(str(genre.name))
+                genreList = ",".join(genreList)
                 newCast = []
                 cast = list(cast)[:5]
                 for actor in cast:
@@ -1332,7 +1328,7 @@ def getSeries(library_name):
                         DB.session.commit()
 
                 newCast = newCast[:5]
-                genreList = json.dumps(genreList)
+                newCast = ",".join([str(i) for i in newCast])
                 isAdult = str(details["adult"])
                 serieObject = Series(id=serie_id, name=name, original_name=originalSerieTitle, genre=genreList, duration=duration, description=description, cast=newCast, bande_annonce_url=bande_annonce_url, cover=cover, banner=new_banner, note=note, date=date, serie_modified_time=serie_modified_time, adult=isAdult, library_name=library_name)
                 DB.session.add(serieObject)

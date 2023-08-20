@@ -124,23 +124,29 @@ def create_account():
 @users_bp.route("/edit_profil", methods=["POST"])
 def edit_profil():
     authorization = request.headers.get("Authorization")
-    check_authorization(request, authorization)
+
+    if authorization not in all_auth_tokens:
+        abort(401, "Unauthorized")
+
+    user = Users.query.filter_by(name=all_auth_tokens[authorization]["user"]).first()
 
     body = request.get_json()
 
     user_name = body["name"]
     password = body["password"]
+    type = None
+    if "type" in body:
+        type = body["type"]
     id = body["id"]
+
+    if str(id) != str(user.id) and user.account_type != "Admin":
+            abort(401, "Unauthorized")
 
     print(all_auth_tokens)
     print(authorization)
     username_in_tokens = all_auth_tokens[authorization]["user"]
     user = Users.query.filter_by(name=username_in_tokens).first()
     user_type = user.account_type
-    print(username_in_tokens)
-
-    if user_type != "Admin" and username_in_tokens != user_name:
-        abort(401, "Unauthorized")
 
     try:
         f = request.files["image"]
@@ -152,18 +158,19 @@ def edit_profil():
         profil_picture = "/static/img/avatars/defaultUserProfilePic.png"
 
     user_to_edit = Users.query.filter_by(id=id).first()
+
+
     if user_to_edit.name != user_name:
         user_to_edit.name = user_name
-        DB.session.commit()
-    if user_to_edit.account_type != type:
+
+    if type and user_to_edit.account_type != type:
         user_to_edit.account_type = type
-        DB.session.commit()
+
     if user_to_edit.password != generate_password_hash(password) and len(password) > 0:
         if password == "":
             user_to_edit.password = None
         else:
             user_to_edit.password = generate_password_hash(password)
-        DB.session.commit()
     if (
         user_to_edit.profil_picture != profil_picture
         and not "/static/img/avatars/defaultUserProfilePic.png" in profil_picture
@@ -171,7 +178,8 @@ def edit_profil():
         f = request.files["profil_picture"]
         f.save(f"{dir_path}{profil_picture}")
         user_to_edit.profil_picture = profil_picture
-        DB.session.commit()
+
+    DB.session.commit()
 
     return jsonify(
         {
@@ -214,17 +222,6 @@ def get_profil(id):
         "account_type": user.account_type,
     }
     return jsonify(user_dict)
-
-
-@users_bp.route("/get_profil_picture/<id>")
-def get_profil_picture(id):
-    user = Users.query.filter_by(id=id).first()
-    if not user or not os.path.exists(profil_picture) or user.profil_picture == None:
-        profil_picture = "/static/img/avatars/defaultUserProfilePic.png"
-    else:
-        profil_picture = user.profil_picture
-
-    return send_file(profil_picture)
 
 @users_bp.route("/is_admin", methods=["GET"])
 def is_admin():

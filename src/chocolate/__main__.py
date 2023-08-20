@@ -1693,7 +1693,9 @@ def edit_movie(id, library):
         return jsonify(movies)
 
     new_movie_id = request.get_json()["new_id"]
-    print(f"The id: {id} and the new id: {new_movie_id}")
+
+    if str(new_movie_id) == str(id):
+        return jsonify({"status": "error", "error": "The new id is the same as the old one"})
     the_movie = Movies.query.filter_by(id=id, library_name=library).first()
     
     movie = Movie()
@@ -1759,13 +1761,11 @@ def edit_movie(id, library):
 
     the_movie.alternatives_names = alternatives_names
 
-    the_movie.vues = str({})
-
     movie_genre = []
     genre = movie_info.genres
     for genre_info in genre:
         movie_genre.append(genre_info.name)
-    movie_genre = jsonify(movie_genre)
+    movie_genre = ",".join(movie_genre)
 
     the_movie.genre = movie_genre
     casts = movie_info.casts.__dict__["cast"]
@@ -1795,14 +1795,13 @@ def edit_movie(id, library):
                 )
 
         actor_image = f"{IMAGES_PATH}/Actor_{actor_id}.webp"
-        actor = [cast.name, character_name, actor_image, cast.id]
-        if actor not in the_cast:
-            the_cast.append(actor)
+        if actor_id not in the_cast:
+            the_cast.append(actor_id)
         else:
             break
         person = Person()
-        p = person.details(cast.id)
-        exists = Actors.query.filter_by(actor_id=cast.id).first() is not None
+        p = person.details(actor_id)
+        exists = Actors.query.filter_by(actor_id=actor_id).first() is not None
         if not exists:
             actor = Actors(
                 name=cast.name,
@@ -1820,31 +1819,31 @@ def edit_movie(id, library):
             actor.actor_programs = f"{actor.actor_programs} {the_movie.id}"
             DB.session.commit()
 
-    the_cast = jsonify(the_cast)
-    the_movie.cast = the_cast
+    the_cast = the_cast[:5]
+    the_movie.cast = ",".join([str(x) for x in the_cast])
 
     movie_cover_path = f"https://image.tmdb.org/t/p/original{movie_info.poster_path}"
     banner = f"https://image.tmdb.org/t/p/original{movie_info.backdrop_path}"
 
     try:
-        os.remove(f"{IMAGES_PATH}/{new_movie_id}_cover.webp")
+        os.remove(f"{IMAGES_PATH}/{new_movie_id}_Cover.webp")
     except FileNotFoundError:
         pass
     try:
-        os.remove(f"{IMAGES_PATH}/{new_movie_id}_cover.png")
+        os.remove(f"{IMAGES_PATH}/{new_movie_id}_Cover.png")
     except FileNotFoundError:
         pass
-    with open(f"{IMAGES_PATH}/{new_movie_id}_cover.png", "wb") as f:
+    with open(f"{IMAGES_PATH}/{new_movie_id}_Cover.png", "wb") as f:
         f.write(requests.get(movie_cover_path).content)
     try:
-        img = Image.open(f"{IMAGES_PATH}/{new_movie_id}_cover.png")
-        img.save(f"{IMAGES_PATH}/{new_movie_id}_cover.webp", "webp")
-        os.remove(f"{IMAGES_PATH}/{new_movie_id}_cover.png")
-        movie_cover_path = f"{IMAGES_PATH}/{new_movie_id}_cover.webp"
+        img = Image.open(f"{IMAGES_PATH}/{new_movie_id}_Cover.png")
+        img.save(f"{IMAGES_PATH}/{new_movie_id}_Cover.webp", "webp")
+        os.remove(f"{IMAGES_PATH}/{new_movie_id}_Cover.png")
+        movie_cover_path = f"{IMAGES_PATH}/{new_movie_id}_Cover.webp"
     except:
         os.rename(
-            f"{IMAGES_PATH}/{new_movie_id}_cover.png",
-            f"{IMAGES_PATH}/{new_movie_id}_cover.webp",
+            f"{IMAGES_PATH}/{new_movie_id}_Cover.png",
+            f"{IMAGES_PATH}/{new_movie_id}_Cover.webp",
         )
         movie_cover_path = "/static/img/broken.webp"
     try:
@@ -1877,6 +1876,12 @@ def edit_movie(id, library):
             f"{IMAGES_PATH}/{new_movie_id}_Banner.webp",
         )
         banner = "/static/img/brokenBanner.webp"
+
+    if str(id) in movie_cover_path:
+        movie_cover_path = movie_cover_path.replace(str(id), str(new_movie_id))
+    if str(id) in banner:
+        banner = banner.replace(str(id), str(new_movie_id))
+
 
     the_movie.cover = movie_cover_path
     the_movie.banner = banner
