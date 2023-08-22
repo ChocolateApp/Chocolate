@@ -4,6 +4,7 @@ import platform
 import argparse
 import logging
 import pathlib
+import shutil
 
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
@@ -60,8 +61,6 @@ IMAGES_PATH = IMAGES_PATH.replace("\\", "/")
 if IMAGES_PATH.endswith("/"):
     IMAGES_PATH = IMAGES_PATH[:-1]
 
-
-
 class ChocolateException(Exception):
     """Base class for exceptions in Chocolate"""
 
@@ -114,6 +113,11 @@ def create_app():
     
     return app
 
+def check_dependencies():
+    if not shutil.which("ffmpeg"):
+        logging.warning("ffmpeg is not installed. Chocolate will not be able to play videos.")
+
+
 def get_dir_path():
     is_in_docker = os.environ.get("AM_I_IN_A_DOCKER_CONTAINER", False)
 
@@ -156,6 +160,8 @@ def get_config():
 def write_config(config):
     with open(CONFIG_PATH, "w") as configfile:
         config.write(configfile)
+
+check_dependencies()
 
 config = get_config()
 tmdb = create_tmdb()
