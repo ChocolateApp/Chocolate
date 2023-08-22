@@ -6,7 +6,6 @@ import zipfile
 import zlib
 import ast
 import datetime
-import json
 import sqlalchemy
 import re
 import subprocess
