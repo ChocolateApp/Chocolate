@@ -38,10 +38,14 @@ dependencies = [
     "natsort>=8.4.0",
     "PyMuPdf>=1.22.5",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 readme = "README.md"
 license = {text = "GPL3.0"}
 
 [build-system]
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"
+[tool.pdm.dev-dependencies]
+lint = [
+    "black>=23.7.0",
+]
