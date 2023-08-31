@@ -5,9 +5,10 @@ import json
 from flask import abort
 
 from chocolate import all_auth_tokens, get_dir_path
-from chocolate.tables import *
+from chocolate.tables import Users, Libraries
 
 dir_path = get_dir_path()
+
 
 def generate_log(request, component):
     method = request.method
@@ -18,7 +19,7 @@ def generate_log(request, component):
 
     try:
         data = request.get_json()
-    except:
+    except Exception:
         data = None
 
     if token and token in all_auth_tokens:
@@ -30,7 +31,7 @@ def generate_log(request, component):
                     username = user.name
                 else:
                     username = f"token {token}"
-            except:
+            except Exception:
                 username = f"token {token}"
         else:
             username = f"token {token}"
@@ -50,7 +51,6 @@ def generate_log(request, component):
         message = (
             f"Request {method} at {path} from {username} with data: {json.dumps(data)}"
         )
-    
 
     log("INFO", component, message)
 
@@ -58,8 +58,8 @@ def generate_log(request, component):
 def log(log_type, log_composant, log_message):
     the_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     log = f"{the_time} - [{log_type}] [{log_composant}] {log_message}\n"
-    
-    #if file does not exist, create it
+
+    # if file does not exist, create it
     if not os.path.exists(path_join(dir_path, "server.log")):
         with open(path_join(dir_path, "server.log"), "w") as logs:
             logs.write(log)
@@ -71,7 +71,7 @@ def log(log_type, log_composant, log_message):
 
     with open(path_join(dir_path, "server.log"), "a") as logs:
         logs.write(log)
-    
+
 
 def path_join(*args):
     return "/".join(args).replace("\\", "/")
@@ -102,19 +102,20 @@ def check_authorization(request, token, library=None):
             generate_log(request, "ERROR")
             abort(404)
 
+
 def user_in_lib(user_id, lib):
     user = Users.query.filter_by(id=user_id).first()
 
     if not user:
         return False
-    
+
     user_id = str(user.id)
 
-    if type(lib) != dict:
+    if not isinstance(lib, dict):
         lib = lib.__dict__
 
     available_for = str(lib["available_for"]).split(",")
 
-    if lib["available_for"] == None or user_id in available_for:
+    if not lib["available_for"] or user_id in available_for:
         return True
     return False

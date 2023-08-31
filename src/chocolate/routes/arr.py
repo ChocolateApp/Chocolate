@@ -6,7 +6,8 @@ from chocolate import DB, get_dir_path, all_auth_tokens
 from chocolate.tables import *
 from ..utils.utils import check_authorization, generate_log
 
-arr_bp = Blueprint('arr', __name__)
+arr_bp = Blueprint("arr", __name__)
+
 
 @arr_bp.route("/lookup", methods=["POST"])
 def lookup():
@@ -38,6 +39,7 @@ def lookup():
         readarr = ReadarrAPI(readarr_url, readarr_api_key)
         search_results = readarr.lookup_book(term=query)
         return jsonify(search_results)
+
 
 @arr_bp.route("/list_qualities/<mediaType>", methods=["GET"])
 def list_qualities(media_type):

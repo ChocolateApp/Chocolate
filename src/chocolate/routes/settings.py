@@ -3,7 +3,8 @@ from flask import Blueprint, jsonify, request, abort, send_file
 from chocolate import config, write_config, tmdb
 from chocolate.tables import *
 
-settings_bp = Blueprint('settings', __name__)
+settings_bp = Blueprint("settings", __name__)
+
 
 @settings_bp.route("/get_settings", methods=["GET"])
 def get_settings():

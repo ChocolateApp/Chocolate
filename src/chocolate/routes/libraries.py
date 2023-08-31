@@ -1,14 +1,24 @@
 import json
-import os
 
-from flask import Blueprint, jsonify, request, abort, send_file
+from flask import Blueprint, jsonify, request, abort
 
 from chocolate import DB, all_auth_tokens
-from chocolate.tables import *
+from chocolate.tables import (
+    Libraries,
+    LibrariesMerge,
+    Users,
+    Movies,
+    Series,
+    Seasons,
+    Episodes,
+    Games,
+    OthersVideos,
+)
 import chocolate.scans as scans
 from ..utils.utils import generate_log
 
-libraries_bp = Blueprint('libraries', __name__)
+libraries_bp = Blueprint("libraries", __name__)
+
 
 @libraries_bp.route("/get_all_libraries", methods=["GET"])
 def get_all_libraries():
@@ -25,7 +35,7 @@ def get_all_libraries():
         del library["_sa_instance_state"]
     if user.account_type != "Admin":
         for library in libraries_list:
-            if library["available_for"] != None:
+            if library["available_for"] is not None:
                 available_for = str(library["available_for"]).split(",")
                 if str(user.id) not in available_for:
                     libraries_list.remove(library)
@@ -34,7 +44,9 @@ def get_all_libraries():
     libraries = sorted(libraries_list, key=lambda k: k["lib_type"].lower())
 
     for library in libraries:
-        child_libs = LibrariesMerge.query.filter_by(parent_lib=library["lib_name"]).all()
+        child_libs = LibrariesMerge.query.filter_by(
+            parent_lib=library["lib_name"]
+        ).all()
         child_libs = [child.child_lib for child in child_libs]
         for child in child_libs:
             for lib in libraries:
@@ -44,6 +56,7 @@ def get_all_libraries():
     generate_log(request, "SERVER")
 
     return jsonify(libraries)
+
 
 @libraries_bp.route("/get_all_libraries_created")
 def get_all_libraries_created():
@@ -58,28 +71,31 @@ def get_all_libraries_created():
     libraries_list = [library.__dict__ for library in libraries]
     for library in libraries_list:
         del library["_sa_instance_state"]
-        #check if lib already have a parent
+        # check if lib already have a parent
         parent = LibrariesMerge.query.filter_by(child_lib=library["lib_name"]).first()
         if parent is not None:
             library["merge_parent"] = parent.parent_lib
-        #if lib is a parent, can't be a child
+        # if lib is a parent, can't be a child
         child = LibrariesMerge.query.filter_by(parent_lib=library["lib_name"]).first()
         if child is None:
             library_type = library["lib_type"]
-            #for all lib of the same type, remove the actual lib, and add all the lib to "possible_merge_parent"
+            # for all lib of the same type, remove the actual lib, and add all the lib to "possible_merge_parent"
             for lib in libraries_list:
-                is_child = LibrariesMerge.query.filter_by(child_lib=lib["lib_name"]).first()
-                if lib["lib_type"] == library_type and lib["lib_name"] != library["lib_name"] and is_child is None:
+                is_child = LibrariesMerge.query.filter_by(
+                    child_lib=lib["lib_name"]
+                ).first()
+                if (
+                    lib["lib_type"] == library_type
+                    and lib["lib_name"] != library["lib_name"]
+                    and is_child is None
+                ):
                     if "possible_merge_parent" not in library:
                         library["possible_merge_parent"] = []
-                    data = {
-                        "value": lib["lib_name"],
-                        "text": lib["lib_name"]
-                    }
+                    data = {"value": lib["lib_name"], "text": lib["lib_name"]}
                     library["possible_merge_parent"].append(data)
     if user.account_type != "Admin":
         for library in libraries_list:
-            if library["available_for"] != None:
+            if library["available_for"] is not None:
                 available_for = str(library["available_for"]).split(",")
                 if str(user.id) not in available_for:
                     libraries_list.remove(library)
@@ -90,6 +106,7 @@ def get_all_libraries_created():
     generate_log(request, "SERVER")
 
     return jsonify(libraries)
+
 
 @libraries_bp.route("/create_library", methods=["POST"])
 def create_lib():
@@ -137,19 +154,20 @@ def create_lib():
         DB.session.commit()
         try:
             function_to_call[lib_type](lib_name)
-        except:
+        except Exception:
             pass
 
         return jsonify({"error": "worked"})
     else:
         abort(409)
 
+
 @libraries_bp.route("/edit_library", methods=["POST"])
 def edit_lib():
     token = request.headers.get("Authorization")
     if token not in all_auth_tokens:
         abort(401)
-        
+
     the_request = request.get_json()
     default_path = the_request["default_path"]
     lib_name = the_request["name"]
@@ -166,21 +184,22 @@ def edit_lib():
     if lib is None:
         abort(404)
 
-    if lib_path != None:
+    if lib_path is not None:
         lib.lib_folder = lib_path
-    if lib_type != None:
+    if lib_type is not None:
         lib.lib_type = lib_type
-    if lib_users != None:
+    if lib_users is not None:
         if len(lib_users.split(",")) == 1:
-            lib_users = int(lib_users.replace('"', ''))
+            lib_users = int(lib_users.replace('"', ""))
         lib.available_for = lib_users
     DB.session.commit()
     return jsonify({"error": "worked"})
 
+
 @libraries_bp.route("/delete_library", methods=["POST"])
 def delete_lib():
     the_request = request.get_json()
-    
+
     lib_name = the_request["name"]
     lib = Libraries.query.filter_by(lib_name=lib_name).first()
 
@@ -217,6 +236,7 @@ def delete_lib():
     DB.session.commit()
     return jsonify({"error": "worked"})
 
+
 @libraries_bp.route("/rescan_all", methods=["POST"])
 def rescan_all():
     libraries = Libraries.query.all()
@@ -234,23 +254,27 @@ def rescan_all():
             scans.getOthersVideos(lib["lib_name"])
     return jsonify(True)
 
+
 @libraries_bp.route("/rescan/<library>", methods=["POST"])
 def rescan(library):
     exists = Libraries.query.filter_by(lib_name=library).first() is not None
+
+    type_to_call = {
+        "series": scans.getSeries,
+        "movies": scans.getMovies,
+        "consoles": scans.getGames,
+        "others": scans.getOthersVideos,
+        "books": scans.getBooks,
+        "musics": scans.getMusics,
+    }
+
     if exists:
         library = Libraries.query.filter_by(lib_name=library).first().__dict__
-        if library["lib_type"] == "series":
-            scans.getSeries(library["lib_name"])
-        elif library["lib_type"] == "movies":
-            scans.getMovies(library["lib_name"])
-        elif library["lib_type"] == "consoles":
-            scans.getGames(library["lib_name"])
-        elif library["lib_type"] == "others":
-            scans.getOthersVideos(library["lib_name"])
-        elif library["lib_type"] == "books":
-            scans.getBooks(library["lib_name"])
-        elif library["lib_type"] == "musics":
-            scans.getMusics(library["lib_name"])
+        merges = LibrariesMerge.query.filter_by(parent_lib=library["lib_name"]).all()
+        for merge in merges:
+            child = Libraries.query.filter_by(lib_name=merge.child_lib).first()
+            type_to_call[child.lib_type](child.lib_name)
+        type_to_call[library["lib_type"]](library["lib_name"])
         return jsonify(True)
     return jsonify(False)
 
@@ -269,7 +293,7 @@ def merge_libraries(parent, child):
     parent = Libraries.query.filter_by(lib_name=parent).first()
     if parent is None:
         return
-    
+
     child = Libraries.query.filter_by(lib_name=child).first()
     if child is None:
         return
@@ -277,8 +301,10 @@ def merge_libraries(parent, child):
     if parent.lib_type != child.lib_type:
         return
 
-    exist = LibrariesMerge.query.filter_by(parent_lib=parent.lib_name, child_lib=child.lib_name).first()
-    #child is already a parent
+    exist = LibrariesMerge.query.filter_by(
+        parent_lib=parent.lib_name, child_lib=child.lib_name
+    ).first()
+    # child is already a parent
     is_parent = LibrariesMerge.query.filter_by(parent_lib=child.lib_name).first()
 
     if exist is None and is_parent is None:
@@ -286,8 +312,9 @@ def merge_libraries(parent, child):
         DB.session.add(fusion)
         DB.session.commit()
     elif is_parent is None:
-        fusion = LibrariesMerge.query.filter_by(parent_lib=parent.lib_name, child_lib=child.lib_name).first()
+        fusion = LibrariesMerge.query.filter_by(
+            parent_lib=parent.lib_name, child_lib=child.lib_name
+        ).first()
         DB.session.delete(fusion)
         DB.session.commit()
     return
-    

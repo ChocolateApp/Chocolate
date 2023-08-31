@@ -4,6 +4,7 @@ from time import time
 
 from . import DB
 
+
 class Users(DB.Model, UserMixin):
     id = DB.Column(DB.Integer, primary_key=True, autoincrement=True)
     name = DB.Column(DB.String(255), unique=True)
@@ -13,7 +14,7 @@ class Users(DB.Model, UserMixin):
 
     def __init__(self, name, password, profil_picture, account_type):
         self.name = name
-        if password != None and password != "":
+        if password is not None and password != "":
             self.password = generate_password_hash(password)
         else:
             self.password = None
@@ -21,12 +22,13 @@ class Users(DB.Model, UserMixin):
         self.account_type = account_type
 
     def __repr__(self) -> str:
-        return f'<Name {self.name}>'
+        return f"<Name {self.name}>"
 
     def verify_password(self, pwd):
-        if self.password == None:
+        if not self.password:
             return True
         return check_password_hash(self.password, pwd)
+
 
 class Movies(DB.Model):
     id = DB.Column(DB.Integer, primary_key=True)
@@ -72,7 +74,6 @@ class Series(DB.Model):
 
 
 class Seasons(DB.Model):
-
     serie = DB.Column(DB.Integer, nullable=False)
     season_id = DB.Column(DB.Integer, primary_key=True)
     season_number = DB.Column(DB.Integer, primary_key=True)
@@ -195,6 +196,7 @@ class Albums(DB.Model):
     library_name : str
         album library name
     """
+
     artist_id = DB.Column(DB.Integer, primary_key=True)
     id = DB.Column(DB.Integer, primary_key=True)
     name = DB.Column(DB.String(255))
@@ -232,6 +234,7 @@ class Tracks(DB.Model):
     library_name : str
         track library name
     """
+
     artist_id = DB.Column(DB.Integer)
     album_id = DB.Column(DB.Integer)
     id = DB.Column(DB.Integer, primary_key=True, autoincrement=True)
@@ -268,6 +271,7 @@ class Playlists(DB.Model):
     library_name : str
         playlist library name
     """
+
     user_id = DB.Column(DB.Integer)
     id = DB.Column(DB.Integer, primary_key=True, autoincrement=True)
     name = DB.Column(DB.String(255))
@@ -310,7 +314,8 @@ class Libraries(DB.Model):
     def __repr__(self) -> str:
         return f"<Libraries {self.lib_name}>"
 
-#une classe qui stocke le nombre de fois qu'a été joué une musique par un utilisateur
+
+# une classe qui stocke le nombre de fois qu'a été joué une musique par un utilisateur
 class MusicPlayed(DB.Model):
     user_id = DB.Column(DB.Integer, primary_key=True)
     music_id = DB.Column(DB.Integer, primary_key=True)
@@ -319,7 +324,8 @@ class MusicPlayed(DB.Model):
     def __repr__(self) -> str:
         return f"<MusicPlayed {self.user_id}>"
 
-#une classe qui stocle les likes d'un utilisateur
+
+# une classe qui stocle les likes d'un utilisateur
 class MusicLiked(DB.Model):
     user_id = DB.Column(DB.Integer, primary_key=True)
     music_id = DB.Column(DB.Integer, primary_key=True)
@@ -329,20 +335,23 @@ class MusicLiked(DB.Model):
     def __repr__(self) -> str:
         return f"<MusicLiked {self.user_id}>"
 
+
 class LatestEpisodeWatched(DB.Model):
     user_id = DB.Column(DB.Integer, primary_key=True)
     serie_id = DB.Column(DB.Integer, primary_key=True)
     episode_id = DB.Column(DB.Integer)
-    
+
     def __repr__(self) -> str:
         return f"<LatestEpisodeWatched {self.user_id}>"
+
 
 class InviteCodes(DB.Model):
     code = DB.Column(DB.String(255), primary_key=True)
 
     def __repr__(self) -> str:
         return f"<InviteCode {self.code}>"
-    
+
+
 class LibrariesMerge(DB.Model):
     parent_lib = DB.Column(DB.String(255), primary_key=True)
     child_lib = DB.Column(DB.String(255), primary_key=True)

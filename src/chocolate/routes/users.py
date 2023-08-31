@@ -4,16 +4,16 @@ import base64
 import io
 
 from PIL import Image
-from flask import Blueprint, jsonify, request, abort, send_file
+from flask import Blueprint, jsonify, request, abort
 from werkzeug.security import generate_password_hash
 
 from chocolate import DB, get_dir_path, all_auth_tokens, IMAGES_PATH
-from chocolate.tables import *
+from chocolate.tables import Users, InviteCodes
 from ..utils.utils import check_authorization, generate_log
 
 
 dir_path = get_dir_path()
-users_bp = Blueprint('users', __name__)
+users_bp = Blueprint("users", __name__)
 
 
 @users_bp.route("/get_all_users", methods=["GET"])
@@ -28,7 +28,7 @@ def get_all_users():
             "name": user.name,
             "profil_picture": profil_picture,
             "account_type": user.account_type,
-            "password_empty": True if user.password == None else False,
+            "password_empty": True if not user.password else False,
             "id": user.id,
         }
         all_users_list.append(user_dict)
@@ -44,7 +44,7 @@ def login():
     account_password = request.get_json()["password"]
     user = Users.query.filter_by(name=account_name).first()
     token = f"Bearer {auth_token}"
-    actual_time_in_seconds = int(time())
+    actual_time_in_seconds = int(time.time())
     all_auth_tokens[token] = {"user": account_name, "time": actual_time_in_seconds}
     if user:
         if user.account_type == "Kid":
@@ -63,6 +63,7 @@ def login():
     else:
         generate_log(request, "ERROR")
         return jsonify({"error": "Unauthorized"})
+
 
 @users_bp.route("/create_account", methods=["POST"])
 def create_account():
@@ -140,25 +141,22 @@ def edit_profil():
     id = body["id"]
 
     if str(id) != str(user.id) and user.account_type != "Admin":
-            abort(401, "Unauthorized")
+        abort(401, "Unauthorized")
 
     print(all_auth_tokens)
     print(authorization)
     username_in_tokens = all_auth_tokens[authorization]["user"]
     user = Users.query.filter_by(name=username_in_tokens).first()
-    user_type = user.account_type
-
     try:
         f = request.files["image"]
         name, extension = os.path.splitext(f.filename)
         profil_picture = f"/static/img/{user_name}{extension}"
         if extension == "":
             profil_picture = "/static/img/avatars/defaultUserProfilePic.png"
-    except:
+    except Exception:
         profil_picture = "/static/img/avatars/defaultUserProfilePic.png"
 
     user_to_edit = Users.query.filter_by(id=id).first()
-
 
     if user_to_edit.name != user_name:
         user_to_edit.name = user_name
@@ -173,7 +171,7 @@ def edit_profil():
             user_to_edit.password = generate_password_hash(password)
     if (
         user_to_edit.profil_picture != profil_picture
-        and not "/static/img/avatars/defaultUserProfilePic.png" in profil_picture
+        and "/static/img/avatars/defaultUserProfilePic.png" not in profil_picture
     ):
         f = request.files["profil_picture"]
         f.save(f"{dir_path}{profil_picture}")
@@ -223,6 +221,7 @@ def get_profil(id):
     }
     return jsonify(user_dict)
 
+
 @users_bp.route("/is_admin", methods=["GET"])
 def is_admin():
     authorization = request.headers.get("Authorization")
@@ -233,10 +232,12 @@ def is_admin():
     else:
         return jsonify(False)
 
+
 @users_bp.route("/invite_exist/<hash>", methods=["GET"])
 def invite_exist(hash):
-    can = InviteCodes.query.filter_by(code=hash).first() != None
+    can = InviteCodes.query.filter_by(code=hash).first() is not None
     return jsonify(can)
+
 
 @users_bp.route("/create_invite", methods=["POST"])
 def create_invite():
@@ -246,7 +247,7 @@ def create_invite():
 
     if user.account_type != "Admin":
         abort(401, "Unauthorized")
-        
+
     body = request.get_json()
     code = body["code"]
     new_invite = InviteCodes(code=code)

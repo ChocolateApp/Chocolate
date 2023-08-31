@@ -19,6 +19,15 @@ MIGRATE = Migrate()
 LOGIN_MANAGER = LoginManager()
 all_auth_tokens = {}
 
+
+class ChocolateException(Exception):
+    """Base class for exceptions in Chocolate"""
+
+
+class UnsupportedSystemDefaultPath(ChocolateException):
+    """Raised when the default path for the config file and the database file is not supported by Chocolate"""
+
+
 parser = argparse.ArgumentParser("Chocolate")
 parser.add_argument("--config", help="Path to the config file (a .ini file)")
 parser.add_argument("--db", help="Path to the database file (a .db file)")
@@ -48,7 +57,9 @@ paths = {
 OPERATING_SYSTEM = platform.system()
 
 if OPERATING_SYSTEM not in paths:
-    raise UnsupportedSystemDefaultPath(f"No known default file path for the config / database on your operating system ({OPERATING_SYSTEM}). Please use --config and --database path or create a pull request to add your system to the one supported by Chocolate")
+    raise UnsupportedSystemDefaultPath(
+        f"No known default file path for the config / database on your operating system ({OPERATING_SYSTEM}). Please use --config and --database path or create a pull request to add your system to the one supported by Chocolate"
+    )
 
 CONFIG_PATH = ARGUMENTS.config or paths[OPERATING_SYSTEM]["config"]
 CONFIG_PATH = CONFIG_PATH.replace("\\", "/")
@@ -61,11 +72,6 @@ IMAGES_PATH = IMAGES_PATH.replace("\\", "/")
 if IMAGES_PATH.endswith("/"):
     IMAGES_PATH = IMAGES_PATH[:-1]
 
-class ChocolateException(Exception):
-    """Base class for exceptions in Chocolate"""
-
-class UnsupportedSystemDefaultPath(ChocolateException):
-    """Raised when the default path for the config file and the database file is not supported by Chocolate"""
 
 def create_app():
     is_in_docker = os.environ.get("AM_I_IN_A_DOCKER_CONTAINER", False)
@@ -82,9 +88,10 @@ def create_app():
         os.mkdir(IMAGES_PATH)
     if not os.path.isdir(f"{IMAGES_PATH}/avatars"):
         os.mkdir(f"{IMAGES_PATH}/avatars")
-            
-    app = Flask(__name__, static_folder=f"{dir_path}/static",
-                template_folder=TEMPLATE_FOLDER)
+
+    app = Flask(
+        __name__, static_folder=f"{dir_path}/static", template_folder=TEMPLATE_FOLDER
+    )
 
     app.secret_key = "ChocolateDBPassword"
 
@@ -100,7 +107,7 @@ def create_app():
     from .routes.settings import settings_bp
     from .routes.libraries import libraries_bp
     from .routes.arr import arr_bp
-    
+
     app.register_blueprint(users_bp)
     app.register_blueprint(settings_bp)
     app.register_blueprint(libraries_bp)
@@ -110,12 +117,15 @@ def create_app():
     MIGRATE.init_app(app, DB)
     LOGIN_MANAGER.init_app(app)
     LOGIN_MANAGER.login_view = "login"
-    
+
     return app
+
 
 def check_dependencies():
     if not shutil.which("ffmpeg"):
-        logging.warning("ffmpeg is not installed. Chocolate will not be able to play videos.")
+        logging.warning(
+            "ffmpeg is not installed. Chocolate will not be able to play videos."
+        )
 
 
 def get_dir_path():
@@ -127,6 +137,7 @@ def get_dir_path():
         dir_path = os.path.dirname(__file__).replace("\\", "/")
 
     return dir_path
+
 
 def create_tmdb():
     tmdb = TMDb()
@@ -140,10 +151,13 @@ def create_tmdb():
 
     return tmdb
 
+
 def get_config():
     if not os.path.exists(CONFIG_PATH):
-        logging.warning(f"Config file not found at {CONFIG_PATH}. Creating a new one...")
-        
+        logging.warning(
+            f"Config file not found at {CONFIG_PATH}. Creating a new one..."
+        )
+
         if not os.path.isdir(os.path.dirname(CONFIG_PATH)):
             os.mkdir(os.path.dirname(CONFIG_PATH))
 
@@ -157,9 +171,11 @@ def get_config():
         config["ChocolateSettings"]["language"] = "EN"
     return config
 
+
 def write_config(config):
     with open(CONFIG_PATH, "w") as configfile:
         config.write(configfile)
+
 
 check_dependencies()
 
