@@ -4,8 +4,8 @@ import json
 
 from flask import abort
 
-from chocolate import all_auth_tokens, get_dir_path
-from chocolate.tables import Users, Libraries
+from chocolate_app import all_auth_tokens, get_dir_path
+from chocolate_app.tables import Users, Libraries
 
 dir_path = get_dir_path()
 

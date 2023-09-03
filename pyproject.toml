@@ -1,5 +1,5 @@
 [project]
-name = "Chocolate"
+name = "chocolate_app"
 version = "7.0.0"
 description = "Chocolate is a modern media manager written in Python"
 authors = [

@@ -7,8 +7,8 @@ from PIL import Image
 from flask import Blueprint, jsonify, request, abort
 from werkzeug.security import generate_password_hash
 
-from chocolate import DB, get_dir_path, all_auth_tokens, IMAGES_PATH
-from chocolate.tables import Users, InviteCodes
+from chocolate_app import DB, get_dir_path, all_auth_tokens, IMAGES_PATH
+from chocolate_app.tables import Users, InviteCodes
 from ..utils.utils import check_authorization, generate_log
 
 

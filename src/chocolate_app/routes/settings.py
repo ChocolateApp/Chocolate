@@ -1,7 +1,7 @@
-from flask import Blueprint, jsonify, request, abort, send_file
+from flask import Blueprint, jsonify, request
 
-from chocolate import config, write_config, tmdb
-from chocolate.tables import *
+from chocolate_app import config, write_config, tmdb
+from chocolate_app.tables import Users, Libraries
 
 settings_bp = Blueprint("settings", __name__)
 
@@ -134,7 +134,7 @@ def save_settings():
             config.set("ChocolateSettings", "allowdownload", "true")
         else:
             config.set("ChocolateSettings", "allowdownload", "false")
-    except:
+    except Exception:
         config.set("ChocolateSettings", "allowdownload", "false")
 
     write_config(config)

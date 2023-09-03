@@ -2,8 +2,8 @@ import json
 
 from flask import Blueprint, jsonify, request, abort
 
-from chocolate import DB, all_auth_tokens
-from chocolate.tables import (
+from chocolate_app import DB, all_auth_tokens
+from chocolate_app.tables import (
     Libraries,
     LibrariesMerge,
     Users,
@@ -14,7 +14,7 @@ from chocolate.tables import (
     Games,
     OthersVideos,
 )
-import chocolate.scans as scans
+import chocolate_app.scans as scans
 from ..utils.utils import generate_log
 
 libraries_bp = Blueprint("libraries", __name__)

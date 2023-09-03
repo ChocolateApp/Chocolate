@@ -4,7 +4,6 @@ from time import time
 
 from . import DB
 
-
 class Users(DB.Model, UserMixin):
     id = DB.Column(DB.Integer, primary_key=True, autoincrement=True)
     name = DB.Column(DB.String(255), unique=True)
@@ -47,6 +46,7 @@ class Movies(DB.Model):
     adult = DB.Column(DB.String(255))
     library_name = DB.Column(DB.String(255))
     alternatives_names = DB.Column(DB.Text)
+    file_date = DB.Column(DB.Float)
 
     def __repr__(self) -> str:
         return f"<Movies {self.title}>"

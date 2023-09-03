@@ -30,7 +30,6 @@ from flask import (
 )
 from guessit import guessit
 from PIL import Image
-from ebooklib import epub
 from pypresence import Presence
 from tmdbv3api import TV, Movie, Person, TMDb, Search
 from tmdbv3api.as_obj import AsObj
@@ -50,9 +49,9 @@ from . import (
     IMAGES_PATH,
     write_config,
 )
-from .tables import *
+from .tables import Language, Movies, Series, Seasons, Episodes, OthersVideos, Users, Libraries, Books, Artists, MusicLiked, MusicPlayed, Playlists, Tracks, Albums, Actors, Games, LatestEpisodeWatched, LibrariesMerge
 from . import scans
-from .utils.utils import path_join, generate_log, check_authorization, user_in_lib
+from .utils.utils import generate_log, check_authorization, user_in_lib
 
 app = create_app()
 dir_path = get_dir_path()
@@ -79,7 +78,7 @@ def load_user(id):
 try:
     repo = git.Repo(search_parent_directories=True)
     last_commit_hash = repo.head.object.hexsha[:7]
-except:
+except Exception:
     last_commit_hash = "xxxxxxx"
 
 
@@ -107,7 +106,7 @@ if enabled_rpc == "true":
     try:
         RPC = Presence(client_id)
         RPC.connect()
-    except Exception as e:
+    except Exception:
         enabled_rpc == "false"
         config.set("ChocolateSettings", "discordrpc", "false")
         write_config(config)
@@ -278,10 +277,7 @@ def length_video(path: str) -> float:
         stdout=subprocess.PIPE,
         text=True,
     )
-    try:
-        return float(seconds.stdout)
-    except:
-        return 0
+    return float(seconds.stdout) or 0
 
 
 def get_gpu_info() -> str:
@@ -292,7 +288,9 @@ def get_gpu_info() -> str:
             ["/usr/sbin/sysctl", "-n", "machdep.cpu.brand_string"]
         ).strip()
     elif platform.system() == "Linux":
-        ret
+        return subprocess.check_output(
+            ["lshw", "-C", "display", "-short"]
+        ).decode("utf-8")
     return ""
 
 
@@ -300,7 +298,7 @@ def gpuname() -> str:
     """Returns the model name of the first available GPU"""
     try:
         gpus = GPUtil.getGPUs()
-    except:
+    except Exception:
         print(
             "Unable to detect GPU model."
         )
@@ -999,7 +997,6 @@ def get_all_movies(library):
     username = all_auth_tokens[token]["user"]
 
     movies = Movies.query.filter_by(library_name=library).all()
-    the_lib = Libraries.query.filter_by(lib_name=library).first()
     user = Users.query.filter_by(name=username).first()
 
     movies_list = [movie.__dict__ for movie in movies]
@@ -1039,11 +1036,8 @@ def get_all_books(library):
     check_authorization(request, token, library)
     generate_log(request, "SUCCESS")
 
-    username = all_auth_tokens[token]["user"]
     books = Books.query.filter_by(library_name=library).all()
     books_list = [book.__dict__ for book in books]
-
-    user = Users.query.filter_by(name=username).first()
 
     for book in books_list:
         del book["_sa_instance_state"]
@@ -1078,12 +1072,11 @@ def get_all_playlists(library):
     playlists_list = natsort.natsorted(playlists_list, key=itemgetter(*["name"]))
 
     liked_music = MusicLiked.query.filter_by(user_id=user_id, liked="true").all()
-    musics = ""
+    musics = []
     for music in liked_music:
         music_id = music.music_id
-
-        musics += f"{music_id},"
-    musics = musics[:-1]
+        musics.append(music_id)
+    musics = ",".join(musics)
 
     if len(musics) > 0:
         playlists_list.insert(
@@ -1147,13 +1140,13 @@ def get_all_tracks(library):
         try:
             album_name = Albums.query.filter_by(id=track["album_id"]).first().name
             track["album_name"] = album_name
-        except:
+        except Exception:
             track["album_name"] = None
 
         try:
             artist_name = Artists.query.filter_by(id=track["artist_id"]).first().name
             track["artist_name"] = artist_name
-        except:
+        except Exception:
             track["artist_name"] = None
 
     tracks_list = natsort.natsorted(tracks_list, key=itemgetter(*["name"]))
@@ -1168,7 +1161,7 @@ def get_album_tracks(album_id):
     try:
         user = all_auth_tokens[token]["user"]
         generate_log(request, "SUCCESS")
-    except:
+    except Exception:
         generate_log(request, "ERROR")
         return jsonify({"error": "Invalid token"})
 
@@ -1205,7 +1198,7 @@ def get_playlist_tracks(playlist_id):
     try:
         user = all_auth_tokens[token]["user"]
         generate_log(request, "SUCCESS")
-    except:
+    except Exception:
         generate_log(request, "ERROR")
         return jsonify({"error": "Invalid token"})
 
@@ -1355,18 +1348,18 @@ def create_playlist():
 
 
 def generate_playlist_cover(id):
-    if type(id) == str or type(id) == int:
+    if isinstance(id, str) or isinstance(id, int):
         id = int(id)
         track = Tracks.query.filter_by(id=id).first()
         cover = track.cover
         return cover
-    elif type(id) == list:
+    elif isinstance(id, list):
         tracks = []
         id_to_append = 0
         for i in range(4):
             try:
                 tracks.append(id[i])
-            except:
+            except Exception:
                 tracks.append(id[id_to_append])
                 id_to_append += 1
 
@@ -1463,12 +1456,11 @@ def get_playlist(playlist_id):
         del playlist_dict["_sa_instance_state"]
     else:
         liked_music = MusicLiked.query.filter_by(user_id=user_id, liked="true").all()
-        musics = ""
+        musics = []
         for music in liked_music:
             music_id = music.music_id
-            liked = music.liked
-            musics += f"{music_id},"
-        musics = musics[:-1]
+            musics.append(music_id)
+        musics = ",".join(musics)
 
         playlist_dict = {
             "id": 0,
@@ -1493,10 +1485,13 @@ def get_artist(artist_id):
 
 @app.route("/get_artist_albums/<artist_id>")
 def get_artist_albums(artist_id):
+    albums = Albums.query.filter_by(artist_id=artist_id).all()
+    artist = Artists.query.filter_by(id=artist_id).first()
+    library = artist.library_name
     token = request.headers.get("Authorization")
+    check_authorization(request, token, library)
     generate_log(request, "SUCCESS")
 
-    albums = Albums.query.filter_by(artist_id=artist_id).all()
     albums_list = [album.__dict__ for album in albums]
 
     for album in albums_list:
@@ -1517,13 +1512,13 @@ def get_artist_tracks(artist_id):
         try:
             album_name = Albums.query.filter_by(id=track["album_id"]).first().name
             track["album_name"] = album_name
-        except:
+        except Exception:
             pass
 
         try:
             artist_name = Artists.query.filter_by(id=track["artist_id"]).first().name
             track["artist_name"] = artist_name
-        except:
+        except Exception:
             pass
 
     return jsonify(tracks_list)
@@ -1705,7 +1700,7 @@ def edit_movie(id, library):
 
     try:
         date = datetime.datetime.strptime(date, "%Y-%m-%d").strftime("%d/%m/%Y")
-    except ValueError as e:
+    except ValueError:
         date = "Unknown"
     except UnboundLocalError:
         date = "Unknown"
@@ -1771,7 +1766,6 @@ def edit_movie(id, library):
 
     the_cast = []
     for cast in casts:
-        character_name = cast.character
         actor_id = cast.id
         actor_image = (
             f"https://www.themoviedb.org/t/p/w600_and_h900_bestv2{cast.profile_path}"
@@ -1783,7 +1777,7 @@ def edit_movie(id, library):
                 img = Image.open(f"{IMAGES_PATH}/Actor_{actor_id}.png")
                 img = img.save(f"{IMAGES_PATH}/Actor_{actor_id}.webp", "webp")
                 os.remove(f"{IMAGES_PATH}/Actor_{actor_id}.png")
-            except Exception as e:
+            except Exception:
                 os.rename(
                     f"{IMAGES_PATH}/Actor_{actor_id}.png",
                     f"{IMAGES_PATH}/Actor_{actor_id}.webp",
@@ -1837,7 +1831,7 @@ def edit_movie(id, library):
         img.save(f"{IMAGES_PATH}/{new_movie_id}_Cover.webp", "webp")
         os.remove(f"{IMAGES_PATH}/{new_movie_id}_Cover.png")
         movie_cover_path = f"{IMAGES_PATH}/{new_movie_id}_Cover.webp"
-    except:
+    except Exception:
         os.rename(
             f"{IMAGES_PATH}/{new_movie_id}_Cover.png",
             f"{IMAGES_PATH}/{new_movie_id}_Cover.webp",
@@ -1849,7 +1843,7 @@ def edit_movie(id, library):
         pass
     with open(f"{IMAGES_PATH}/{new_movie_id}_Banner.png", "wb") as f:
         f.write(requests.get(banner).content)
-    if movie_info.backdrop_path == None:
+    if not movie_info.backdrop_path:
         banner = f"https://image.tmdb.org/t/p/original{movie_info.backdrop_path}"
         if banner != "https://image.tmdb.org/t/p/originalNone":
             with open(f"{IMAGES_PATH}/{new_movie_id}_Banner.png", "wb") as f:
@@ -1861,7 +1855,7 @@ def edit_movie(id, library):
         img.save(f"{IMAGES_PATH}/{new_movie_id}_Banner.webp", "webp")
         os.remove(f"{IMAGES_PATH}/{new_movie_id}_Banner.png")
         banner = f"{IMAGES_PATH}/{new_movie_id}_Banner.webp"
-    except:
+    except Exception:
         os.rename(
             f"{IMAGES_PATH}/{new_movie_id}_Banner.png",
             f"{IMAGES_PATH}/{new_movie_id}_Banner.webp",
@@ -1889,7 +1883,6 @@ def edit_serie(id, library):
         serie_name = serie["original_name"]
         tmdb = TMDb()
         tmdb.language = config["ChocolateSettings"]["language"].lower()
-        series = TV()
         serie_info = Search().tv_shows(serie_name)
         if serie_info.results == {}:
             data = {
@@ -2383,7 +2376,7 @@ def get_channels(channels):
         try:
             data["name"] = m3u[i].split(",")[-1].replace("\n", "")
             work = True
-        except:
+        except Exception:
             work = False
         if work:
             data["url"] = m3u[i + 1].replace("\n", "")
@@ -2414,7 +2407,6 @@ def get_channels(channels):
 def search_tv(library, search):
     token = request.headers.get("Authorization")
     check_authorization(request, token, library)
-    username = all_auth_tokens[token]["user"]
 
     library = Libraries.query.filter_by(lib_name=library).first()
     if not library:
@@ -2444,7 +2436,7 @@ def search_tv(library, search):
         try:
             data["name"] = m3u[i].split(",")[-1].replace("\n", "")
             work = True
-        except:
+        except Exception:
             work = False
         if work:
             data["url"] = m3u[i + 1].replace("\n", "")
@@ -2694,7 +2686,7 @@ def game_data(lib, game_id):
 
 @app.route("/game_file/<lib>/<id>")
 def game_file(lib, id):
-    if id != None:
+    if id is not None:
         game = Games.query.filter_by(id=id, library_name=lib).first()
         game = game.__dict__
         slug = game["slug"]
@@ -2703,8 +2695,8 @@ def game_file(lib, id):
 
 @app.route("/bios/<console>")
 def bios(console):
-    if console != None:
-        if os.path.exists(f"{dir_path}/static/bios/{console}") == False:
+    if console is not None:
+        if not os.path.exists(f"{dir_path}/static/bios/{console}"):
             abort(404)
         bios = [
             i
@@ -2713,7 +2705,7 @@ def bios(console):
         ]
         bios = f"{dir_path}/static/bios/{console}/{bios[0]}"
 
-        if os.path.exists(bios) == False:
+        if not os.path.exists(bios):
             abort(404)
 
         return send_file(bios, as_attachment=True)
@@ -2745,7 +2737,12 @@ def search_movies(library, search):
         real_title = movie.real_title.lower()
         slug = movie.slug.lower()
         description = movie.description.lower().split(" ")
-        cast = movie.cast.lower()
+        casts = movie.cast.split(",")
+        cast_list = []
+        for cast in casts:
+            cast = Actors.query.filter_by(actor_id=cast).first()
+            cast_list.append(cast.name)
+        cast = " ".join(cast_list)
         date = str(movie.date).lower()
         genre = movie.genre.lower()
         alternatives_names = movie.alternatives_names.lower()
@@ -2834,10 +2831,7 @@ def search_books(library, search):
     token = request.headers.get("Authorization")
     check_authorization(request, token, library)
 
-    username = all_auth_tokens[token]["user"]
-
     books = Books.query.filter_by(library_name=library).all()
-    user = Users.query.filter_by(name=username).first()
     library = Libraries.query.filter_by(lib_name=library).first()
 
     search = unidecode(search.replace("%20", " ").lower())
@@ -2974,7 +2968,7 @@ def main_movie(movie_id):
     video_properties = get_video_properties(video_path)
     height = int(video_properties["height"])
     width = int(video_properties["width"])
-    m3u8_file = f"#EXTM3U\n\n"
+    m3u8_file = "#EXTM3U\n\n"
 
     m3u8_file += generate_caption_movie(movie_id)
     qualities = [144, 240, 360, 480, 720, 1080]
@@ -3081,7 +3075,6 @@ def can_i_play_other_video(video_hash):
         return jsonify({"can_I_play": False})
     else:
         user = all_auth_tokens[token]["user"]
-        user_id = Users.query.filter_by(name=user).id
         video = OthersVideos.query.filter_by(video_hash=video_hash).first()
         if video is None:
             return jsonify({"can_I_play": False})
@@ -3107,7 +3100,7 @@ def main_serie(episode_id):
     video_properties = get_video_properties(episode_path)
     height = int(video_properties["height"])
     width = int(video_properties["width"])
-    m3u8_file = f"#EXTM3U\n\n"
+    m3u8_file = "#EXTM3U\n\n"
     # m3u8_file += generate_caption_serie(episode_id)
     file = []
     qualities = [144, 240, 360, 480, 720, 1080]
@@ -3174,7 +3167,7 @@ def main_other(other_hash):
 
 def generate_caption_serie(episode_id):
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
-    episode_path = episode.slug
+    slug = episode.slug
     caption_command = [
         "ffprobe",
         "-loglevel",
@@ -3188,11 +3181,6 @@ def generate_caption_serie(episode_id):
         slug,
     ]
     caption_pipe = subprocess.Popen(caption_command, stdout=subprocess.PIPE)
-    try:
-        slug = slug.split("\\")[-1]
-        slug = slug.split("/")[-1]
-    except:
-        slug = slug.split("/")[-1]
     caption_response = caption_pipe.stdout.read().decode("utf-8")
     caption_response = caption_response.split("\n")
 
@@ -3211,11 +3199,11 @@ def generate_caption_serie(episode_id):
             try:
                 title_name = title_name.split(" : ")[0]
                 subtitle_type = title_name.split(" : ")[1]
-            except:
+            except Exception:
                 title_name = title_name
                 subtitle_type = "Unknown"
 
-        except:
+        except Exception:
             title_name = new_language
         subtitle_type = "Unknown"
         if subtitle_type.lower() != "pgs":
@@ -3233,12 +3221,7 @@ def generate_caption_serie(episode_id):
 
 def generate_caption_movie(movie_id):
     movie_path = Movies.query.filter_by(id=movie_id).first()
-    library = movie_path.library_name
-    the_library = Libraries.query.filter_by(lib_name=library).first()
-    path = the_library.lib_folder
-    movie_path = movie_path.slug
-    movie_path = movie_path.replace("\\", "/")
-    slug = f"{path}\{movie_path}"
+    slug = movie_path.slug
 
     caption_command = [
         "ffprobe",
@@ -3254,10 +3237,6 @@ def generate_caption_movie(movie_id):
     ]
 
     caption_pipe = subprocess.Popen(caption_command, stdout=subprocess.PIPE)
-    try:
-        slug = slug.split("/")[-1]
-    except:
-        slug = slug.split("/")[-1]
     caption_response = caption_pipe.stdout.read().decode("utf-8")
     caption_response = caption_response.split("\n")
     caption_response.pop()
@@ -3270,7 +3249,7 @@ def generate_caption_movie(movie_id):
         language = line.split(",")[2]
         try:
             title_name = line.split(",")[3]
-        except:
+        except Exception:
             title_name = language
 
         if type != "subrip":
@@ -3495,7 +3474,7 @@ def user_image(id):
     user = Users.query.filter_by(id=id).first()
     user_image = user.profil_picture
 
-    if user == None or not os.path.exists(user_image):
+    if not user or not os.path.exists(user_image):
         return send_file(
             f"{dir_path}/static/img/avatars/defaultUserProfilePic.png",
             as_attachment=True,
@@ -3521,7 +3500,7 @@ if __name__ == "__main__":
                 ],
                 start=start_time,
             )
-        except:
+        except Exception:
             pass
 
     with app.app_context():
@@ -3565,7 +3544,7 @@ if __name__ == "__main__":
                 ],
                 start=time(),
             )
-        except:
+        except Exception:
             pass
 
     app.run(host="0.0.0.0", port="8888")

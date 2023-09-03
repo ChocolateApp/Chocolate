@@ -521,17 +521,11 @@ def getMovies(library_name):
                 search = Search().movies(guessedTitle, year=year)
 
             search = transformToDict(search)
-
-            if (
-                (type(search) == dict and search["results"] == {})
-                or (type(search) == list and search == [])
-                or (type(search) == search and not search["results"])
-            ):
+            if not search or not search["results"]:
                 all_movies_not_sorted.append(originalMovieTitle)
                 continue
 
-            if "results" in search:
-                search = search["results"]
+            search = search["results"]
             bestMatch = search[0]
             if (
                 config["ChocolateSettings"]["askwhichmovie"] == "false"
@@ -758,6 +752,7 @@ def getMovies(library_name):
                 adult=str(res["adult"]),
                 library_name=library_name,
                 alternatives_names=alternatives_names,
+                file_date=os.path.getmtime(video_path),
             )
             DB.session.add(filmData)
             DB.session.commit()
@@ -999,7 +994,6 @@ def getSeries(library_name):
             newCast = []
             cast = list(cast)[:5]
             for actor in cast:
-                actorName = actor.name.replace("/", "")
                 actor_id = actor.id
                 actorImage = f"https://image.tmdb.org/t/p/original{actor.profile_path}"
                 image = f"{IMAGES_PATH}/Actor_{actor_id}.png"
@@ -1165,7 +1159,7 @@ def getSeries(library_name):
                                         f"{IMAGES_PATH}/{season_id}_Cover.webp"
                                     )
                                 except Exception:
-                                    season_cover_path = f"/static/img/brokenImage.png"
+                                    season_cover_path = "/static/img/brokenImage.png"
 
                         allSeasons = os.listdir(seriePath)
 
@@ -1228,9 +1222,13 @@ def getSeries(library_name):
                                 continue
 
                             if isinstance(episodeIndex, list):
+                                for i in range(len(episodeIndex)):
+                                    if isinstance(episodeIndex[i], int):
+                                        print(f"Episode index is {episodeIndex}")
+                                        episodeIndex[i] = str(episodeIndex[i])
                                 episodeIndex = "".join(episodeIndex)
 
-                            exists = Episodes.query.filter_by(episode_number=int(episodeIndex), season_id=int(season_id)).first() is not None
+                            exists = Episodes.query.filter_by(episode_number=int(episodeIndex), season_id=season_id).first() is not None
                             
                             if not exists:
                                 #print(f"Episode {episodeIndex} of {serieTitle} for the Season {season_id} not found")
@@ -1327,7 +1325,7 @@ def getSeries(library_name):
         name
         for name in os.listdir(allSeriesPath)
         if os.path.isfile(path_join(allSeriesPath, name))
-        and name.endswith((".rar", ".zip", ".part")) == False
+        and not name.endswith((".rar", ".zip", ".part"))
     ]
     for file in allFiles:
         printLoading(allFiles, file, file)
@@ -1341,7 +1339,7 @@ def getSeries(library_name):
             title = guess["title"]
             if "episode" not in guess:
                 season = guess["season"]
-                if type(guess["season"]) == list:
+                if isinstance(guess["season"], list):
                     season, episode = guess["season"]
                 else:
                     season = guess["season"]
@@ -1369,7 +1367,7 @@ def getSeries(library_name):
                 guess = guessit(file)
                 serie = guess["title"]
                 season = guess["season"]
-                if type(season) == list:
+                if isinstance(season, list):
                     season, episode = guess["season"]
                 season = int(season)
                 if serie == originalSerieTitle:
@@ -1482,7 +1480,6 @@ def getSeries(library_name):
                 newCast = []
                 cast = list(cast)[:5]
                 for actor in cast:
-                    actorName = actor.name.replace("/", "")
                     actor_id = actor.id
                     actorImage = (
                         f"https://image.tmdb.org/t/p/original{actor.profile_path}"
@@ -1495,7 +1492,6 @@ def getSeries(library_name):
                         os.remove(f"{IMAGES_PATH}/Actor_{actor_id}.png")
 
                     actorImage = f"{IMAGES_PATH}/Actor_{actor_id}.webp"
-                    actorCharacter = actor.character
                     actor.profile_path = str(actorImage)
                     thisActor = actor_id
                     newCast.append(thisActor)
@@ -1583,7 +1579,7 @@ def getSeries(library_name):
                             os.remove(f"{IMAGES_PATH}/{season_id}_Cover.png")
                             season_cover_path = f"{IMAGES_PATH}/{season_id}_Cover.webp"
                         except Exception:
-                            season_cover_path = f"/static/img/brokenImage.png"
+                            season_cover_path = "/static/img/brokenImage.png"
 
                 try:
                     modified_date = os.path.getmtime(f"{allSeriesPath}{slug}")
@@ -1616,8 +1612,6 @@ def getSeries(library_name):
                 str(episodeIndex),
             )
 
-            # print(f"La serie est {serie_id}, la saison est {season_number} id: {season_id}, type: {type(season_id) == int} - isnumeric: {season_id.isnumeric()}, donc {type(season_id) == int or season_id.isnumeric()}")
-
             try:
                 exists = (
                     Episodes.query.filter_by(
@@ -1634,7 +1628,7 @@ def getSeries(library_name):
                     is not None
                 )
             if not exists:
-                if type(season_id) == int or season_id.isnumeric():
+                if isinstance(season_id, int) or season_id.isnumeric():
                     showEpisode = Episode()
                     episodeDetails = showEpisode.details(
                         serie_id, season_number, episodeIndex
@@ -1764,7 +1758,7 @@ def getGames(library_name):
             name
             for name in os.listdir(allGamesPath)
             if os.path.isdir(path_join(allGamesPath, name))
-            and name.endswith((".rar", ".zip", ".part")) == False
+            and not name.endswith((".rar", ".zip", ".part"))
         ]
     except Exception:
         return
@@ -1859,7 +1853,7 @@ def getGames(library_name):
             if numberOfGamesInDB < numberOfGamesInFolder:
                 gameSlug = f"{allGamesPath}/{console}/{file}"
                 exists = Games.query.filter_by(slug=gameSlug).first() is not None
-                if file.endswith(tuple(supportedFileTypes)) and exists == False:
+                if file.endswith(tuple(supportedFileTypes)) and not exists:
                     newFileName = file
                     newFileName = re.sub(r"\d{5} - ", "", newFileName)
                     newFileName = re.sub(r"\d{4} - ", "", newFileName)
@@ -1917,9 +1911,9 @@ def getGames(library_name):
                     DB.session.commit()
 
                 elif console == "PS1" and file.endswith(".cue") and not exists:
-                    if saidPS1 == False:
+                    if not saidPS1:
                         print(
-                            f"You need to zip all our .bin files and the .cue file in one .zip file to being able to play it"
+                            "You need to zip all our .bin files and the .cue file in one .zip file to being able to play it"
                         )
                         saidPS1 = True
 
@@ -2198,7 +2192,7 @@ def getMusics(library):
                         if title.isdigit():
                             title = guessedData["alternative_title"]
                     else:
-                        if type("episode") == list and "season" in guessedData:
+                        if isinstance("episode", list) and "season" in guessedData:
                             title = f"{guessedData['season']}{' '.join(guessedData['episode'][1])}"
                         elif "episode" in guessedData and "season" in guessedData:
                             title = f"{guessedData['season']}{guessedData['episode']}"
@@ -2253,7 +2247,7 @@ def getMusics(library):
                     if title.isdigit():
                         title = guessedData["alternative_title"]
                 else:
-                    if type("episode") == list and "season" in guessedData:
+                    if isinstance("episode", list) and "season" in guessedData:
                         title = f"{guessedData['season']}{' '.join(guessedData['episode'][1])}"
                     elif "episode" in guessedData and "season" in guessedData:
                         title = f"{guessedData['season']}{guessedData['episode']}"
