@@ -1,6 +1,8 @@
 import json
+import natsort
 
 from flask import Blueprint, jsonify, request, abort
+from operator import itemgetter
 
 from chocolate_app import DB, all_auth_tokens
 from chocolate_app.tables import (
@@ -240,18 +242,22 @@ def delete_lib():
 @libraries_bp.route("/rescan_all", methods=["POST"])
 def rescan_all():
     libraries = Libraries.query.all()
-    for lib in libraries:
-        lib = lib.__dict__
-        if "lib_type" not in lib.keys():
-            continue
-        if lib["lib_type"] == "series":
-            scans.getSeries(lib["lib_name"])
-        elif lib["lib_type"] == "movies":
-            scans.getMovies(lib["lib_name"])
-        elif lib["lib_type"] == "consoles":
-            scans.getGames(lib["lib_name"])
-        elif lib["lib_type"] == "others":
-            scans.getOthersVideos(lib["lib_name"])
+    libraries = [library.__dict__ for library in libraries]
+
+    libraries = natsort.natsorted(libraries, key=itemgetter(*["lib_name"]))
+    libraries = natsort.natsorted(libraries, key=itemgetter(*["lib_type"]))
+
+    type_to_call = {
+        "series": scans.getSeries,
+        "movies": scans.getMovies,
+        "consoles": scans.getGames,
+        "others": scans.getOthersVideos,
+        "books": scans.getBooks,
+        "musics": scans.getMusics,
+    }
+
+    for library in libraries:
+        type_to_call[library["lib_type"]](library["lib_name"])
     return jsonify(True)
 
 

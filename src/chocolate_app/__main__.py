@@ -2740,8 +2740,8 @@ def search_movies(library, search):
         casts = movie.cast.split(",")
         cast_list = []
         for cast in casts:
-            cast = Actors.query.filter_by(actor_id=cast).first()
-            cast_list.append(cast.name)
+            cast_list.append(cast.name.lower())
+
         cast = " ".join(cast_list)
         date = str(movie.date).lower()
         genre = movie.genre.lower()
@@ -3511,19 +3511,17 @@ if __name__ == "__main__":
             libraries = natsort.natsorted(libraries, key=itemgetter(*["lib_name"]))
             libraries = natsort.natsorted(libraries, key=itemgetter(*["lib_type"]))
 
+            type_to_call = {
+                "series": scans.getSeries,
+                "movies": scans.getMovies,
+                "consoles": scans.getGames,
+                "others": scans.getOthersVideos,
+                "books": scans.getBooks,
+                "musics": scans.getMusics,
+            }
+
             for library in libraries:
-                if library["lib_type"] == "series":
-                    scans.getSeries(library["lib_name"])
-                elif library["lib_type"] == "movies":
-                    scans.getMovies(library["lib_name"])
-                elif library["lib_type"] == "consoles":
-                    scans.getGames(library["lib_name"])
-                elif library["lib_type"] == "others":
-                    scans.getOthersVideos(library["lib_name"])
-                elif library["lib_type"] == "books":
-                    scans.getBooks(library["lib_name"])
-                elif library["lib_type"] == "musics":
-                    scans.getMusics(library["lib_name"])
+                type_to_call[library["lib_type"]](library["lib_name"])
 
             print()
     print("\033[?25h", end="")
