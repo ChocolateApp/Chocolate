@@ -2,7 +2,7 @@
     "movies": "Movies",
     "series": "Series",
     "consoles": "Consoles",
-    "tv_channels": "TV Channels",
+    "tv_channels": "TV",
     "other": "Other",
     "books": "Books",
     "musics": "Musics",
@@ -73,5 +73,6 @@
     "albums": "Albums",
     "artists": "Artists",
     "singles": "Singles",
-    "playlists": "Playlists"
+    "playlists": "Playlists",
+    "invite": "Invite a new user"
 }

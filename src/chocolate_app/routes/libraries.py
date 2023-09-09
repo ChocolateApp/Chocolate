@@ -102,9 +102,6 @@ def get_all_libraries_created():
                 if str(user.id) not in available_for:
                     libraries_list.remove(library)
 
-    libraries = sorted(libraries_list, key=lambda k: k["lib_name"].lower())
-    libraries = sorted(libraries_list, key=lambda k: k["lib_type"].lower())
-
     generate_log(request, "SERVER")
 
     return jsonify(libraries)
@@ -115,9 +112,9 @@ def create_lib():
     the_request = request.get_json()
     the_request = json.loads(the_request)
     lib_name = the_request["lib_name"]
-    lib_path = the_request["libPath"]
+    lib_path = the_request["lib_path"]
     lib_type = the_request["lib_type"]
-    lib_users = the_request["libUsers"]
+    lib_users = the_request["lib_users"]
 
     if lib_users == "":
         lib_users = None

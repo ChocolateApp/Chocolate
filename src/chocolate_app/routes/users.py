@@ -133,8 +133,9 @@ def edit_profil():
 
     body = request.get_json()
 
-    user_name = body["name"]
+    user_name = body["username"]
     password = body["password"]
+
     type = None
     if "type" in body:
         type = body["type"]

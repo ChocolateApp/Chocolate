@@ -305,11 +305,11 @@ class Actors(DB.Model):
 
 
 class Libraries(DB.Model):
-    lib_name = DB.Column(DB.String(255), primary_key=True)
-    lib_image = DB.Column(DB.String(255))
-    lib_type = DB.Column(DB.String(255))
+    lib_name = DB.Column(DB.Text, primary_key=True)
+    lib_image = DB.Column(DB.Text)
+    lib_type = DB.Column(DB.Text)
     lib_folder = DB.Column(DB.Text)
-    available_for = DB.Column(DB.JSON)
+    available_for = DB.Column(DB.Text)
 
     def __repr__(self) -> str:
         return f"<Libraries {self.lib_name}>"
