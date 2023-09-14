@@ -45,6 +45,8 @@ dir_path = get_dir_path()
 
 deezer = deezer.Client()
 
+image_requests = requests.Session()
+
 genre_list = {
     12: "Aventure",
     14: "Fantastique",
@@ -140,13 +142,14 @@ def createArtist(artistName, lib):
     path = f"{IMAGES_PATH}/Artist_{artist_id}.png"
     # Récupération de l'image, conversion en webp et sauvegarde dans le dossier static au nom "Artist_{artist_id}.webp"
     with open(path, "wb") as f:
-        f.write(requests.get(cover).content)
+        f.write(image_requests.get(cover).content)
 
     try:
         img = Image.open(path)
-        img = img.save(f"{IMAGES_PATH}/Artist_{artist_id}.webp", "webp")
+        img.save(f"{IMAGES_PATH}/Artist_{artist_id}.webp", "webp")
         os.remove(f"{IMAGES_PATH}/Artist_{artist_id}.png")
         path = f"{IMAGES_PATH}/Artist_{artist_id}.webp"
+        img.close()
     except Exception:
         pass
 
@@ -199,13 +202,14 @@ def createAlbum(name, artist_id, tracks=[], library=""):
     path = f"{IMAGES_PATH}/Album_{album_id}.png"
 
     with open(path, "wb") as f:
-        f.write(requests.get(cover).content)
+        f.write(image_requests.get(cover).content)
 
     try:
         img = Image.open(path)
-        img = img.save(f"{IMAGES_PATH}/Album_{album_id}.webp", "webp")
+        img.save(f"{IMAGES_PATH}/Album_{album_id}.webp", "webp")
         os.remove(path)
         path = f"{IMAGES_PATH}/Album_{album_id}.webp"
+        img.close()
     except Exception:
         pass
 
@@ -236,11 +240,12 @@ def getAlbumImage(album_name, path):
 
     # Récupération de l'image, conversion en webp et sauvegarde dans le dossier static au nom "Album_{album_id}.webp"
     with open(path, "wb") as f:
-        f.write(requests.get(cover).content)
+        f.write(image_requests.get(cover).content)
 
     try:
         img = Image.open(path)
-        img = img.save(path, "webp")
+        img.save(path, "webp")
+        img.close()
     except Exception:
         pass
 
@@ -253,11 +258,12 @@ def getArtistImage(artist_name, path):
     cover = artist.picture_big
 
     with open(path, "wb") as f:
-        f.write(requests.get(cover).content)
+        f.write(image_requests.get(cover).content)
 
     try:
         img = Image.open(path)
-        img = img.save(path, "webp")
+        img.save(path, "webp")
+        img.close()
     except Exception:
         pass
 
@@ -563,12 +569,13 @@ def getMovies(library_name):
             real_title, extension = os.path.splitext(originalMovieTitle)
 
             with open(f"{IMAGES_PATH}/{movie_id}_Cover.png", "wb") as f:
-                f.write(requests.get(movieCoverPath).content)
+                f.write(image_requests.get(movieCoverPath).content)
             try:
                 img = Image.open(f"{IMAGES_PATH}/{movie_id}_Cover.png")
                 img.save(f"{IMAGES_PATH}/{movie_id}_Cover.webp", "webp")
                 os.remove(f"{IMAGES_PATH}/{movie_id}_Cover.png")
                 movieCoverPath = f"{IMAGES_PATH}/{movie_id}_Cover.webp"
+                img.close()
             except Exception:
                 try:
                     os.rename(
@@ -584,12 +591,12 @@ def getMovies(library_name):
                     )
                     movieCoverPath = f"{IMAGES_PATH}/{movie_id}_Cover.webp"
             with open(f"{IMAGES_PATH}/{movie_id}_Banner.png", "wb") as f:
-                f.write(requests.get(banner).content)
+                f.write(image_requests.get(banner).content)
             if not res["backdrop_path"]:
                 banner = f"https://image.tmdb.org/t/p/original{details.backdrop_path}"
                 if banner != "https://image.tmdb.org/t/p/originalNone":
                     with open(f"{IMAGES_PATH}/{movie_id}_Banner.png", "wb") as f:
-                        f.write(requests.get(banner).content)
+                        f.write(image_requests.get(banner).content)
                 else:
                     banner = "/static/img/broken.webp"
             try:
@@ -597,6 +604,7 @@ def getMovies(library_name):
                 img.save(f"{IMAGES_PATH}/{movie_id}_Banner.webp", "webp")
                 os.remove(f"{IMAGES_PATH}/{movie_id}_Banner.png")
                 banner = f"{IMAGES_PATH}/{movie_id}_Banner.webp"
+                img.close()
             except Exception:
                 banner = "/static/img/brokenBanner.webp"
 
@@ -614,11 +622,12 @@ def getMovies(library_name):
                 actorImage = f"https://www.themovieDB.org/t/p/w600_and_h900_bestv2{cast.profile_path}"
                 if not os.path.exists(f"{IMAGES_PATH}/Actor_{actor_id}.webp"):
                     with open(f"{IMAGES_PATH}/Actor_{actor_id}.png", "wb") as f:
-                        f.write(requests.get(actorImage).content)
+                        f.write(image_requests.get(actorImage).content)
                     try:
                         img = Image.open(f"{IMAGES_PATH}/Actor_{actor_id}.png")
-                        img = img.save(f"{IMAGES_PATH}/Actor_{actor_id}.webp", "webp")
+                        img.save(f"{IMAGES_PATH}/Actor_{actor_id}.webp", "webp")
                         os.remove(f"{IMAGES_PATH}/Actor_{actor_id}.png")
+                        img.close()
                     except Exception:
                         os.rename(
                             f"{IMAGES_PATH}/Actor_{actor_id}.png",
@@ -937,22 +946,24 @@ def getSeries(library_name):
             banner = f"https://image.tmdb.org/t/p/original{res['backdrop_path']}"
             if not os.path.exists(f"{IMAGES_PATH}/{serie_id}_Cover.png"):
                 with open(f"{IMAGES_PATH}/{serie_id}_Cover.png", "wb") as f:
-                    f.write(requests.get(cover).content)
+                    f.write(image_requests.get(cover).content)
                 try:
                     img = Image.open(f"{IMAGES_PATH}/{serie_id}_Cover.png")
-                    img = img.save(f"{IMAGES_PATH}/{serie_id}_Cover.webp", "webp")
+                    img.save(f"{IMAGES_PATH}/{serie_id}_Cover.webp", "webp")
                     os.remove(f"{IMAGES_PATH}/{serie_id}_Cover.png")
+                    img.close()
                 except Exception:
                     
                     pass
 
             if not os.path.exists(f"{IMAGES_PATH}/{serie_id}_Banner.png"):
                 with open(f"{IMAGES_PATH}/{serie_id}_Banner.png", "wb") as f:
-                    f.write(requests.get(banner).content)
+                    f.write(image_requests.get(banner).content)
                 try:
                     img = Image.open(f"{IMAGES_PATH}/{serie_id}_Banner.png")
-                    img = img.save(f"{IMAGES_PATH}/{serie_id}_Banner.webp", "webp")
+                    img.save(f"{IMAGES_PATH}/{serie_id}_Banner.webp", "webp")
                     os.remove(f"{IMAGES_PATH}/{serie_id}_Banner.png")
+                    img.close()
                 except Exception:
                     
                     pass
@@ -1000,11 +1011,12 @@ def getSeries(library_name):
                 if not os.path.exists(f"{IMAGES_PATH}/Actor_{actor_id}.webp"):
                     try:
                         with open(f"{IMAGES_PATH}/Actor_{actor_id}.png", "wb") as f:
-                            f.write(requests.get(actorImage).content)
+                            f.write(image_requests.get(actorImage).content)
                         img = Image.open(f"{IMAGES_PATH}/Actor_{actor_id}.png")
-                        img = img.save(f"{IMAGES_PATH}/Actor_{actor_id}.webp", "webp")
+                        img.save(f"{IMAGES_PATH}/Actor_{actor_id}.webp", "webp")
                         os.remove(f"{IMAGES_PATH}/Actor_{actor_id}.png")
                         image = f"{IMAGES_PATH}/Actor_{actor_id}.webp"
+                        img.close()
                     except Exception:
                         
                         pass
@@ -1133,31 +1145,33 @@ def getSeries(library_name):
                                 with open(
                                     f"{IMAGES_PATH}/{season_id}_Cover.png", "wb"
                                 ) as f:
-                                    f.write(requests.get(season_cover_path).content)
+                                    f.write(image_requests.get(season_cover_path).content)
                                 img = Image.open(f"{IMAGES_PATH}/{season_id}_Cover.png")
-                                img = img.save(
+                                img.save(
                                     f"{IMAGES_PATH}/{season_id}_Cover.webp", "webp"
                                 )
                                 os.remove(f"{IMAGES_PATH}/{season_id}_Cover.png")
                                 season_cover_path = (
                                     f"{IMAGES_PATH}/{season_id}_Cover.webp"
                                 )
+                                img.close()
                             except Exception:
                                 try:
                                     with open(
                                         f"{IMAGES_PATH}/{season_id}_Cover.png", "wb"
                                     ) as f:
-                                        f.write(requests.get(season_cover_path).content)
+                                        f.write(image_requests.get(season_cover_path).content)
                                     img = Image.open(
                                         f"{IMAGES_PATH}/{season_id}_Cover.png"
                                     )
-                                    img = img.save(
+                                    img.save(
                                         f"{IMAGES_PATH}/{season_id}_Cover.webp", "webp"
                                     )
                                     os.remove(f"{IMAGES_PATH}/{season_id}_Cover.png")
                                     season_cover_path = (
                                         f"{IMAGES_PATH}/{season_id}_Cover.webp"
                                     )
+                                    img.close()
                                 except Exception:
                                     season_cover_path = "/static/img/brokenImage.png"
 
@@ -1226,6 +1240,7 @@ def getSeries(library_name):
                                     if isinstance(episodeIndex[i], int):
                                         print(f"Episode index is {episodeIndex}")
                                         episodeIndex[i] = str(episodeIndex[i])
+                                        break
                                 episodeIndex = "".join(episodeIndex)
 
                             exists = Episodes.query.filter_by(episode_number=int(episodeIndex), season_id=season_id).first() is not None
@@ -1264,18 +1279,19 @@ def getSeries(library_name):
                                         f"{IMAGES_PATH}/{season_id}_{episode_id}_Cover.png",
                                         "wb",
                                     ) as f:
-                                        f.write(requests.get(coverEpisode).content)
+                                        f.write(image_requests.get(coverEpisode).content)
                                     try:
                                         img = Image.open(
                                             f"{IMAGES_PATH}/{season_id}_{episode_id}_Cover.png"
                                         )
-                                        img = img.save(
+                                        img.save(
                                             f"{IMAGES_PATH}/{season_id}_{episode_id}_Cover.webp",
                                             "webp",
                                         )
                                         os.remove(
                                             f"{IMAGES_PATH}/{season_id}_{episode_id}_Cover.png"
                                         )
+                                        img.close()
                                         coverEpisode = f"{IMAGES_PATH}/{season_id}_{episode_id}_Cover.webp"
                                     except Exception:
                                         coverEpisode = f"{IMAGES_PATH}/{season_id}_{episode_id}_Cover.png"
@@ -1422,11 +1438,12 @@ def getSeries(library_name):
                 banner = f"https://image.tmdb.org/t/p/original{res.backdrop_path}"
                 if not os.path.exists(f"{IMAGES_PATH}/{serie_id}_Cover.png"):
                     with open(f"{IMAGES_PATH}/{serie_id}_Cover.png", "wb") as f:
-                        f.write(requests.get(cover).content)
+                        f.write(image_requests.get(cover).content)
                     try:
                         img = Image.open(f"{IMAGES_PATH}/{serie_id}_Cover.png")
-                        img = img.save(f"{IMAGES_PATH}/{serie_id}_Cover.webp", "webp")
+                        img.save(f"{IMAGES_PATH}/{serie_id}_Cover.webp", "webp")
                         os.remove(f"{IMAGES_PATH}/{serie_id}_Cover.png")
+                        img.close()
                     except Exception as e:
                         print(f"Error with the image of the {serie}:\n{e}")
                         pass
@@ -1434,12 +1451,13 @@ def getSeries(library_name):
                 new_banner = f"{IMAGES_PATH}/{serie_id}_Banner.webp"
                 if not os.path.exists(f"{IMAGES_PATH}/{serie_id}_Banner.png"):
                     with open(f"{IMAGES_PATH}/{serie_id}_Banner.png", "wb") as f:
-                        f.write(requests.get(banner).content)
+                        f.write(image_requests.get(banner).content)
 
                     if os.path.exists(f"{IMAGES_PATH}/{serie_id}_Banner.png"):
                         img = Image.open(f"{IMAGES_PATH}/{serie_id}_Banner.png")
-                        img = img.save(f"{IMAGES_PATH}/{serie_id}_Banner.webp", "webp")
+                        img.save(f"{IMAGES_PATH}/{serie_id}_Banner.webp", "webp")
                         os.remove(f"{IMAGES_PATH}/{serie_id}_Banner.png")
+                        img.close()
                     else:
                         new_banner = f"{IMAGES_PATH}/{serie_id}_Banner.png"
 
@@ -1486,10 +1504,11 @@ def getSeries(library_name):
                     )
                     if not os.path.exists(f"{IMAGES_PATH}/Actor_{actor_id}.webp"):
                         with open(f"{IMAGES_PATH}/Actor_{actor_id}.png", "wb") as f:
-                            f.write(requests.get(actorImage).content)
+                            f.write(image_requests.get(actorImage).content)
                         img = Image.open(f"{IMAGES_PATH}/Actor_{actor_id}.png")
-                        img = img.save(f"{IMAGES_PATH}/Actor_{actor_id}.webp", "webp")
+                        img.save(f"{IMAGES_PATH}/Actor_{actor_id}.webp", "webp")
                         os.remove(f"{IMAGES_PATH}/Actor_{actor_id}.png")
+                        img.close()
 
                     actorImage = f"{IMAGES_PATH}/Actor_{actor_id}.webp"
                     actor.profile_path = str(actorImage)
@@ -1562,22 +1581,24 @@ def getSeries(library_name):
                 season_cover_path = f"https://image.tmdb.org/t/p/original{seasonPoster}"
                 if not os.path.exists(f"{IMAGES_PATH}/{season_id}_Cover.png"):
                     with open(f"{IMAGES_PATH}/{season_id}_Cover.png", "wb") as f:
-                        f.write(requests.get(season_cover_path).content)
+                        f.write(image_requests.get(season_cover_path).content)
                     try:
                         img = Image.open(f"{IMAGES_PATH}/{season_id}_Cover.png")
-                        img = img.save(f"{IMAGES_PATH}/{season_id}_Cover.webp", "webp")
+                        img.save(f"{IMAGES_PATH}/{season_id}_Cover.webp", "webp")
                         os.remove(f"{IMAGES_PATH}/{season_id}_Cover.png")
                         season_cover_path = f"{IMAGES_PATH}/{season_id}_Cover.webp"
+                        img.close()
                     except Exception:
                         with open(f"{IMAGES_PATH}/{season_id}_Cover.png", "wb") as f:
-                            f.write(requests.get(season_cover_path).content)
+                            f.write(image_requests.get(season_cover_path).content)
                         try:
                             img = Image.open(f"{IMAGES_PATH}/{season_id}_Cover.png")
-                            img = img.save(
+                            img.save(
                                 f"{IMAGES_PATH}/{season_id}_Cover.webp", "webp"
                             )
                             os.remove(f"{IMAGES_PATH}/{season_id}_Cover.png")
                             season_cover_path = f"{IMAGES_PATH}/{season_id}_Cover.webp"
+                            img.close()
                         except Exception:
                             season_cover_path = "/static/img/brokenImage.png"
 
@@ -1653,18 +1674,19 @@ def getSeries(library_name):
                     with open(
                         f"{IMAGES_PATH}/{season_id}_{episode_id}_Cover.png", "wb"
                     ) as f:
-                        f.write(requests.get(coverEpisode).content)
+                        f.write(image_requests.get(coverEpisode).content)
                     try:
                         img = Image.open(
                             f"{IMAGES_PATH}/{season_id}_{episode_id}_Cover.png"
                         )
-                        img = img.save(
+                        img.save(
                             f"{IMAGES_PATH}/{season_id}_{episode_id}_Cover.webp", "webp"
                         )
                         os.remove(f"{IMAGES_PATH}/{season_id}_{episode_id}_Cover.png")
                         coverEpisode = (
                             f"{IMAGES_PATH}/{season_id}_{episode_id}_Cover.webp"
                         )
+                        img.close()
                     except Exception:
                         coverEpisode = (
                             f"{IMAGES_PATH}/{season_id}_{episode_id}_Cover.png"
@@ -1969,16 +1991,17 @@ def getGames(library_name):
                             gameCover = gameIGDB["cover"]
 
                             with open(
-                                f"{allGamesPath}/{console}/{gameRealTitle}.png", "wb"
+                                f"{IMAGES_PATH}/{console}_{gameIGDB['id']}.png", "wb"
                             ) as f:
-                                f.write(requests.get(gameCover).content)
-                            gameCover = f"{allGamesPath}/{console}/{gameRealTitle}.png"
+                                f.write(image_requests.get(gameCover).content)
+                            gameCover = f"{IMAGES_PATH}/{console}_{gameRealTitle}.png"
                             img = Image.open(gameCover)
-                            img = img.save(
-                                f"{allGamesPath}/{console}/{gameRealTitle}.webp", "webp"
+                            img.save(
+                                f"{IMAGES_PATH}/{console}_{gameRealTitle}.webp", "webp"
                             )
                             os.remove(gameCover)
-                            gameCover = f"{allGamesPath}/{console}/{gameRealTitle}.webp"
+                            img.close()
+                            gameCover = f"{IMAGES_PATH}/{console}_{gameRealTitle}.webp"
 
                             gameDescription = gameIGDB["description"]
                             gameNote = gameIGDB["note"]
@@ -2174,8 +2197,9 @@ def getMusics(library):
                 imagePath = f"{IMAGES_PATH}/Album_{album_id}.webp"
                 if image is not None:
                     if not os.path.exists(imagePath):
-                        image = Image.open(io.BytesIO(image))
-                        image = image.save(imagePath, "webp")
+                        img = Image.open(io.BytesIO(image))
+                        img.save(imagePath, "webp")
+                        img.close()
                 elif not os.path.exists(imagePath):
                     print(f"L'album {album} n'a pas d'image")
                     getAlbumImage(album, imagePath)
@@ -2230,8 +2254,9 @@ def getMusics(library):
             imagePath = f"{IMAGES_PATH}/Album_{artist_id}.webp"
             if image is not None:
                 if not os.path.exists(imagePath):
-                    image = Image.open(io.BytesIO(image))
-                    image = image.save(imagePath, "webp")
+                    img = Image.open(io.BytesIO(image))
+                    img.save(imagePath, "webp")
+                    img.close()
             elif not os.path.exists(imagePath):
                 getArtistImage(artistName, imagePath)
 
@@ -2380,6 +2405,8 @@ def getEPUBCover(path, name, id):
         os.remove(f"{IMAGES_PATH}/Books_Banner_{id}.webp")
 
     img.save(f"{IMAGES_PATH}/Books_Banner_{id}.webp", "webp")
+    img.close()
+    pdfDoc.close()
     path = f"{IMAGES_PATH}/Books_Banner_{id}.webp"
 
     return path, "EPUB"
@@ -2395,8 +2422,8 @@ def getCBZCover(path, name, id):
                     # Ouvre le fichier image
                     with zip_ref.open(file) as image_file:
                         img = Image.open(io.BytesIO(image_file.read()))
-                        # Enregistre l'image
                         img.save(f"{IMAGES_PATH}/Books_Banner_{id}.webp", "webp")
+                        img.close()
                         break
                 elif file.filename.endswith("/"):
                     with zip_ref.open(file) as image_file:
@@ -2411,6 +2438,7 @@ def getCBZCover(path, name, id):
                                     img.save(
                                         f"{IMAGES_PATH}/Books_Banner_{id}.webp", "webp"
                                     )
+                                    img.close()
                                     break
         return f"{IMAGES_PATH}/Books_Banner_{id}.webp", "CBZ"
     except Exception:
@@ -2430,12 +2458,14 @@ def getCBRCover(path, name, id):
                         img = Image.open(io.BytesIO(image_file.read()))
                         # Enregistre l'image
                         img.save(f"{IMAGES_PATH}/Books_Banner_{id}.webp", "webp")
+                        img.close()
                         break
                 elif file.filename.endswith("/"):
                     with rar_ref.open(file) as image_file:
                         img = Image.open(io.BytesIO(image_file.read()))
                         # Enregistre l'image
                         img.save(f"{IMAGES_PATH}/Books_Banner_{id}.webp", "webp")
+                        img.close()
                         break
 
             return f"{IMAGES_PATH}/Books_Banner_{id}.webp", "CBR"

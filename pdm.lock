@@ -6,7 +6,7 @@ groups = ["default", "lint"]
 cross_platform = true
 static_urls = false
 lock_version = "4.3"
-content_hash = "sha256:8f61f6604324ac82a52a46619a51f848e997fad28c3c944fa807d323da67d598"
+content_hash = "sha256:c095f0b622aa05b9bbfe0b9c3aa482ee940dfd28d074dbf719922d18b9637422"
 
 [[package]]
 name = "alembic"
@@ -66,6 +66,7 @@ dependencies = [
     "packaging>=22.0",
     "pathspec>=0.9.0",
     "platformdirs>=2",
+    "tomli>=1.1.0; python_version < \"3.11\"",
 ]
 files = [
     {file = "black-23.7.0-cp311-cp311-macosx_10_16_arm64.whl", hash = "sha256:b5b0ee6d96b345a8b420100b7d71ebfdd19fab5e8301aff48ec270042cd40ac2"},
@@ -1007,6 +1008,16 @@ dependencies = [
 files = [
     {file = "tmdbv3api-1.9.0-py3-none-any.whl", hash = "sha256:2bcd8c6e8902397860715a71045f200ecc3ee06804ecf786cb4c1e09b2deeba8"},
     {file = "tmdbv3api-1.9.0.tar.gz", hash = "sha256:504c5da6b99c4516ff160a01576112d097f209c0534f943c15c4b56cbd92c33b"},
+]
+
+[[package]]
+name = "tomli"
+version = "2.0.1"
+requires_python = ">=3.7"
+summary = "A lil' TOML parser"
+files = [
+    {file = "tomli-2.0.1-py3-none-any.whl", hash = "sha256:939de3e7a6161af0c887ef91b7d41a53e7c5a1ca976325f429cb46ea9bc30ecc"},
+    {file = "tomli-2.0.1.tar.gz", hash = "sha256:de526c12914f0c550d15924c62d72abc48d6fe7364aa87328337a31007fe8a4f"},
 ]
 
 [[package]]

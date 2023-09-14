@@ -329,7 +329,7 @@ def get_gpu_brand():
 @app.route("/language_file")
 def language_file():
     language = config["ChocolateSettings"]["language"]
-
+    
     if (
         not os.path.isfile(f"{dir_path}/static/lang/{language.lower()}.json")
         or "{}"
@@ -344,7 +344,7 @@ def language_file():
     ) as f:
         language = json.load(f)
 
-    with open(f"{dir_path}/static/lang/EN.json", "r", encoding="utf-8") as f:
+    with open(f"{dir_path}/static/lang/en.json", "r", encoding="utf-8") as f:
         en = json.load(f)
 
     for key in en:
@@ -1020,6 +1020,14 @@ def get_all_movies(library):
         "duration",
     ]
 
+    
+    merged_lib = LibrariesMerge.query.filter_by(parent_lib=library).all()
+    merged_lib = [child.child_lib for child in merged_lib]
+
+    for lib in merged_lib:
+        movies = Movies.query.filter_by(library_name=lib).all()
+        movies_list += [movie.__dict__ for movie in movies]
+
     for movie in movies_list:
         for key in list(movie.keys()):
             if key not in used_keys:
@@ -1038,6 +1046,13 @@ def get_all_books(library):
 
     books = Books.query.filter_by(library_name=library).all()
     books_list = [book.__dict__ for book in books]
+
+    merged_lib = LibrariesMerge.query.filter_by(parent_lib=library).all()
+    merged_lib = [child.child_lib for child in merged_lib]
+
+    for lib in merged_lib:
+        books = Books.query.filter_by(library_name=lib).all()
+        books_list += [book.__dict__ for book in books]
 
     for book in books_list:
         del book["_sa_instance_state"]
@@ -1397,6 +1412,11 @@ def generate_playlist_cover(id):
             exist = os.path.exists(cover)
         im.save(cover, "WEBP")
 
+        im1.close()
+        im2.close()
+        im3.close()
+        im4.close()
+
         return cover
 
 
@@ -1555,10 +1575,10 @@ def get_all_series(library):
             if serie["adult"] == "True":
                 series_list.remove(serie)
 
-    fusionned_lib = LibrariesMerge.query.filter_by(parent_lib=library).all()
-    fusionned_lib = [child.child_lib for child in fusionned_lib]
+    merged_lib = LibrariesMerge.query.filter_by(parent_lib=library).all()
+    merged_lib = [child.child_lib for child in merged_lib]
 
-    for lib in fusionned_lib:
+    for lib in merged_lib:
         series = Series.query.filter_by(library_name=lib).all()
         series_list += [serie.__dict__ for serie in series]
 
@@ -1831,6 +1851,7 @@ def edit_movie(id, library):
         img.save(f"{IMAGES_PATH}/{new_movie_id}_Cover.webp", "webp")
         os.remove(f"{IMAGES_PATH}/{new_movie_id}_Cover.png")
         movie_cover_path = f"{IMAGES_PATH}/{new_movie_id}_Cover.webp"
+        img.close()
     except Exception:
         os.rename(
             f"{IMAGES_PATH}/{new_movie_id}_Cover.png",
@@ -1855,6 +1876,7 @@ def edit_movie(id, library):
         img.save(f"{IMAGES_PATH}/{new_movie_id}_Banner.webp", "webp")
         os.remove(f"{IMAGES_PATH}/{new_movie_id}_Banner.png")
         banner = f"{IMAGES_PATH}/{new_movie_id}_Banner.webp"
+        img.close()
     except Exception:
         os.rename(
             f"{IMAGES_PATH}/{new_movie_id}_Banner.png",
@@ -1946,6 +1968,7 @@ def edit_serie(id, library):
 
             img = Image.open(f"{IMAGES_PATH}/{serie_id}_Cover.png")
             img = img.save(f"{IMAGES_PATH}/{serie_id}_Cover.webp", "webp")
+            img.close()
             os.remove(f"{IMAGES_PATH}/{serie_id}_Cover.png")
         else:
             os.remove(f"{IMAGES_PATH}/{serie_id}_Cover.webp")
@@ -1955,6 +1978,7 @@ def edit_serie(id, library):
             img = Image.open(f"{IMAGES_PATH}/{serie_id}_Cover.png")
             img = img.save(f"{IMAGES_PATH}/{serie_id}_Cover.webp", "webp")
             os.remove(f"{IMAGES_PATH}/{serie_id}_Cover.png")
+            img.close()
 
         if not os.path.exists(f"{IMAGES_PATH}/{serie_id}_Banner.webp"):
             with open(f"{IMAGES_PATH}/{serie_id}_Banner.png", "wb") as f:
@@ -1962,6 +1986,7 @@ def edit_serie(id, library):
 
             img = Image.open(f"{IMAGES_PATH}/{serie_id}_Banner.png")
             img = img.save(f"{IMAGES_PATH}/{serie_id}_Banner.webp", "webp")
+            img.close()
             os.remove(f"{IMAGES_PATH}/{serie_id}_Banner.png")
         else:
             os.remove(f"{IMAGES_PATH}/{serie_id}_Banner.webp")
@@ -1969,6 +1994,7 @@ def edit_serie(id, library):
                 f.write(requests.get(banner).content)
             img = Image.open(f"{IMAGES_PATH}/{serie_id}_Banner.png")
             img = img.save(f"{IMAGES_PATH}/{serie_id}_Banner.webp", "webp")
+            img.close()
             os.remove(f"{IMAGES_PATH}/{serie_id}_Banner.png")
 
         banner = f"{IMAGES_PATH}/{serie_id}_Banner.webp"
@@ -2015,6 +2041,7 @@ def edit_serie(id, library):
                     f.write(requests.get(actor_image).content)
                 img = Image.open(f"{IMAGES_PATH}/Actor_{actor_id}.png")
                 img = img.save(f"{IMAGES_PATH}/Actor_{actor_id}.webp", "webp")
+                img.close()
                 os.remove(f"{IMAGES_PATH}/Actor_{actor_id}.png")
             else:
                 os.remove(f"{IMAGES_PATH}/Actor_{actor_id}.webp")
@@ -2022,6 +2049,7 @@ def edit_serie(id, library):
                     f.write(requests.get(actor_image).content)
                 img = Image.open(f"{IMAGES_PATH}/Actor_{actor_id}.png")
                 img = img.save(f"{IMAGES_PATH}/Actor_{actor_id}.webp", "webp")
+                img.close()
                 os.remove(f"{IMAGES_PATH}/Actor_{actor_id}.png")
 
             actor_image = f"{IMAGES_PATH}/Actor_{actor_id}.webp"
@@ -2211,6 +2239,7 @@ def book_url_page(id, page):
             page = pdf_doc[int(page)]
             image_stream = io.BytesIO(page.get_pixmap().tobytes("jpg"))
             image_stream.seek(0)
+            fitz.close()
             return send_file(image_stream, mimetype="image/jpeg")
 
         elif book_type == "CBZ":
@@ -2244,6 +2273,7 @@ def book_data(id):
     if book_type == "PDF" or book_type == "EPUB":
         pdfDoc = fitz.open(book_slug)
         nb_pages = pdfDoc.page_count
+        pdfDoc.close()
     elif book_type == "CBZ":
         with zipfile.ZipFile(book_slug, "r") as zip:
             nb_pages = len(zip.namelist())
@@ -2282,6 +2312,13 @@ def get_all_others(library):
 
     other = OthersVideos.query.filter_by(library_name=the_lib.lib_name).all()
     other_list = [video.__dict__ for video in other]
+    
+    merged_lib = LibrariesMerge.query.filter_by(parent_lib=library).all()
+    merged_lib = [child.child_lib for child in merged_lib]
+
+    for lib in merged_lib:
+        other = OthersVideos.query.filter_by(library_name=lib).all()
+        other_list += [video.__dict__ for video in other]
 
     for video in other_list:
         del video["_sa_instance_state"]
@@ -2642,18 +2679,27 @@ def get_all_consoles(library):
     }
 
     consoles = Games.query.filter_by(library_name=library).all()
-    consoles_list = []
+    consoles_list = [console.__dict__ for console in consoles]
 
-    for console in consoles:
+    merged_lib = LibrariesMerge.query.filter_by(parent_lib=library).all()
+    merged_lib = [child.child_lib for child in merged_lib]
+
+    for lib in merged_lib:
+        consoles = Games.query.filter_by(library_name=lib).all()
+        consoles_list += [console.__dict__ for console in consoles]
+
+    consoles_list_unique = []
+
+    for console in consoles_list:
         data = {
             "short_name": console.console,
             "image": consoles_data[console.console]["image"],
             "name": consoles_data[console.console]["name"],
         }
-        if data not in consoles_list:
-            consoles_list.append(data)
+        if data not in consoles_list_unique:
+            consoles_list_unique.append(data)
 
-    return jsonify(consoles_list)
+    return jsonify(consoles_list_unique)
 
 
 @app.route("/get_all_games/<lib>/<console_name>")
@@ -3392,6 +3438,7 @@ def episode_cover(id):
         img.save(f"{IMAGES_PATH}/{season_id}_{id}_Cover.webp", "webp")
         episode_cover = f"{IMAGES_PATH}/{season_id}_{id}_Cover.webp"
         episode.episode_cover_path = episode_cover
+        img.close()
         DB.session.commit()
 
     return send_file(episode_cover, as_attachment=True)
@@ -3504,7 +3551,7 @@ if __name__ == "__main__":
             pass
 
     with app.app_context():
-        if not ARGUMENTS.no_scans:
+        if not ARGUMENTS.no_scans and config["APIKeys"]["TMDB"] != "Empty":
             libraries = Libraries.query.all()
             libraries = [library.__dict__ for library in libraries]
 
@@ -3521,7 +3568,8 @@ if __name__ == "__main__":
             }
 
             for library in libraries:
-                type_to_call[library["lib_type"]](library["lib_name"])
+                if library["lib_type"] in type_to_call:
+                    type_to_call[library["lib_type"]](library["lib_name"])
 
             print()
     print("\033[?25h", end="")

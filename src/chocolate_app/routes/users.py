@@ -99,13 +99,18 @@ def create_account():
 
         # Enregistrer l'image au format WebP
         image.save(full_path, "WEBP")
+        image.close()
 
     user_exists = Users.query.filter_by(name=account_name).first()
-
+    nb_users = len(Users.query.filter().all())
     if user_exists:
         abort(409)
     account_type_input = account_type_input.lower()
     account_type_input = account_type_input.capitalize()
+
+    if nb_users == 0:
+        account_type_input = "Admin"
+
     new_user = Users(
         name=account_name,
         password=account_password,
@@ -133,7 +138,7 @@ def edit_profil():
 
     body = request.get_json()
 
-    user_name = body["username"]
+    user_name = body["name"]
     password = body["password"]
 
     type = None
@@ -166,10 +171,10 @@ def edit_profil():
         user_to_edit.account_type = type
 
     if user_to_edit.password != generate_password_hash(password) and len(password) > 0:
-        if password == "":
-            user_to_edit.password = None
-        else:
             user_to_edit.password = generate_password_hash(password)
+    
+    if password == "":
+        user_to_edit.password = None
     if (
         user_to_edit.profil_picture != profil_picture
         and "/static/img/avatars/defaultUserProfilePic.png" not in profil_picture

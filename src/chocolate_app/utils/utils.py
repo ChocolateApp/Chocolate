@@ -4,7 +4,7 @@ import json
 
 from flask import abort
 
-from chocolate_app import all_auth_tokens, get_dir_path
+from chocolate_app import all_auth_tokens, get_dir_path, LOG_PATH
 from chocolate_app.tables import Users, Libraries
 
 dir_path = get_dir_path()
@@ -60,16 +60,16 @@ def log(log_type, log_composant, log_message):
     log = f"{the_time} - [{log_type}] [{log_composant}] {log_message}\n"
 
     # if file does not exist, create it
-    if not os.path.exists(path_join(dir_path, "server.log")):
-        with open(path_join(dir_path, "server.log"), "w") as logs:
+    if not os.path.exists(LOG_PATH):
+        with open(LOG_PATH, "w") as logs:
             logs.write(log)
         return
 
-    with open(path_join(dir_path, "server.log"), "r") as logs:
+    with open(LOG_PATH, "r") as logs:
         if log in logs.read():
             return
 
-    with open(path_join(dir_path, "server.log"), "a") as logs:
+    with open(LOG_PATH, "a") as logs:
         logs.write(log)
 
 
@@ -105,8 +105,8 @@ def check_authorization(request, token, library=None):
 
 def user_in_lib(user_id, lib):
     user = Users.query.filter_by(id=user_id).first()
-
-    if not user:
+    
+    if not user or not lib:
         return False
 
     user_id = str(user.id)

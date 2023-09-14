@@ -95,6 +95,7 @@ def get_all_libraries_created():
                         library["possible_merge_parent"] = []
                     data = {"value": lib["lib_name"], "text": lib["lib_name"]}
                     library["possible_merge_parent"].append(data)
+
     if user.account_type != "Admin":
         for library in libraries_list:
             if library["available_for"] is not None:
@@ -102,9 +103,11 @@ def get_all_libraries_created():
                 if str(user.id) not in available_for:
                     libraries_list.remove(library)
 
+
+
     generate_log(request, "SERVER")
 
-    return jsonify(libraries)
+    return jsonify(libraries_list)
 
 
 @libraries_bp.route("/create_library", methods=["POST"])
@@ -254,7 +257,8 @@ def rescan_all():
     }
 
     for library in libraries:
-        type_to_call[library["lib_type"]](library["lib_name"])
+        if library["lib_type"] in type_to_call:
+            type_to_call[library["lib_type"]](library["lib_name"])
     return jsonify(True)
 
 

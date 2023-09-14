@@ -32,6 +32,7 @@ parser = argparse.ArgumentParser("Chocolate")
 parser.add_argument("--config", help="Path to the config file (a .ini file)")
 parser.add_argument("--db", help="Path to the database file (a .db file)")
 parser.add_argument("--images", help="Path to the images folder (a folder)")
+parser.add_argument("--logs", help="Path to the logs file (a .log file)")
 parser.add_argument("--no-scans", help="Disable startup scans", action="store_true")
 
 ARGUMENTS = parser.parse_args()
@@ -41,16 +42,19 @@ paths = {
         "config": f"{os.getenv('APPDATA')}/Chocolate/config.ini",
         "db": f"{os.getenv('APPDATA')}/Chocolate/database.db",
         "images": f"{os.getenv('APPDATA')}/Chocolate/images",
+        "logs": f"{os.getenv('APPDATA')}/Chocolate/server.log",
     },
     "Linux": {
         "config": "/var/chocolate/config.ini",
         "db": "/var/chocolate/database.db",
         "images": "/var/chocolate/images/",
+        "logs": "/var/chocolate/server.log",
     },
     "Darwin": {
         "config": f"{os.getenv('HOME')}/Library/Application Support/Chocolate/config.ini",
         "db": f"{os.getenv('HOME')}/Library/Application Support/Chocolate/database.db",
         "images": f"{os.getenv('HOME')}/Library/Application Support/Chocolate/images/",
+        "logs": f"{os.getenv('HOME')}/Library/Application Support/Chocolate/server.log",
     },
 }
 
@@ -66,6 +70,9 @@ CONFIG_PATH = CONFIG_PATH.replace("\\", "/")
 
 DB_PATH = ARGUMENTS.db or paths[OPERATING_SYSTEM]["db"]
 DB_PATH = DB_PATH.replace("\\", "/")
+
+LOG_PATH = ARGUMENTS.logs or paths[OPERATING_SYSTEM]["logs"]
+LOG_PATH = LOG_PATH.replace("\\", "/")
 
 IMAGES_PATH = ARGUMENTS.images or paths[OPERATING_SYSTEM]["images"]
 IMAGES_PATH = IMAGES_PATH.replace("\\", "/")
