@@ -1238,9 +1238,7 @@ def getSeries(library_name):
                             if isinstance(episodeIndex, list):
                                 for i in range(len(episodeIndex)):
                                     if isinstance(episodeIndex[i], int):
-                                        print(f"Episode index is {episodeIndex}")
                                         episodeIndex[i] = str(episodeIndex[i])
-                                        break
                                 episodeIndex = "".join(episodeIndex)
 
                             exists = Episodes.query.filter_by(episode_number=int(episodeIndex), season_id=season_id).first() is not None
