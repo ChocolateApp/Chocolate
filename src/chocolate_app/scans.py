@@ -472,6 +472,14 @@ def IGDBRequest(url, console):
 def getMovies(library_name):
     all_movies_not_sorted = []
     path = Libraries.query.filter_by(lib_name=library_name).first().lib_folder
+    
+    movie_files = Movies.query.filter_by(library_name=library_name).all()
+    for movie in movie_files:
+        slug = movie.slug
+        if not os.path.exists(slug):
+            DB.session.delete(movie)
+            DB.session.commit()
+
     film_file_list = []
     try:
         movie_files = os.listdir(path)
@@ -766,16 +774,12 @@ def getMovies(library_name):
             DB.session.add(filmData)
             DB.session.commit()
 
-    movie_files = Movies.query.filter_by(library_name=library_name).all()
-    for movie in movie_files:
-        slug = movie.slug
-        if not os.path.exists(slug):
-            DB.session.delete(movie)
-            DB.session.commit()
 
 
 def getSeries(library_name):
     allSeriesPath = Libraries.query.filter_by(lib_name=library_name).first().lib_folder
+    if not os.path.exists(allSeriesPath):
+        return
     allSeries = os.listdir(allSeriesPath)
     allSeriesName = []
     for dir in allSeries:
@@ -1222,7 +1226,7 @@ def getSeries(library_name):
                                 episodeIndex = guess["episode"]
                             elif "episode_title" in guess:
                                 episodeIndex = guess["episode_title"]
-                            elif "season" in guess and len(guess["season"]) == 2:
+                            elif "season" in guess and isinstance(guess["season"], list) and len(guess["season"]) == 2:
                                 episodeIndex = guess["season"][1]
                             elif "season" in guess:
                                 episodeIndex = guess["season"]
@@ -1346,10 +1350,9 @@ def getSeries(library_name):
 
         slug = path_join(allSeriesPath, file)
         exists = Episodes.query.filter_by(slug=slug).first() is not None
-
         if not exists:
             guess = guessit(file)
-            # print(f"\n {guess}")
+            #print(f"\n {guess}")
             title = guess["title"]
             if "episode" not in guess:
                 season = guess["season"]
