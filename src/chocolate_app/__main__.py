@@ -1000,7 +1000,6 @@ def get_all_movies(library):
     user = Users.query.filter_by(name=username).first()
 
     movies_list = [movie.__dict__ for movie in movies]
-
     user_type = user.account_type
     for movie in movies_list:
         del movie["_sa_instance_state"]
@@ -1026,7 +1025,8 @@ def get_all_movies(library):
 
     for lib in merged_lib:
         movies = Movies.query.filter_by(library_name=lib).all()
-        movies_list += [movie.__dict__ for movie in movies]
+        if movies:
+            movies_list += [movie.__dict__ for movie in movies]
 
     for movie in movies_list:
         for key in list(movie.keys()):
@@ -1034,7 +1034,7 @@ def get_all_movies(library):
                 del movie[key]
 
     movies_list = natsort.natsorted(movies_list, key=itemgetter(*["real_title"]))
-
+    
     return jsonify(movies_list)
 
 
@@ -1929,7 +1929,7 @@ def edit_serie(id, library):
             "folder_title": serie["original_name"],
         }
 
-        return jsonify(data, default=transform, indent=4)
+        return jsonify(data)
 
     elif request.method == "POST":
         serie_id = request.get_json()["new_id"]
@@ -1968,7 +1968,7 @@ def edit_serie(id, library):
 
             img = Image.open(f"{IMAGES_PATH}/{serie_id}_Cover.png")
             img = img.save(f"{IMAGES_PATH}/{serie_id}_Cover.webp", "webp")
-            img.close()
+
             os.remove(f"{IMAGES_PATH}/{serie_id}_Cover.png")
         else:
             os.remove(f"{IMAGES_PATH}/{serie_id}_Cover.webp")
@@ -1978,7 +1978,6 @@ def edit_serie(id, library):
             img = Image.open(f"{IMAGES_PATH}/{serie_id}_Cover.png")
             img = img.save(f"{IMAGES_PATH}/{serie_id}_Cover.webp", "webp")
             os.remove(f"{IMAGES_PATH}/{serie_id}_Cover.png")
-            img.close()
 
         if not os.path.exists(f"{IMAGES_PATH}/{serie_id}_Banner.webp"):
             with open(f"{IMAGES_PATH}/{serie_id}_Banner.png", "wb") as f:
@@ -1986,7 +1985,6 @@ def edit_serie(id, library):
 
             img = Image.open(f"{IMAGES_PATH}/{serie_id}_Banner.png")
             img = img.save(f"{IMAGES_PATH}/{serie_id}_Banner.webp", "webp")
-            img.close()
             os.remove(f"{IMAGES_PATH}/{serie_id}_Banner.png")
         else:
             os.remove(f"{IMAGES_PATH}/{serie_id}_Banner.webp")
@@ -1994,7 +1992,6 @@ def edit_serie(id, library):
                 f.write(requests.get(banner).content)
             img = Image.open(f"{IMAGES_PATH}/{serie_id}_Banner.png")
             img = img.save(f"{IMAGES_PATH}/{serie_id}_Banner.webp", "webp")
-            img.close()
             os.remove(f"{IMAGES_PATH}/{serie_id}_Banner.png")
 
         banner = f"{IMAGES_PATH}/{serie_id}_Banner.webp"
@@ -2041,7 +2038,6 @@ def edit_serie(id, library):
                     f.write(requests.get(actor_image).content)
                 img = Image.open(f"{IMAGES_PATH}/Actor_{actor_id}.png")
                 img = img.save(f"{IMAGES_PATH}/Actor_{actor_id}.webp", "webp")
-                img.close()
                 os.remove(f"{IMAGES_PATH}/Actor_{actor_id}.png")
             else:
                 os.remove(f"{IMAGES_PATH}/Actor_{actor_id}.webp")
@@ -2049,19 +2045,12 @@ def edit_serie(id, library):
                     f.write(requests.get(actor_image).content)
                 img = Image.open(f"{IMAGES_PATH}/Actor_{actor_id}.png")
                 img = img.save(f"{IMAGES_PATH}/Actor_{actor_id}.webp", "webp")
-                img.close()
                 os.remove(f"{IMAGES_PATH}/Actor_{actor_id}.png")
 
             actor_image = f"{IMAGES_PATH}/Actor_{actor_id}.webp"
             actor_character = actor.character
             actor.profile_path = str(actor_image)
-            this_actor = [
-                str(actor_name),
-                str(actor_character),
-                str(actor_image),
-                str(actor.id),
-            ]
-            new_cast.append(this_actor)
+            new_cast.append(str(actor.id))
 
             person = Person()
             p = person.details(actor.id)
@@ -2082,13 +2071,14 @@ def edit_serie(id, library):
                 actor = Actors.query.filter_by(actor_id=actor.id).first()
                 actor.actor_programs = f"{actor.actor_programs} {serie_id}"
                 DB.session.commit()
+
         all_series_path = Libraries.query.filter_by(lib_name=library).first().lib_folder
         serie_modified_time = os.path.getmtime(
             f"{all_series_path}/{the_serie.original_name}"
         )
 
-        new_cast = jsonify(new_cast[:5])
-        genre_list = jsonify(genre_list)
+        new_cast = ",".join(new_cast[:5])
+        genre_list = ",".join(genre_list)
         is_adult = str(details["adult"])
         the_serie.id = serie_id
         the_serie.name = name
@@ -2239,7 +2229,6 @@ def book_url_page(id, page):
             page = pdf_doc[int(page)]
             image_stream = io.BytesIO(page.get_pixmap().tobytes("jpg"))
             image_stream.seek(0)
-            fitz.close()
             return send_file(image_stream, mimetype="image/jpeg")
 
         elif book_type == "CBZ":
@@ -2273,7 +2262,6 @@ def book_data(id):
     if book_type == "PDF" or book_type == "EPUB":
         pdfDoc = fitz.open(book_slug)
         nb_pages = pdfDoc.page_count
-        pdfDoc.close()
     elif book_type == "CBZ":
         with zipfile.ZipFile(book_slug, "r") as zip:
             nb_pages = len(zip.namelist())
@@ -2786,7 +2774,11 @@ def search_movies(library, search):
         casts = movie.cast.split(",")
         cast_list = []
         for cast in casts:
-            cast_list.append(cast.name.lower())
+            if cast == "":
+                continue
+            cast_id = int(cast)
+            cast = Actors.query.filter_by(actor_id=cast_id).first().name
+            cast_list.append(cast.lower())
 
         cast = " ".join(cast_list)
         date = str(movie.date).lower()
@@ -3325,17 +3317,30 @@ def get_actor_data(actor_id):
     movies_data = []
     series_data = []
     actor = Actors.query.filter_by(actor_id=actor_id).first()
-    movies = actor.actor_programs.split(" ")
-    for movie in movies:
-        in_movies = Movies.query.filter_by(id=movie).first() is not None
-        in_series = Series.query.filter_by(id=movie).first() is not None
+    programs = actor.actor_programs
+    programs = programs.split(" ")
+
+    #remove duplicates
+    new_programs = []
+
+    for program in programs:
+        if str(program) not in new_programs:
+            new_programs.append(str(program))
+
+    actor.actor_programs = " ".join(programs)
+    DB.session.commit()
+
+
+    for program in programs:
+        in_movies = Movies.query.filter_by(id=program).first() is not None
+        in_series = Series.query.filter_by(id=program).first() is not None
         if in_movies:
-            this_movie = Movies.query.filter_by(id=movie).first().__dict__
+            this_movie = Movies.query.filter_by(id=program).first().__dict__
             del this_movie["_sa_instance_state"]
             if this_movie not in movies_data:
                 movies_data.append(this_movie)
         elif in_series:
-            this_series = Series.query.filter_by(id=movie).first().__dict__
+            this_series = Series.query.filter_by(id=program).first().__dict__
             del this_series["_sa_instance_state"]
             if this_series not in series_data:
                 series_data.append(this_series)
@@ -3396,6 +3401,8 @@ def download_episode(episode_id):
 def movie_cover(id):
     movie = Movies.query.filter_by(id=id).first()
     movie_cover = movie.cover
+    if movie_cover.startswith("/static/img/"):
+        movie_cover = f"{dir_path}{movie_cover}"
     return send_file(movie_cover, as_attachment=True)
 
 
