@@ -2009,7 +2009,7 @@ def getBooks(library):
         for file in files:
             path = f"{root}/{file}".replace("\\", "/")
 
-            if is_book_file(file)
+            if is_book_file(file):
                 books.append(path)
 
     allBooks = books
