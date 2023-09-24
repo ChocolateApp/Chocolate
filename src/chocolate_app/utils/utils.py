@@ -1,8 +1,9 @@
 import os
 import datetime
 import json
+import requests
 
-from flask import abort
+from PIL import Image, UnidentifiedImageError
 
 from chocolate_app import all_auth_tokens, get_dir_path, LOG_PATH
 from chocolate_app.tables import Users, Libraries
@@ -42,14 +43,14 @@ def generate_log(request, component):
         username = "Unknown"
 
     if not data:
-        message = f"Request {method} at {path} from {username}"
+        message = f"Request {method} at {path}. from {username}"
     else:
         if "password" in data:
             data["password"] = "********"
         if "image" in data:
             data["image"] = "Image as a base64 (to long)"
         message = (
-            f"Request {method} at {path} from {username} with data: {json.dumps(data)}"
+            f"Request {method} at {path}. from {username} with data: {json.dumps(data)}"
         )
 
     log("INFO", component, message)
@@ -119,3 +120,52 @@ def user_in_lib(user_id, lib):
     if not lib["available_for"] or user_id in available_for:
         return True
     return False
+
+def save_image(url, path, width=300, ratio=73/50):
+    if "Banner" in path:
+        width = 1920
+        ratio = 9/16
+    elif "Actor" in path:
+        width = 300
+        ratio = 1
+    height = int(width * ratio)
+    image_requests = requests.Session()
+    if not os.path.exists(f"{path}.webp"):
+        with open(f"{path}.png", "wb") as f:
+            f.write(image_requests.get(url).content)
+        
+        try:
+            image = Image.open(f"{path}.png")
+        except UnidentifiedImageError:
+            return "/static/images/broken" + "Banner" * ("Banner" in path) + ".png"
+        #resize image but don't crop it
+        image = image.resize((width, height), Image.ANTIALIAS)
+        image.save(f"{path}.webp", "webp", optimize=True)
+        os.remove(f"{path}.png")
+
+    return f"{path}.webp"
+
+def check_extension(file, extensions):
+    if file.split(".")[-1] in extensions:
+        return True
+    return False
+
+def is_video_file(file):
+    extensions = ["mkv", "avi", "mp4", "webm", "ogg", "m4v", "mov", "wmv", "flv", "3gp"]
+    return check_extension(file, extensions)
+
+def is_music_file(file):
+    extensions = ["mp3", "wav", "ogg", "flac", "m4a", "wma"]
+    return check_extension(file, extensions)
+
+def is_book_file(file):
+    extensions = ["pdf", "epub", "cbz", "cbr"]
+    return check_extension(file, extensions)
+
+def is_image_file(file):
+    extensions = ["png", "jpg", "jpeg", "gif", "webp"]
+    return check_extension(file, extensions)
+
+def is_compressed_file(file):
+    extensions = ["zip", "rar", "7z", "tar", "gz", "bz2", "xz"]
+    return check_extension(file, extensions)
