@@ -1855,7 +1855,7 @@ def getMusics(library):
             allTracks = [
                 track
                 for track in allTracks
-                if os.path.splitext(track)[1] in supportedMusicTypes
+                if is_music_file(track)
             ]
             album_id = createAlbum(albumName, artist_id, allTracks, library)
 
