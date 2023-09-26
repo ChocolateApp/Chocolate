@@ -3,6 +3,8 @@ import datetime
 import json
 import requests
 
+from flask import abort
+
 from PIL import Image, UnidentifiedImageError
 
 from chocolate_app import all_auth_tokens, get_dir_path, LOG_PATH
@@ -121,7 +123,7 @@ def user_in_lib(user_id, lib):
         return True
     return False
 
-def save_image(url, path, width=300, ratio=73/50):
+def save_image(url, path, width=600, ratio=73/50):
     if "Banner" in path:
         width = 1920
         ratio = 9/16
@@ -141,7 +143,8 @@ def save_image(url, path, width=300, ratio=73/50):
         #resize image but don't crop it
         image = image.resize((width, height), Image.ANTIALIAS)
         image.save(f"{path}.webp", "webp", optimize=True)
-        os.remove(f"{path}.png")
+        if os.path.exists(f"{path}.png"):
+            os.remove(f"{path}.png")
 
     return f"{path}.webp"
 

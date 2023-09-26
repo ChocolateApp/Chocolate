@@ -775,11 +775,8 @@ def getSeries(library_name):
         nbSeasons = len(seasons)
 
         episodeGroups = show.episode_groups(serie_id).results
-        # print(f"Pour {serie_name} : nbEpisodes: {nbEpisodes} nbSeasons: {nbSeasons} defaultNbOfEpisodes: {defaultNbOfEpisodes} defaultNbOfSeasons: {defaultNbOfSeasons}")
 
-        if nbEpisodes <= defaultNbOfEpisodes and nbSeasons <= defaultNbOfSeasons:
-            pass
-        elif len(episodeGroups) > 0:
+        if len(episodeGroups) > 0 and nbEpisodes > defaultNbOfEpisodes and nbSeasons > defaultNbOfSeasons:
             seasonsInfo = None
             for group in episodeGroups:
                 groupNbEpisodes = group.episode_count
@@ -819,7 +816,8 @@ def getSeries(library_name):
                                 ]
                             break
 
-            if seasonsInfo is None:
+
+            if seasonsInfo is None or seasonsInfo == {}:
                 group = episodeGroups[0]
                 theGroup = Group()
                 seasonsInfo = theGroup.details(group.id).groups
@@ -1081,7 +1079,7 @@ def getSeries(library_name):
                                     episode_id = episodeInfo["id"]
                                     realEpisodeName = episodeInfo["name"]
 
-                                coverEpisode = save_image(f"https://image.tmdb.org/t/p/original{episodeInfo['still_path']}", f"{IMAGES_PATH}/{season_id}_{episode_id}_Cover")
+                                coverEpisode = save_image(f"https://image.tmdb.org/t/p/original{episodeInfo['still_path']}", f"{IMAGES_PATH}/{season_id}_{episode_id}_Episode_Banner")
                                 
                                 try:
                                     exists = (
@@ -1393,7 +1391,7 @@ def getSeries(library_name):
                     episode_id = episodeInfo["id"]
                     realEpisodeName = episodeInfo["name"]
 
-                coverEpisode = save_image(f"https://image.tmdb.org/t/p/original{episodeInfo.still_path}", f"{IMAGES_PATH}/{season_id}_{episode_id}_Cover")
+                coverEpisode = save_image(f"https://image.tmdb.org/t/p/original{episodeInfo.still_path}", f"{IMAGES_PATH}/{season_id}_{episode_id}_Episode_Banner")
                 
                 try:
                     exists = (
