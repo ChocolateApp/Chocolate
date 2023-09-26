@@ -2801,13 +2801,15 @@ def search_books(library, search):
                 if term in value:
                     count += 1
         if count > 0:
+            book = book.__dict__
+            book["count"] = count
             results.append(book)
 
-    books = [i.__dict__ for i in results]
-    for book in books:
+    for book in results:
         del book["_sa_instance_state"]
 
-    books = natsort.natsorted(books, key=itemgetter(*["title"]))
+    #sort results by count
+    books = sorted(results, key=lambda x: x["count"], reverse=True)
     return jsonify(books)
 
 
@@ -2822,7 +2824,8 @@ def search_others(library, search):
     search_terms = search.split()
 
     others = OthersVideos.query.filter_by(library_name=library).all()
-    results = {}
+    results = []
+
     for other in others:
         count = 0
         video_hash = other.video_hash.lower()
@@ -2835,11 +2838,12 @@ def search_others(library, search):
                 if term in value:
                     count += 1
         if count > 0:
-            results[other] = count
+            other = other.__dict__
+            other["count"] = count
+            results.append(other)
 
-    results = sorted(results.items(), key=lambda x: x[1], reverse=True)
+    others = sorted(results, key=lambda x: x["count"], reverse=True)
 
-    others = [i[0].__dict__ for i in results]
     for i in others:
         del i["_sa_instance_state"]
 
@@ -3369,6 +3373,10 @@ def other_cover(id):
 def book_cover(id):
     book = Books.query.filter_by(id=id).first()
     book_cover = book.cover
+
+    if not os.path.exists(book_cover):
+        abort(404)
+
     return send_file(book_cover, as_attachment=True)
 
 
