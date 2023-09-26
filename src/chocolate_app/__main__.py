@@ -3317,8 +3317,8 @@ def movie_cover(id):
     if movie is None:
         abort(404)
     movie_cover = movie.cover
-    if movie_cover.startswith("/static/img/"):
-        movie_cover = f"{dir_path}{movie_cover}"
+    if not os.path.exists(movie_cover):
+        abort(404)
     return send_file(movie_cover, as_attachment=True)
 
 
@@ -3326,6 +3326,8 @@ def movie_cover(id):
 def movie_banner(id):
     movie = Movies.query.filter_by(id=id).first()
     movie_banner = movie.banner
+    if not os.path.exists(movie_banner):
+        abort(404)
     return send_file(movie_banner, as_attachment=True)
 
 
@@ -3333,6 +3335,8 @@ def movie_banner(id):
 def serie_cover(id):
     serie = Series.query.filter_by(id=id).first()
     serie_cover = serie.cover
+    if not os.path.exists(serie_cover):
+        abort(404)
     return send_file(serie_cover, as_attachment=True)
 
 
@@ -3340,6 +3344,8 @@ def serie_cover(id):
 def serie_banner(id):
     serie = Series.query.filter_by(id=id).first()
     serie_banner = serie.banner
+    if not os.path.exists(serie_banner):
+        abort(404)
     return send_file(serie_banner, as_attachment=True)
 
 
@@ -3347,6 +3353,8 @@ def serie_banner(id):
 def season_cover(id):
     season = Seasons.query.filter_by(season_id=id).first()
     season_cover = season.cover
+    if not os.path.exists(season_cover):
+        abort(404)
     return send_file(season_cover, as_attachment=True)
 
 
@@ -3354,11 +3362,8 @@ def season_cover(id):
 def episode_cover(id):
     episode = Episodes.query.filter_by(episode_id=id).first()
     episode_cover = episode.episode_cover_path
-    if "https://" in episode_cover:
-        episode_cover = save_image(episode_cover, f"{IMAGES_PATH}/{episode.season_id}_{id}_Cover")
-        episode.episode_cover_path = episode_cover
-        DB.session.commit()
-
+    if not os.path.exists(episode_cover):
+        abort(404)
     return send_file(episode_cover, as_attachment=True)
 
 
@@ -3366,6 +3371,8 @@ def episode_cover(id):
 def other_cover(id):
     other = OthersVideos.query.filter_by(video_hash=id).first()
     other_cover = other.banner
+    if not os.path.exists(other_cover):
+        abort(404)
     return send_file(other_cover, as_attachment=True)
 
 
@@ -3373,10 +3380,8 @@ def other_cover(id):
 def book_cover(id):
     book = Books.query.filter_by(id=id).first()
     book_cover = book.cover
-
     if not os.path.exists(book_cover):
         abort(404)
-
     return send_file(book_cover, as_attachment=True)
 
 
@@ -3384,26 +3389,8 @@ def book_cover(id):
 def actor_image(id):
     actor = Actors.query.filter_by(actor_id=id).first()
     actor_image = actor.actor_image
-    if not actor or not os.path.exists(actor_image):
-        ext_to_ext = {
-            ".png": ".webp",
-            ".webp": ".png",
-        }
-        name, extension = os.path.splitext(actor_image)
-        new_extension = ext_to_ext[extension]
-        actor_image = f"{name}{new_extension}"
-        if not os.path.exists(actor_image):
-            actor.actor_image = (
-                f"{dir_path}/static/img/avatars/defaultUserProfilePic.png"
-            )
-            DB.session.commit()
-            return send_file(
-                f"{dir_path}/static/img/avatars/defaultUserProfilePic.png",
-                as_attachment=True,
-            )
-        else:
-            actor.actor_image = actor_image
-            DB.session.commit()
+    if not os.path.exists(actor_image):
+        abort(404)
     return send_file(actor_image, as_attachment=True)
 
 
@@ -3411,6 +3398,8 @@ def actor_image(id):
 def artist_image(id):
     artist = Artists.query.filter_by(id=id).first()
     artist_image = artist.cover
+    if not os.path.exists(artist_image):
+        abort(404)
     return send_file(artist_image, as_attachment=True)
 
 
@@ -3418,6 +3407,8 @@ def artist_image(id):
 def album_cover(id):
     album = Albums.query.filter_by(id=id).first()
     album_cover = album.cover
+    if not os.path.exists(album_cover):
+        abort(404)
     return send_file(album_cover, as_attachment=True)
 
 
@@ -3435,6 +3426,8 @@ def playlist_cover(id):
 def track_cover(id):
     track = Tracks.query.filter_by(id=id).first()
     track_cover = track.cover
+    if not os.path.exists(track_cover):
+        abort(404)
     return send_file(track_cover, as_attachment=True)
 
 
