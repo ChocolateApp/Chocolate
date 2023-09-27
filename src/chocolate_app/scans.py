@@ -260,23 +260,22 @@ def is_connected():
         return False
 
 
-def printLoading(filesList, actualFile, title):
+def printLoading(filesList, index, title):
     terminal_size = os.get_terminal_size().columns - 1
-    try:
-        index = filesList.index(actualFile) + 1
-    except Exception:
-        index = 0
     percentage = index * 100 / len(filesList)
 
     loading_first_part = ("•" * int(percentage * 0.2))[:-1]
     loading_first_part = f"{loading_first_part}➤"
     loading_second_part = "•" * (20 - int(percentage * 0.2))
 
-    loading = f"{str(int(percentage)).rjust(3)}% | [\33[32m{loading_first_part}\33[31m{loading_second_part}\33[0m] | {title} | {index}/{len(filesList)}"
-    loading2 = loading + " " * (terminal_size - len(loading))
+    loading = f"{str(int(percentage)).rjust(3)}% | [\33[32m{loading_first_part}\33[31m{loading_second_part}\33[0m] | {title}"
 
-    if len(loading2) > terminal_size:
-        loading2 = loading2[: terminal_size - 3] + "..."
+    loading_fraction = f" | {index}/{len(filesList)}"
+
+    if len(loading) > terminal_size:
+        loading = loading[: terminal_size - len(loading_fraction) - 3] + "..." + loading_fraction
+
+    loading2 = loading + " " * (terminal_size - len(loading))
 
     print("\033[?25l", end="")
     print(loading2, end="\r", flush=True)
@@ -436,8 +435,9 @@ def getMovies(library_name):
         return
 
     movie = Movie()
-
+    index = 0
     for searchedFilm in film_file_list:
+        index += 1
         movieTitle = searchedFilm
         if os.path.isdir(path_join(path, searchedFilm)):
             the_path = path_join(path, searchedFilm)
@@ -446,7 +446,7 @@ def getMovies(library_name):
             movieTitle, extension = os.path.splitext(movieTitle)
         originalMovieTitle = movieTitle
 
-        printLoading(film_file_list, searchedFilm, movieTitle)
+        printLoading(film_file_list, index, movieTitle)
 
         slug = searchedFilm
         video_path = f"{path}/{slug}"
@@ -678,16 +678,19 @@ def getSeries(library_name):
         return
 
     show = TV()
-
+    index = 0
     for serie in allSeriesName:
+        index += 1
         if not isinstance(serie, str):
             continue
 
-        printLoading(allSeriesName, serie, serie)
 
         seriePath = serie
         serieTitle = serie.split("/")[-1]
         originalSerieTitle = serieTitle
+
+        printLoading(allSeriesName, index, originalSerieTitle)
+
         try:
             serie_modified_time = os.path.getmtime(seriePath)
         except FileNotFoundError:
@@ -1130,8 +1133,10 @@ def getSeries(library_name):
         if os.path.isfile(path_join(allSeriesPath, name))
         and is_video_file(name)
     ]
+    index = 0
     for file in allFiles:
-        printLoading(allFiles, file, file)
+        index += 1
+        printLoading(allFiles, index, file)
 
         slug = path_join(allSeriesPath, file)
         exists = Episodes.query.filter_by(slug=slug).first() is not None
@@ -1557,17 +1562,21 @@ def getGames(library_name):
         ".sat",
         ".sms",
     ]
+    index = 0
     for console in allConsoles:
+        index += 1
         if console not in supportedConsoles:
             print(
                 f"{console} is not supported or the console name is not correct, here is the list of supported consoles: \n{', '.join(supportedConsoles)} rename the folder to one of these names if it's the correct console"
             )
             break
 
-        printLoading(allConsoles, console, console)
+        printLoading(allConsoles, index, console)
 
         allFiles = os.listdir(f"{allGamesPath}/{console}")
+        index = 0
         for file in allFiles:
+            index += 1
             # get all games in the db
             allGamesInDB = Games.query.filter_by(
                 library_name=library_name, console=console
@@ -1591,7 +1600,7 @@ def getGames(library_name):
                         f"{allGamesPath}/{console}/{newFileName}",
                     )
 
-                    printLoading(allFiles, file, newFileName)
+                    printLoading(allFiles, index, newFileName)
 
                     file = newFileName
 
@@ -1753,11 +1762,12 @@ def getOthersVideos(library, allVideosPath=None):
     for directory in allDirectories:
         directoryPath = f"{allVideosPath}/{directory}"
         getOthersVideos(library, directoryPath)
-
+    index = 0
     for video in allVideos:
+        index += 1
         title, extension = os.path.splitext(video)
 
-        printLoading(allVideos, video, title)
+        printLoading(allVideos, index, title)
 
         slug = f"{allVideosPath}/{video}"
         exists = OthersVideos.query.filter_by(slug=slug).first() is not None
@@ -1842,8 +1852,9 @@ def getMusics(library):
             continue
 
         startPath = f"{allMusicsPath}/{artist}"
-
+        index = 0
         for album in allAlbums:
+            index += 1
             albumGuessedData = guessit(album)
             if "title" in albumGuessedData:
                 albumName = albumGuessedData["title"]
@@ -1866,7 +1877,7 @@ def getMusics(library):
                     continue
 
                 title, extension = os.path.splitext(track)
-                printLoading(allTracks, track, title)
+                printLoading(allTracks, index, title)
 
                 tags = TinyTag.get(slug, image=True)
 
@@ -1914,8 +1925,9 @@ def getMusics(library):
                 )
                 DB.session.add(track)
                 DB.session.commit()
-
+        index = 0
         for track in allFiles:
+            index += 1
             slug = f"{startPath}/{track}"
 
             exists = Tracks.query.filter_by(slug=slug).first() is not None
@@ -1923,7 +1935,7 @@ def getMusics(library):
                 continue
 
             title, extension = os.path.splitext(track)
-            printLoading(allFiles, track, title)
+            printLoading(allFiles, index, title)
 
             tags = TinyTag.get(slug, image=True)
 
@@ -2020,11 +2032,13 @@ def getBooks(library):
         ".cbr": getCBRCover,
     }
 
+    index = 0
     for book in allBooks:
+        index += 1
         name, extension = os.path.splitext(book)
         name = name.split("/")[-1]
 
-        printLoading(allBooks, book, name)
+        printLoading(allBooks, index, name)
 
         slug = f"{book}"
 
