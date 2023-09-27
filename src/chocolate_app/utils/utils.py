@@ -172,3 +172,6 @@ def is_image_file(file):
 def is_compressed_file(file):
     extensions = ["zip", "rar", "7z", "tar", "gz", "bz2", "xz"]
     return check_extension(file, extensions)
+
+def is_directory(file):
+    return os.path.isdir(file)

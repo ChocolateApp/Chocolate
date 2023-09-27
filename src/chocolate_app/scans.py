@@ -39,7 +39,7 @@ from .tables import (
 )
 
 
-from .utils.utils import path_join, save_image, is_video_file, is_music_file, is_book_file, is_image_file
+from .utils.utils import path_join, save_image, is_video_file, is_music_file, is_book_file, is_image_file, is_directory
 
 dir_path = get_dir_path()
 
@@ -423,12 +423,13 @@ def getMovies(library_name):
             DB.session.commit()
 
     film_file_list = []
-    try:
-        movie_files = os.listdir(path)
-    except Exception:
+    if not os.path.exists(path):
         return
+    
+    movie_files = os.listdir(path)
+    
     for movie_file in movie_files:
-        if is_video_file(movie_file):
+        if is_video_file(movie_file) or is_directory(path_join(path, movie_file)):
             film_file_list.append(movie_file)
 
     if not is_connected():
