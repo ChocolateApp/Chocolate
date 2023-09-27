@@ -260,7 +260,7 @@ def is_connected():
         return False
 
 
-def printLoading(filesList, index, title):
+def print_loading(filesList, index, title):
     terminal_size = os.get_terminal_size().columns - 1
     percentage = index * 100 / len(filesList)
 
@@ -268,17 +268,19 @@ def printLoading(filesList, index, title):
     loading_first_part = f"{loading_first_part}➤"
     loading_second_part = "•" * (20 - int(percentage * 0.2))
 
-    loading = f"{str(int(percentage)).rjust(3)}% | [\33[32m{loading_first_part}\33[31m{loading_second_part}\33[0m] | {title}"
+    loading_start = f"{str(int(percentage)).rjust(3)}% | [\33[32m{loading_first_part}\33[31m{loading_second_part}\33[0m]"
+    loading_middle = f"{title}"
+    loading_end = f"{index}/{len(filesList)}"
 
-    loading_fraction = f" | {index}/{len(filesList)}"
+    if len(loading_start) + len(loading_middle) + len(loading_end) > terminal_size:
+        loading_middle = loading_middle[: terminal_size - len(loading_start) - len(loading_end) - 3] + "..."
 
-    if len(loading) > terminal_size:
-        loading = loading[: terminal_size - len(loading_fraction) - 3] + "..." + loading_fraction
+    free_space = (terminal_size - len(loading_start) - len(loading_middle) - len(loading_end)) // 2
+    loading_middle = " " * free_space + loading_middle + " " * free_space + " " * ((terminal_size - len(loading_start) - len(loading_middle) - len(loading_end)) % 2)
 
-    loading2 = loading + " " * (terminal_size - len(loading))
-
+    loading = f"{loading_start} | {loading_middle} | {loading_end}"
     print("\033[?25l", end="")
-    print(loading2, end="\r", flush=True)
+    print(loading, end="\r", flush=True)
 
 
 def searchGame(game, console):
@@ -446,7 +448,7 @@ def getMovies(library_name):
             movieTitle, extension = os.path.splitext(movieTitle)
         originalMovieTitle = movieTitle
 
-        printLoading(film_file_list, index, movieTitle)
+        print_loading(film_file_list, index, movieTitle)
 
         slug = searchedFilm
         video_path = f"{path}/{slug}"
@@ -689,7 +691,7 @@ def getSeries(library_name):
         serieTitle = serie.split("/")[-1]
         originalSerieTitle = serieTitle
 
-        printLoading(allSeriesName, index, originalSerieTitle)
+        print_loading(allSeriesName, index, originalSerieTitle)
 
         try:
             serie_modified_time = os.path.getmtime(seriePath)
@@ -1136,7 +1138,7 @@ def getSeries(library_name):
     index = 0
     for file in allFiles:
         index += 1
-        printLoading(allFiles, index, file)
+        print_loading(allFiles, index, file)
 
         slug = path_join(allSeriesPath, file)
         exists = Episodes.query.filter_by(slug=slug).first() is not None
@@ -1571,7 +1573,7 @@ def getGames(library_name):
             )
             break
 
-        printLoading(allConsoles, index, console)
+        print_loading(allConsoles, index, console)
 
         allFiles = os.listdir(f"{allGamesPath}/{console}")
         index = 0
@@ -1600,7 +1602,7 @@ def getGames(library_name):
                         f"{allGamesPath}/{console}/{newFileName}",
                     )
 
-                    printLoading(allFiles, index, newFileName)
+                    print_loading(allFiles, index, newFileName)
 
                     file = newFileName
 
@@ -1767,7 +1769,7 @@ def getOthersVideos(library, allVideosPath=None):
         index += 1
         title, extension = os.path.splitext(video)
 
-        printLoading(allVideos, index, title)
+        print_loading(allVideos, index, title)
 
         slug = f"{allVideosPath}/{video}"
         exists = OthersVideos.query.filter_by(slug=slug).first() is not None
@@ -1877,7 +1879,7 @@ def getMusics(library):
                     continue
 
                 title, extension = os.path.splitext(track)
-                printLoading(allTracks, index, title)
+                print_loading(allTracks, index, title)
 
                 tags = TinyTag.get(slug, image=True)
 
@@ -1935,7 +1937,7 @@ def getMusics(library):
                 continue
 
             title, extension = os.path.splitext(track)
-            printLoading(allFiles, index, title)
+            print_loading(allFiles, index, title)
 
             tags = TinyTag.get(slug, image=True)
 
@@ -2038,7 +2040,7 @@ def getBooks(library):
         name, extension = os.path.splitext(book)
         name = name.split("/")[-1]
 
-        printLoading(allBooks, index, name)
+        print_loading(allBooks, index, name)
 
         slug = f"{book}"
 
