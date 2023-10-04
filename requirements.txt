@@ -12,7 +12,7 @@ GPUtil==1.4.0
 guessit==3.7.1
 ImageHash==4.3.1
 opencv_python==4.5.5.64
-Pillow==9.5.0
+Pillow==10.0.1
 pyarr==5.0.0
 pycountry==22.3.5
 PyMuPDF==1.21.1
