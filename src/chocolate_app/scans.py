@@ -201,7 +201,10 @@ def createAlbum(name, artist_id, tracks=[], library=""):
 
 
 def getAlbumImage(album_name, path):
-    album = deezer.search_albums(album_name)[0]
+    album = deezer.search_albums(album_name)
+    if len(album) == 0:
+        return None
+    album = album[0]
     cover = save_image(album.cover_big, path)
     return cover
 
@@ -1891,7 +1894,6 @@ def getMusics(library):
                         img.save(imagePath, "webp")
                         img.close()
                 elif not os.path.exists(imagePath):
-                    print(f"L'album {album} n'a pas d'image")
                     getAlbumImage(album, imagePath)
 
                 if tags.title is not None and tags.title != "" and tags.title != " ":
