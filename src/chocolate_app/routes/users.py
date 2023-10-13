@@ -141,6 +141,11 @@ def edit_profil():
     user_name = body["name"]
     password = body["password"]
 
+    db_user = Users.query.filter_by(name=user_name).first()
+
+    if not db_user or str(db_user.id) != str(user.id):
+        abort(500, "You are not allowed to change the username of this user")
+
     type = None
     if "type" in body:
         type = body["type"]
@@ -149,8 +154,6 @@ def edit_profil():
     if str(id) != str(user.id) and user.account_type != "Admin":
         abort(401, "Unauthorized")
 
-    print(all_auth_tokens)
-    print(authorization)
     username_in_tokens = all_auth_tokens[authorization]["user"]
     user = Users.query.filter_by(name=username_in_tokens).first()
     try:
