@@ -5,6 +5,7 @@
 <div style="font-style: italic; text-align: center;" markdown="1" align="center">
 
   ![wakatime](https://wakatime.com/badge/user/4cf4132a-4ced-411d-b714-67bdbdc84527/project/ecce3f45-dba9-4e4b-8f78-693c6d237d1c.svg)
+  [![PyPI version](https://badge.fury.io/py/chocolate-app.svg)](https://badge.fury.io/py/chocolate-app)
   [![GitHub release](https://img.shields.io/github/release/ChocolateApp/Chocolate?include_prereleases=&sort=semver&color=blue)](https://github.com/ChocolateApp/Chocolate/releases/)
   [![GitHub stars](https://img.shields.io/github/stars/ChocolateApp/Chocolate?style=social&label=Stars&color=blue)](https://github.com/ChocolateApp/Chocolate)
   [![GitHub watchers](https://img.shields.io/github/watchers/ChocolateApp/Chocolate?style=social&label=Watchers&color=blue)](https://github.com/ChocolateApp/Chocolate)
@@ -46,27 +47,17 @@ This is what you have to do to get started with Chocolate :
 
 ### Installation
 
-#### For Linux
-* Go to the [latest release](https://github.com/ChocolateApp/Chocolate/releases/latest)
-* Download the latest installer named `install.sh`
-* Place it where you want
-* Run it
-* Enjoy !
-
-#### For Windows
-No installer available, either:
-* [Use Docker]( https://github.com/ChocolateApp/Chocolate#for-docker)
-* Install manually
-    * So download the source code and install the dependencies (requirements.txt, ffmpeg and winrar (only for cbr files so books))
-    * For ffmpeg and winrar, you have to add them to your PATH
+#### For Windows/Linux/Mac
+* Make sure you have at least python 3.10 and pip installed
+* Execute ```pip install chocolate_app```
+* To run chocolate, simply execute ```python -m chocolate_app``` or ```python3 -m chocolate_app```
 
 #### For QNAP
 * Go here: [https://www.myqnap.org/product/chocolate81/](https://www.myqnap.org/product/chocolate81/)
 * Enjoy !
 
 #### For Docker
-* Execute `docker pull imprevisible/chocolate`
-* Enjoy !
+* WIP (Release soon)
 
 ### Files organizations
 
