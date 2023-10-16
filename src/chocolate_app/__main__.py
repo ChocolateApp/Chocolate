@@ -1226,7 +1226,10 @@ def get_playlist_tracks(playlist_id):
         ).first()
         tracks = tracks.tracks.split(",")
         for track in tracks:
-            track = Tracks.query.filter_by(id=track).first().__dict__
+            track = Tracks.query.filter_by(id=track).first()
+            if not track:
+                continue
+            track = track.__dict__
 
             del track["_sa_instance_state"]
 
@@ -1376,15 +1379,21 @@ def generate_playlist_cover(id):
             try:
                 tracks.append(id[i])
             except Exception:
+                if id_to_append >= len(id):
+                    break
                 tracks.append(id[id_to_append])
                 id_to_append += 1
 
         covers = []
         for track in tracks:
             track = Tracks.query.filter_by(id=track).first()
-
-            covers.append(track.cover)
-
+            if track and os.path.exists(track.cover):
+                covers.append(track.cover)
+            elif track:
+                artist = Artists.query.filter_by(id=track.artist_id).first()
+                covers.append(artist.cover)
+            else:
+                return None
         im1 = Image.open(covers[0])
         im2 = Image.open(covers[1])
         im3 = Image.open(covers[2])
@@ -3414,12 +3423,18 @@ def album_cover(id):
 
 @app.route("/playlist_cover/<id>")
 def playlist_cover(id):
-    if id and id != "0":
-        playlist = Playlists.query.filter_by(id=id).first()
+    playlist = Playlists.query.filter_by(id=id).first()
+    playlist_cover = None
+    if id and id != "0" and playlist:
         playlist_cover = playlist.cover
-    else:
+    elif playlist:
         playlist_cover = f"{dir_path}/static/img/likes.webp"
-    return send_file(playlist_cover, as_attachment=True)
+    
+    if playlist_cover is None or not os.path.exists(playlist_cover):
+        abort(404)
+    
+    print(playlist_cover)
+    return send_file(playlist_cover, as_attachment=True, mimetype="image/webp", download_name=f"Playlist_{id}.webp")
 
 
 @app.route("/track_cover/<id>")
@@ -3444,68 +3459,68 @@ def user_image(id):
 
     return send_file(user_image, as_attachment=True)
 
+def start_chocolate():
+    if __name__ == "__main__":
+        enabled_rpc = config["ChocolateSettings"]["discordrpc"]
+        if enabled_rpc == "true":
+            try:
+                RPC.update(
+                    state="Loading Chocolate...",
+                    details=f"The Universal MediaManager | ({last_commit_hash})",
+                    large_image="loader",
+                    large_text="Chocolate",
+                    buttons=[
+                        {
+                            "label": "Github",
+                            "url": "https://github.com/ChocolateApp/Chocolate",
+                        }
+                    ],
+                    start=start_time,
+                )
+            except Exception:
+                pass
 
-if __name__ == "__main__":
-    enabled_rpc = config["ChocolateSettings"]["discordrpc"]
-    if enabled_rpc == "true":
-        try:
-            RPC.update(
-                state="Loading Chocolate...",
-                details=f"The Universal MediaManager | ({last_commit_hash})",
-                large_image="loader",
-                large_text="Chocolate",
-                buttons=[
-                    {
-                        "label": "Github",
-                        "url": "https://github.com/ChocolateApp/Chocolate",
-                    }
-                ],
-                start=start_time,
-            )
-        except Exception:
-            pass
+        with app.app_context():
+            if not ARGUMENTS.no_scans and config["APIKeys"]["TMDB"] != "Empty":
+                libraries = Libraries.query.all()
+                libraries = [library.__dict__ for library in libraries]
 
-    with app.app_context():
-        if not ARGUMENTS.no_scans and config["APIKeys"]["TMDB"] != "Empty":
-            libraries = Libraries.query.all()
-            libraries = [library.__dict__ for library in libraries]
+                libraries = natsort.natsorted(libraries, key=itemgetter(*["lib_name"]))
+                libraries = natsort.natsorted(libraries, key=itemgetter(*["lib_type"]))
 
-            libraries = natsort.natsorted(libraries, key=itemgetter(*["lib_name"]))
-            libraries = natsort.natsorted(libraries, key=itemgetter(*["lib_type"]))
+                type_to_call = {
+                    "series": scans.getSeries,
+                    "movies": scans.getMovies,
+                    "consoles": scans.getGames,
+                    "others": scans.getOthersVideos,
+                    "books": scans.getBooks,
+                    "musics": scans.getMusics,
+                }
 
-            type_to_call = {
-                "series": scans.getSeries,
-                "movies": scans.getMovies,
-                "consoles": scans.getGames,
-                "others": scans.getOthersVideos,
-                "books": scans.getBooks,
-                "musics": scans.getMusics,
-            }
+                for library in libraries:
+                    if library["lib_type"] in type_to_call:
+                        type_to_call[library["lib_type"]](library["lib_name"])
 
-            for library in libraries:
-                if library["lib_type"] in type_to_call:
-                    type_to_call[library["lib_type"]](library["lib_name"])
+                print()
+        print("\033[?25h", end="")
 
-            print()
-    print("\033[?25h", end="")
+        enabled_rpc = config["ChocolateSettings"]["discordrpc"]
+        if enabled_rpc == "true":
+            try:
+                RPC.update(
+                    state="Idling",
+                    details=f"The Universal MediaManager | ({last_commit_hash})",
+                    large_image="largeimage",
+                    large_text="Chocolate",
+                    buttons=[
+                        {
+                            "label": "Github",
+                            "url": "https://github.com/ChocolateApp/Chocolate",
+                        }
+                    ],
+                    start=time(),
+                )
+            except Exception:
+                pass
 
-    enabled_rpc = config["ChocolateSettings"]["discordrpc"]
-    if enabled_rpc == "true":
-        try:
-            RPC.update(
-                state="Idling",
-                details=f"The Universal MediaManager | ({last_commit_hash})",
-                large_image="largeimage",
-                large_text="Chocolate",
-                buttons=[
-                    {
-                        "label": "Github",
-                        "url": "https://github.com/ChocolateApp/Chocolate",
-                    }
-                ],
-                start=time(),
-            )
-        except Exception:
-            pass
-
-    app.run(host="0.0.0.0", port="8888")
+        app.run(host="0.0.0.0", port="8888")
