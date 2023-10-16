@@ -1,6 +1,6 @@
 [project]
-name = "Chocolate"
-version = "7.0.0"
+name = "chocolate_app"
+version = "7.0.7"
 description = ""
 authors = [
     {name = "Imprevisible", email = "impr.visible@gmail.com"},
@@ -31,7 +31,6 @@ dependencies = [
     "deezer-python>=6.1.0",
     "tinytag>=1.9.0",
     "argparse>=1.4.0",
-    "logging>=0.4.9.6",
     "EbookLib>=0.18",
     "flask-migrate>=4.0.4",
     "tmdbv3api>=1.9.0",
