@@ -1,6 +1,6 @@
 [project]
 name = "chocolate_app"
-version = "7.0.7"
+version = "7.0.9"
 description = ""
 authors = [
     {name = "Imprevisible", email = "impr.visible@gmail.com"},
@@ -49,3 +49,9 @@ build-backend = "pdm.backend"
 lint = [
     "black>=23.7.0",
 ]
+
+[project.scripts]
+chocolate_app = "chocolate_app.__main__:start_chocolate"
+
+[tool.pdm.scripts]
+chocolate_app = "chocolate_app.__main__:start_chocolate"
