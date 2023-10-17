@@ -1,0 +1,9 @@
+FROM python:3.10
+
+RUN pip install chocolate_app
+
+RUN apt-get update && apt-get install -y ffmpeg unrar-free
+
+EXPOSE 8888
+
+CMD ["python", "-m", "chocolate_app"]
