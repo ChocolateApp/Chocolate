@@ -543,7 +543,7 @@ def getMovies(library_name):
                     break
                 person = Person()
                 p = person.details(cast.id)
-                exists = Actors.query.filter_by(actor_id=cast.id).first() is not None
+                exists = Actors.query.filter_by(actor_id=cast.id, name=actorImage).first() is not None
                 if not exists:
                     actor = Actors(
                         name=cast.name,
