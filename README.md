@@ -5,6 +5,7 @@
 <div style="font-style: italic; text-align: center;" markdown="1" align="center">
 
   ![wakatime](https://wakatime.com/badge/user/4cf4132a-4ced-411d-b714-67bdbdc84527/project/ecce3f45-dba9-4e4b-8f78-693c6d237d1c.svg)
+  [![PyPI version](https://badge.fury.io/py/chocolate-app.svg)](https://badge.fury.io/py/chocolate-app)
   [![GitHub release](https://img.shields.io/github/release/ChocolateApp/Chocolate?include_prereleases=&sort=semver&color=blue)](https://github.com/ChocolateApp/Chocolate/releases/)
   [![GitHub stars](https://img.shields.io/github/stars/ChocolateApp/Chocolate?style=social&label=Stars&color=blue)](https://github.com/ChocolateApp/Chocolate)
   [![GitHub watchers](https://img.shields.io/github/watchers/ChocolateApp/Chocolate?style=social&label=Watchers&color=blue)](https://github.com/ChocolateApp/Chocolate)
@@ -21,6 +22,10 @@ It's a free software.<br>
 <p style="display: inline-flex;
     align-items: center;">
 This product uses the TMDB API but is not endorsed or certified by TMDB | <img src="https://www.themoviedb.org/assets/2/v4/logos/v2/blue_square_1-5bdc75aaebeb75dc7ae79426ddd9be3b2be1e342510f8202baf6bffa71d7f5c4.svg" height="20px"></p><br>
+
+<a href="https://hosted.weblate.org/engage/chocolate/">
+  <img src="https://hosted.weblate.org/widget/chocolate/translation/multi-auto.svg"/>
+</a>
 
 ### Built With
 
@@ -42,27 +47,17 @@ This is what you have to do to get started with Chocolate :
 
 ### Installation
 
-#### For Linux
-* Go to the [latest release](https://github.com/ChocolateApp/Chocolate/releases/latest)
-* Download the latest installer named `install.sh`
-* Place it where you want
-* Run it
-* Enjoy !
-
-#### For Windows
-No installer available, either:
-* [Use Docker]( https://github.com/ChocolateApp/Chocolate#for-docker)
-* Install manually
-    * So download the source code and install the dependencies (requirements.txt, ffmpeg and winrar (only for cbr files so books))
-    * For ffmpeg and winrar, you have to add them to your PATH
+#### For Windows/Linux/Mac
+* Make sure you have at least python 3.10 and pip installed
+* Execute ```pip install chocolate_app```
+* To run chocolate, simply execute ```python -m chocolate_app``` or ```python3 -m chocolate_app```
 
 #### For QNAP
 * Go here: [https://www.myqnap.org/product/chocolate81/](https://www.myqnap.org/product/chocolate81/)
 * Enjoy !
 
 #### For Docker
-* Execute `docker pull imprevisible/chocolate`
-* Enjoy !
+* WIP (Release soon)
 
 ### Files organizations
 
@@ -146,14 +141,13 @@ Don't forget to give the project a star! Thanks again!
 4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-
+<!-- TO-DO -->
 ## TO-DO for Chocolate Server
 - [ ] A docker image **URGENT**
+- [ ] Allow library fusion (for example, if you have two libraries for movies, you can merge them, so only one library will be displayed)
 - [ ] Create a plugin system
 - [ ] Add the mobile ui of the video player
-- [ ] Add Musics
 - [ ] Add a watchtogether system
-- [ ] Translate in multiple languages
 - [ ] Multiple interface
 - [ ] Allow custom css
 - [ ] Statistics
@@ -165,10 +159,8 @@ Don't forget to give the project a star! Thanks again!
 - [ ] Use the GPU to encode videos if possible
 - [ ] Change season with the buttons
 - [ ] Add logs
-- [ ] Use arrow keys to change books pages
 - [ ] Design a UI for the path selection instead of a string
 - [ ] Use two pages for books on horizontal screen
-- [ ] Package on chocolatey
 - [ ] NFO support
 - [ ] Allow support of PosgreSQL/MySQL
 
@@ -176,108 +168,6 @@ Don't forget to give the project a star! Thanks again!
 - [ ] Detect series intro and skip them
 - [ ] Dev a mobile/TV app with chromecasting, and download
 - [ ] Add all audio tracks
-- [ ] Translate the rescan buttons
-
-<!--LANGUAGES TO TRANSLATE -->
-## Languages to translate
-
-- [X] AF: Afrikaans
-- [X] SQ: Albanian
-- [X] AM: Amharic
-- [X] AR: Arabic
-- [X] HY: Armenian
-- [X] AZ: Azerbaijani
-- [X] EU: Basque
-- [X] BE: Belarusian
-- [X] BN: Bengali
-- [X] BS: Bosnian
-- [X] BG: Bulgarian
-- [X] CA: Catalan
-- [X] NY: Chichewa
-- [X] CO: Corsican
-- [X] HR: Croatian
-- [X] CS: Czech
-- [X] DA: Danish
-- [X] NL: Dutch
-- [X] EN: English
-- [X] EO: Esperanto
-- [X] ET: Estonian
-- [X] FI: Finnish
-- [X] FR: French
-- [ ] FY: Frisian
-- [ ] GL: Galician
-- [ ] KA: Georgian
-- [X] DE: German
-- [ ] EL: Greek
-- [ ] GU: Gujarati
-- [ ] HT: Haitian Creole
-- [ ] HA: Hausa
-- [ ] HE: Hebrew
-- [ ] HI: Hindi
-- [ ] HU: Hungarian
-- [ ] IS: Icelandic
-- [ ] IG: Igbo
-- [ ] ID: Indonesian
-- [ ] GA: Irish
-- [X] IT: Italian
-- [ ] JA: Japanese
-- [ ] JV: Javanese
-- [ ] KN: Kannada
-- [ ] KK: Kazakh
-- [ ] KM: Khmer
-- [ ] KO: Korean
-- [ ] KU: Kurdish (Kurmanji)
-- [ ] LO: Lao
-- [ ] LA: Latin
-- [ ] LV: Latvian
-- [ ] LT: Lithuanian
-- [ ] LB: Luxembourgish
-- [ ] MK: Macedonian
-- [ ] MG: Malagasy
-- [ ] MS: Malay
-- [ ] ML: Malayalam
-- [ ] MT: Maltese
-- [X] ZH: Mandarin
-- [ ] MI: Maori
-- [ ] MR: Marathi
-- [ ] MN: Mongolian
-- [ ] NE: Nepali
-- [ ] NO: Norwegian
-- [ ] PS: Pashto
-- [ ] FA: Persian
-- [ ] PL: Polish
-- [ ] PT: Portuguese
-- [ ] PA: Punjabi
-- [ ] RO: Romanian
-- [ ] RU: Russian
-- [ ] SM: Samoan
-- [ ] GD: Scots Gaelic
-- [ ] SR: Serbian
-- [ ] SN: Shona
-- [ ] SD: Sindhi
-- [ ] SK: Slovak
-- [ ] SL: Slovenian
-- [ ] SO: Somali
-- [X] ES: Spanish
-- [ ] SU: Sundanese
-- [ ] SW: Swahili
-- [ ] SV: Swedish
-- [ ] TG: Tajik
-- [ ] TA: Tamil
-- [ ] TT: Tatar
-- [ ] TE: Telugu
-- [ ] TH: Thai
-- [ ] TR: Turkish
-- [ ] TK: Turkmen
-- [ ] UK: Ukrainian
-- [ ] UR: Urdu
-- [ ] UZ: Uzbek
-- [ ] VI: Vietnamese
-- [ ] CY: Welsh
-- [ ] XH: Xhosa
-- [ ] YI: Yiddish
-- [ ] YO: Yoruba
-- [ ] ZU: Zuluv
 
 <!-- CONTACT -->
 ## Contact
