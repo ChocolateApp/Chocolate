@@ -263,7 +263,10 @@ def is_connected():
 
 
 def print_loading(filesList, index, title):
-    terminal_size = os.get_terminal_size().columns - 1
+    try:
+        terminal_size = os.get_terminal_size().columns - 1
+    except OSError:
+        terminal_size = 100
     percentage = index * 100 / len(filesList)
 
     loading_first_part = ("•" * int(percentage * 0.2))[:-1]
