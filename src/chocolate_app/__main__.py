@@ -3524,3 +3524,5 @@ def start_chocolate():
                 pass
 
         app.run(host="0.0.0.0", port="8888")
+
+start_chocolate()

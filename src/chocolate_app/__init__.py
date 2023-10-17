@@ -81,15 +81,8 @@ if IMAGES_PATH.endswith("/"):
 
 
 def create_app():
-    is_in_docker = os.environ.get("AM_I_IN_A_DOCKER_CONTAINER", False)
-    TEMPLATE_FOLDER = ""
-
-    if is_in_docker:
-        dir_path = "/chocolate"
-        TEMPLATE_FOLDER = f"{dir_path}/templates"
-    else:
-        dir_path = pathlib.Path(__package__).parent
-        TEMPLATE_FOLDER = f"{dir_path}/templates"
+    dir_path = pathlib.Path(__package__).parent
+    TEMPLATE_FOLDER = f"{dir_path}/templates"
 
     if not os.path.isdir(IMAGES_PATH):
         os.mkdir(IMAGES_PATH)
@@ -136,12 +129,7 @@ def check_dependencies():
 
 
 def get_dir_path():
-    is_in_docker = os.environ.get("AM_I_IN_A_DOCKER_CONTAINER", False)
-
-    if is_in_docker:
-        dir_path = "/chocolate"
-    else:
-        dir_path = os.path.dirname(__file__).replace("\\", "/")
+    dir_path = os.path.dirname(__file__).replace("\\", "/")
 
     return dir_path
 
