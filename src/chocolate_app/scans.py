@@ -199,7 +199,6 @@ def createAlbum(name, artist_id, tracks=[], library=""):
 
     return album_id
 
-
 def getAlbumImage(album_name, path):
     album = deezer.search_albums(album_name)
     if len(album) == 0:
