@@ -138,7 +138,7 @@ def save_image(url, path, width=600, ratio=73/50):
         
         try:
             image = Image.open(f"{path}.png")
-        except UnidentifiedImageError or FileNotFoundError:
+        except:
             return "/static/images/broken" + "Banner" * ("Banner" in path) + ".png"
         #resize image but don't crop it
         image = image.resize((width, height), Image.ANTIALIAS)
