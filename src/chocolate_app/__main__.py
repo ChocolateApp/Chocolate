@@ -59,6 +59,8 @@ dir_path = get_dir_path()
 with app.app_context():
     DB.create_all()
 
+LOG_LEVEL = "error"
+
 log = logging.getLogger("werkzeug")
 log.setLevel(logging.DEBUG)
 
@@ -69,11 +71,9 @@ with warnings.catch_warnings():
 
 langs_dict = GoogleTranslator().get_supported_languages(as_dict=True)
 
-
 @LOGIN_MANAGER.user_loader
 def load_user(id):
     return Users.query.get(int(id))
-
 
 try:
     repo = git.Repo(search_parent_directories=True)
@@ -81,6 +81,15 @@ try:
 except Exception:
     last_commit_hash = "xxxxxxx"
 
+VIDEO_CODEC = os.getenv("VIDEO_CODEC", "libx264")
+if VIDEO_CODEC == "":
+    VIDEO_CODEC = "libx264"
+
+FFMPEG_ARGS = os.getenv("FFMPEG_ARGS", "")
+if FFMPEG_ARGS == "":
+    FFMPEG_ARGS = []
+else:
+    FFMPEG_ARGS = FFMPEG_ARGS.split(" ")
 
 def translate(string):
     language = config["ChocolateSettings"]["language"]
@@ -323,13 +332,13 @@ def get_gpu_brand():
         return "Apple"
     else:
         return "UNKNOWN"
-    
-    
+
+
 
 @app.route("/language_file")
 def language_file():
     language = config["ChocolateSettings"]["language"]
-    
+
     if (
         not os.path.isfile(f"{dir_path}/static/lang/{language.lower()}.json")
         or "{}"
@@ -541,12 +550,13 @@ def get_chunk_serie(episode_id, idx=0):
 
     time_start = str(datetime.timedelta(seconds=seconds))
     time_end = str(datetime.timedelta(seconds=seconds + CHUNK_LENGTH))
-    log_level_value = "error"
+
     command = [
         "ffmpeg",
+        FFMPEG_ARGS,
         "-hide_banner",
         "-loglevel",
-        log_level_value,
+        LOG_LEVEL,
         "-ss",
         time_start,
         "-to",
@@ -556,7 +566,7 @@ def get_chunk_serie(episode_id, idx=0):
         "-output_ts_offset",
         time_start,
         "-c:v",
-        "libx264",
+        VIDEO_CODEC,
         "-c:a",
         "aac",
         "-b:a",
@@ -567,6 +577,8 @@ def get_chunk_serie(episode_id, idx=0):
         "mpegts",
         "pipe:1",
     ]
+
+    command = [item for sublist in command for item in (sublist if isinstance(sublist, list) else [sublist])]
 
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
 
@@ -597,7 +609,7 @@ def get_chunk_serie_quality(quality, episode_id, idx=0):
     new_height = round(float(width) / float(height) * new_width)
     if (new_height % 2) != 0:
         new_height += 1
-    log_level_value = "error"
+
 
     bitrate = {
         "1080": "192k",
@@ -610,9 +622,10 @@ def get_chunk_serie_quality(quality, episode_id, idx=0):
 
     command = [
         "ffmpeg",
+        FFMPEG_ARGS,
         "-hide_banner",
         "-loglevel",
-        log_level_value,
+        LOG_LEVEL,
         "-ss",
         time_start,
         "-to",
@@ -622,7 +635,7 @@ def get_chunk_serie_quality(quality, episode_id, idx=0):
         "-output_ts_offset",
         time_start,
         "-c:v",
-        "libx264",
+        VIDEO_CODEC,
         "-vf",
         f"scale={new_height}:{new_width}",
         "-c:a",
@@ -635,7 +648,7 @@ def get_chunk_serie_quality(quality, episode_id, idx=0):
         "mpegts",
         "pipe:1",
     ]
-
+    command = [item for sublist in command for item in (sublist if isinstance(sublist, list) else [sublist])]
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
 
     response = make_response(pipe.stdout.read())
@@ -658,13 +671,14 @@ def chunk_movie(movie_id, idx=0):
 
     time_start = str(datetime.timedelta(seconds=seconds))
     time_end = str(datetime.timedelta(seconds=seconds + CHUNK_LENGTH))
-    log_level_value = "error"
+
 
     command = [
         "ffmpeg",
+        FFMPEG_ARGS,
         "-hide_banner",
         "-loglevel",
-        log_level_value,
+        LOG_LEVEL,
         "-ss",
         time_start,
         "-to",
@@ -674,7 +688,7 @@ def chunk_movie(movie_id, idx=0):
         "-output_ts_offset",
         time_start,
         "-c:v",
-        "libx264",
+        VIDEO_CODEC,
         "-c:a",
         "aac",
         "-b:a",
@@ -685,6 +699,7 @@ def chunk_movie(movie_id, idx=0):
         "mpegts",
         "pipe:1",
     ]
+    command = [item for sublist in command for item in (sublist if isinstance(sublist, list) else [sublist])]
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
 
     response = make_response(pipe.stdout.read())
@@ -735,24 +750,23 @@ def get_chunk_quality(quality, movie_id, idx=0):
     if v_bitrate < 1500:
         v_bitrate = 1500
 
-    log_level_value = "error"
+
     command = [
         "ffmpeg",
+        FFMPEG_ARGS,
         "-hide_banner",
         "-loglevel",
-        log_level_value,
+        LOG_LEVEL,
         "-ss",
         time_start,
         "-to",
         time_end,
-        "-hwaccel",
-        "auto",
         "-i",
         video_path,
         "-output_ts_offset",
         time_start,
         "-c:v",
-        "libx264",
+        VIDEO_CODEC,
         "-vf",
         f"scale={new_height}:{new_width}",
         "-c:a",
@@ -765,7 +779,7 @@ def get_chunk_quality(quality, movie_id, idx=0):
         "mpegts",
         "pipe:1",
     ]
-
+    command = [item for sublist in command for item in (sublist if isinstance(sublist, list) else [sublist])]
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
 
     response = make_response(pipe.stdout.read())
@@ -788,13 +802,14 @@ def get_chunk_other(hash, idx=0):
 
     time_start = str(datetime.timedelta(seconds=seconds))
     time_end = str(datetime.timedelta(seconds=seconds + CHUNK_LENGTH))
-    log_level_value = "error"
+
 
     command = [
         "ffmpeg",
+        FFMPEG_ARGS,
         "-hide_banner",
         "-loglevel",
-        log_level_value,
+        LOG_LEVEL,
         "-ss",
         time_start,
         "-to",
@@ -804,7 +819,7 @@ def get_chunk_other(hash, idx=0):
         "-output_ts_offset",
         time_start,
         "-c:v",
-        "libx264",
+        VIDEO_CODEC,
         "-c:a",
         "aac",
         "-b:a",
@@ -815,6 +830,7 @@ def get_chunk_other(hash, idx=0):
         "mpegts",
         "pipe:1",
     ]
+    command = [item for sublist in command for item in (sublist if isinstance(sublist, list) else [sublist])]
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
 
     response = make_response(pipe.stdout.read())
@@ -854,12 +870,13 @@ def get_chunk_other_quality(quality, hash, idx=0):
         "144": "64k",
     }
 
-    log_level_value = "error"
+
     command = [
         "ffmpeg",
+        FFMPEG_ARGS,
         "-hide_banner",
         "-loglevel",
-        log_level_value,
+        LOG_LEVEL,
         "-ss",
         time_start,
         "-to",
@@ -869,7 +886,7 @@ def get_chunk_other_quality(quality, hash, idx=0):
         "-output_ts_offset",
         time_start,
         "-c:v",
-        "libx264",
+        VIDEO_CODEC,
         "-vf",
         f"scale={new_height}:{new_width}",
         "-c:a",
@@ -882,7 +899,7 @@ def get_chunk_other_quality(quality, hash, idx=0):
         "mpegts",
         "pipe:1",
     ]
-
+    command = [item for sublist in command for item in (sublist if isinstance(sublist, list) else [sublist])]
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
 
     response = make_response(pipe.stdout.read())
@@ -903,6 +920,7 @@ def chunk_caption(movie_id, index):
     video_path = movie.slug
     extract_captions_command = [
         "ffmpeg",
+        FFMPEG_ARGS,
         "-hide_banner",
         "-loglevel",
         "error",
@@ -958,6 +976,7 @@ def chunk_caption_serie(language, index, episode_id):
 
     extract_captions_command = [
         "ffmpeg",
+        FFMPEG_ARGS,
         "-hide_banner",
         "-loglevel",
         "error",
@@ -1019,7 +1038,7 @@ def get_all_movies(library):
         "duration",
     ]
 
-    
+
     merged_lib = LibrariesMerge.query.filter_by(parent_lib=library).all()
     merged_lib = [child.child_lib for child in merged_lib]
 
@@ -1034,7 +1053,7 @@ def get_all_movies(library):
                 del movie[key]
 
     movies_list = natsort.natsorted(movies_list, key=itemgetter(*["real_title"]))
-    
+
     return jsonify(movies_list)
 
 
@@ -1880,7 +1899,7 @@ def edit_serie(id, library):
                 "folder_title": serie["original_name"],
             }
             return jsonify(data, default=transform, indent=4)
-        
+
         serie_info = sorted(serie_info, key=lambda k: k["popularity"], reverse=True)
 
         real_series = []
@@ -1931,7 +1950,7 @@ def edit_serie(id, library):
 
         cover = save_image(f"https://image.tmdb.org/t/p/original{res.poster_path}", f"{IMAGES_PATH}/{serie_id}_Cover")
         banner = save_image(f"https://image.tmdb.org/t/p/original{res.backdrop_path}", f"{IMAGES_PATH}/{serie_id}_Banner")
-        
+
         description = res["overview"]
         note = res.vote_average
         date = res.first_air_date
@@ -2219,7 +2238,7 @@ def get_all_others(library):
 
     other = OthersVideos.query.filter_by(library_name=the_lib.lib_name).all()
     other_list = [video.__dict__ for video in other]
-    
+
     merged_lib = LibrariesMerge.query.filter_by(parent_lib=library).all()
     merged_lib = [child.child_lib for child in merged_lib]
 
@@ -2531,8 +2550,10 @@ def search_playlists(library, search):
             if term in name:
                 count += 1
             for track in tracks:
-                track = Tracks.query.filter_by(id=track).first().name.lower()
-                if term in track:
+                track = Tracks.query.filter_by(id=track).first()
+                if not track:
+                    continue
+                if term in track.name.lower():
                     count += 1
         if count > 0:
             data = playlist
@@ -3302,12 +3323,7 @@ def download_movie(movie_id):
     if not can_download:
         return jsonify({"error": "download not allowed"})
     movie = Movies.query.filter_by(id=movie_id).first()
-    movie_path = movie.slug
-    movie_library = movie.library_name
-    library = Libraries.query.filter_by(lib_name=movie_library).first()
-    library_path = library.lib_folder
-    movie_path = f"{library_path}/{movie_path}"
-    return send_file(movie_path, as_attachment=True)
+    return send_file(movie.slug, as_attachment=True)
 
 
 @app.route("/download_episode/<episode_id>")
@@ -3415,10 +3431,9 @@ def artist_image(id):
 @app.route("/album_cover/<id>")
 def album_cover(id):
     album = Albums.query.filter_by(id=id).first()
-    album_cover = album.cover
-    if not os.path.exists(album_cover):
+    if not album or not os.path.exists(album.cover):
         abort(404)
-    return send_file(album_cover, as_attachment=True)
+    return send_file(album.cover, as_attachment=True)
 
 
 @app.route("/playlist_cover/<id>")
@@ -3429,10 +3444,10 @@ def playlist_cover(id):
         playlist_cover = playlist.cover
     elif playlist:
         playlist_cover = f"{dir_path}/static/img/likes.webp"
-    
+
     if playlist_cover is None or not os.path.exists(playlist_cover):
         abort(404)
-    
+
     print(playlist_cover)
     return send_file(playlist_cover, as_attachment=True, mimetype="image/webp", download_name=f"Playlist_{id}.webp")
 
