@@ -79,6 +79,8 @@ IMAGES_PATH = IMAGES_PATH.replace("\\", "/")
 if IMAGES_PATH.endswith("/"):
     IMAGES_PATH = IMAGES_PATH[:-1]
 
+if os.getenv("NO_SCANS") == "true":
+    ARGUMENTS.no_scans = True
 
 def create_app():
     dir_path = pathlib.Path(__package__).parent
