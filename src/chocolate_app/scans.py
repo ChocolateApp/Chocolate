@@ -39,7 +39,7 @@ from .tables import (
 )
 
 
-from .utils.utils import path_join, save_image, is_video_file, is_music_file, is_book_file, is_image_file, is_directory
+from .utils.utils import path_join, save_image, is_video_file, is_music_file, is_book_file, is_image_file, is_directory, log
 
 dir_path = get_dir_path()
 
@@ -120,7 +120,9 @@ def length_video(path: str) -> float:
     )
     try:
         return float(seconds.stdout)
-    except Exception:
+    except Exception as e:
+        log_message = f"Error while getting the length of the video {path}: {e}"
+        log("ERROR", "LENGTH VIDEO", log_message)
         return 0
 
 
@@ -410,6 +412,8 @@ def IGDBRequest(url, console):
                     }
                     return game_data
                 except Exception:
+                    log_message = f"Error while getting the game {game['name']} from IGDB"
+                    log("ERROR", "GAME SCAN", log_message)
                     continue
         return None
 
@@ -417,7 +421,7 @@ def IGDBRequest(url, console):
 def getMovies(library_name):
     all_movies_not_sorted = []
     path = Libraries.query.filter_by(lib_name=library_name).first().lib_folder
-    
+
     movie_files = Movies.query.filter_by(library_name=library_name).all()
     for movie in movie_files:
         slug = movie.slug
@@ -428,9 +432,9 @@ def getMovies(library_name):
     film_file_list = []
     if not os.path.exists(path):
         return
-    
+
     movie_files = os.listdir(path)
-    
+
     for movie_file in movie_files:
         if is_video_file(movie_file) or is_directory(path_join(path, movie_file)):
             film_file_list.append(movie_file)
@@ -445,7 +449,12 @@ def getMovies(library_name):
         movieTitle = searchedFilm
         if os.path.isdir(path_join(path, searchedFilm)):
             the_path = path_join(path, searchedFilm)
-            searchedFilm = path_join(searchedFilm, os.listdir(the_path)[0])
+            try:
+                searchedFilm = path_join(searchedFilm, os.listdir(the_path)[0])
+            except Exception as e:
+                log_message = f"Error while getting the movie {movieTitle}: {e}"
+                log("ERROR", "MOVIE SCAN", log_message)
+                continue
         else:
             movieTitle, extension = os.path.splitext(movieTitle)
         originalMovieTitle = movieTitle
@@ -531,7 +540,7 @@ def getMovies(library_name):
             casts = list(details.casts.cast)[:5]
             theCast = []
             for cast in casts:
-                
+
                 actor_id = cast.id
                 actorImage = save_image(f"https://www.themovieDB.org/t/p/w600_and_h900_bestv2{cast.profile_path}", f"{IMAGES_PATH}/Actor_{actor_id}")
                 if actor_id not in theCast:
@@ -616,7 +625,7 @@ def getMovies(library_name):
                             break
                         except KeyError:
                             bande_annonce_url = "Unknown"
-                            
+
             alternatives_names = []
             actualTitle = movieTitle
             characters = [" ", "-", "_", ":", ".", ",", "!", "'", "`", '"']
@@ -643,6 +652,7 @@ def getMovies(library_name):
             alternatives_names = list(dict.fromkeys(alternatives_names))
 
             alternatives_names = ",".join(alternatives_names)
+
             filmData = Movies(
                 id=movie_id,
                 title=movieTitle,
@@ -671,7 +681,7 @@ def getSeries(library_name):
     allSeriesPath = Libraries.query.filter_by(lib_name=library_name).first().lib_folder
     if not os.path.exists(allSeriesPath):
         return
-    
+
     allSeries = os.listdir(allSeriesPath)
     allSeriesName = []
     for dir in allSeries:
@@ -697,8 +707,9 @@ def getSeries(library_name):
 
         try:
             serie_modified_time = os.path.getmtime(seriePath)
-        except FileNotFoundError:
-            continue
+        except FileNotFoundError as e:
+            log_message = f"File {seriePath} not found: {e}"
+            log("ERROR", "SERIE SCAN", log_message)
 
         serie_guess = guessit(originalSerieTitle)
         if "title" in serie_guess:
@@ -712,7 +723,9 @@ def getSeries(library_name):
                 search = Search().tv_shows(serieTitle, release_year=serie_guess["year"])
             else:
                 search = Search().tv_shows(serieTitle)
-        except TMDbException:
+        except TMDbException as e:
+            log_message = f"Error while searching serie {serieTitle}: {e}"
+            log("ERROR", "SERIE SEARCH", log_message)
             break
 
         search = search.results
@@ -866,9 +879,11 @@ def getSeries(library_name):
                                 websites_trailers[bandeAnnonceHost] + bandeAnnonceKey
                             )
                             break
-                        except KeyError:
+                        except KeyError as e:
+                            log_message = f"Error while getting trailer for serie {serieTitle}: {e}"
+                            log("ERROR", "SERIE SCAN", log_message)
                             bande_annonce_url = "Unknown"
-                            
+
             genreList = []
             for genre in serieGenre:
                 genreList.append(str(genre.name))
@@ -944,8 +959,9 @@ def getSeries(library_name):
                 modified_date = seasonInDB.modified_date
                 try:
                     actualSeasonModifiedTime = os.path.getmtime(url)
-                except FileNotFoundError:
-                    continue
+                except FileNotFoundError as e:
+                    log_message = f"File {url} not found: {e}"
+                    log("ERROR", "SERIE SCAN", log_message)
             if seasonInDB is None or modified_date != actualSeasonModifiedTime:
                 try:
                     allEpisodes = [
@@ -953,8 +969,10 @@ def getSeries(library_name):
                         for f in os.listdir(season_dir)
                         if os.path.isfile(path_join(season_dir, f))
                     ]
-                except FileNotFoundError:
-                    continue
+                except FileNotFoundError as e:
+                    log_message = f"File {season_dir} not found: {e}"
+                    log("ERROR", "SERIE SCAN", log_message)
+
                 if seasonInDB:
                     seasonInDB.modified_date = modified_date
                     DB.session.commit()
@@ -1047,7 +1065,7 @@ def getSeries(library_name):
                                 episodeIndex = guess["season"]
                             elif "title" in guess:
                                 episodeIndex = guess["title"]
-                                
+
                             else:
                                 print(
                                     f"Can't find the episode index of {episodeName}, data: {guess}, slug: {slug}"
@@ -1061,7 +1079,7 @@ def getSeries(library_name):
                                 episodeIndex = "".join(episodeIndex)
 
                             exists = Episodes.query.filter_by(episode_number=int(episodeIndex), season_id=season_id).first() is not None
-                            
+
                             if not exists:
                                 #print(f"Episode {episodeIndex} of {serieTitle} for the Season {season_id} not found")
                                 if isinstance(season_id, int) or season_id.isnumeric():
@@ -1071,8 +1089,9 @@ def getSeries(library_name):
                                         episodeDetails = showEpisode.details(
                                             serie_id, season_number, episodeIndex
                                         )
-                                    except TMDbException:
-                                        #episode does not exist
+                                    except TMDbException as e:
+                                        log_message = f"Error while getting episode {episodeIndex} of season {season_number} of serie {serieTitle}: {e}"
+                                        log("ERROR", "SERIE SCAN", log_message)
                                         continue
                                     realEpisodeName = episodeDetails.name
                                     episodeInfo = showEpisode.details(
@@ -1080,7 +1099,6 @@ def getSeries(library_name):
                                     )
                                     episode_id = episodeInfo["id"]
                                 else:
-                                    print(f"Get episodeInfo of : E{episodeIndex} S{season_number} of {serieTitle}")
                                     episodeInfo = bigSeason["episodes"][
                                         int(episodeIndex) - 1
                                     ]
@@ -1088,7 +1106,7 @@ def getSeries(library_name):
                                     realEpisodeName = episodeInfo["name"]
 
                                 coverEpisode = save_image(f"https://image.tmdb.org/t/p/original{episodeInfo['still_path']}", f"{IMAGES_PATH}/{season_id}_{episode_id}_Episode_Banner")
-                                
+
                                 try:
                                     exists = (
                                         Episodes.query.filter_by(
@@ -1260,7 +1278,7 @@ def getSeries(library_name):
                                 break
                             except KeyError:
                                 bande_annonce_url = "Unknown"
-                                
+
                 genreList = []
                 for genre in serieGenre:
                     genreList.append(str(genre.name))
@@ -1402,7 +1420,7 @@ def getSeries(library_name):
                     realEpisodeName = episodeInfo["name"]
 
                 coverEpisode = save_image(f"https://image.tmdb.org/t/p/original{episodeInfo.still_path}", f"{IMAGES_PATH}/{season_id}_{episode_id}_Episode_Banner")
-                
+
                 try:
                     exists = (
                         Episodes.query.filter_by(episode_id=episode_id).first()
@@ -1494,7 +1512,9 @@ def getGames(library_name):
             if os.path.isdir(path_join(allGamesPath, name))
             and is_video_file(name)
         ]
-    except Exception:
+    except Exception as e:
+        log_message = f"Error while getting games in {allGamesPath} : {e}"
+        log("ERROR", "GAME SCAN", log_message)
         return
 
     for console in allConsoles:
@@ -1749,7 +1769,9 @@ def getOthersVideos(library, allVideosPath=None):
         allVideosPath = Libraries.query.filter_by(lib_name=library).first().lib_folder
         try:
             allVideos = os.listdir(allVideosPath)
-        except Exception:
+        except Exception as e:
+            log_message = f"Error while getting others videos in {allVideosPath} : {e}"
+            log("ERROR", "OTHER SCAN", log_message)
             return
     else:
         allVideos = os.listdir(f"{allVideosPath}")

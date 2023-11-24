@@ -307,7 +307,9 @@ def gpuname() -> str:
     """Returns the model name of the first available GPU"""
     try:
         gpus = GPUtil.getGPUs()
-    except Exception:
+    except Exception as e:
+        log_message = f"Unable to detect GPU model: {e}"
+        log("ERROR", "GPU", log_message)
         print(
             "Unable to detect GPU model."
         )
@@ -1580,14 +1582,16 @@ def get_artist_tracks(artist_id):
         try:
             album_name = Albums.query.filter_by(id=track["album_id"]).first().name
             track["album_name"] = album_name
-        except Exception:
-            pass
+        except Exception as e:
+            log_message = f"Error while getting album name for track {track['id']}: {e}"
+            log("ERROR", "GET_ARTIST_TRACKS", log_message)
 
         try:
             artist_name = Artists.query.filter_by(id=track["artist_id"]).first().name
             track["artist_name"] = artist_name
         except Exception:
-            pass
+            log_message = f"Error while getting artist name for track {track['id']}: {e}"
+            log("ERROR", "GET_ARTIST_TRACKS", log_message)
 
     return jsonify(tracks_list)
 
@@ -1790,8 +1794,9 @@ def edit_movie(id, library):
                     )
                     break
                 except KeyError as e:
+                    log_message = f"Error while getting the trailer of the movie {the_movie.real_title} : {e}"
+                    log("ERROR", "SERVER", log_message)
                     bande_annonce_url = "Unknown"
-                    print(e)
 
     the_movie.bande_annonce_url = bande_annonce_url
     the_movie.adult = str(movie_info.adult)
@@ -1930,8 +1935,9 @@ def edit_serie(id, library):
             cover = f"{dir_path}{season.season_cover_path}"
             try:
                 os.remove(cover)
-            except FileNotFoundError:
-                pass
+            except FileNotFoundError as e:
+                log_message = f"Error while deleting the cover of the season {season.season_number} of the serie {the_serie.original_name} : {e}"
+                log("ERROR", "SERIE EDIT", log_message)
             episodes = Episodes.query.filter_by(season_id=season.season_number).all()
             for episode in episodes:
                 cover = f"{dir_path}{episode.episode_cover_path}"
@@ -1977,8 +1983,9 @@ def edit_serie(id, library):
                         )
                         break
                     except KeyError as e:
+                        log_message = f"Error while getting the trailer of the serie {the_serie.original_name} : {e}"
+                        log("ERROR", "SERIE EDIT", log_message)
                         bande_annonce_url = "Unknown"
-                        print(e)
         genre_list = []
         for genre in serie_genre:
             genre_list.append(str(genre.name))
@@ -3492,8 +3499,9 @@ def start_chocolate():
                     ],
                     start=start_time,
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                log_message = f"Error while updating Discord RPC: {e}"
+                log("ERROR", "Discord RPC", log_message)
 
         with app.app_context():
             if not ARGUMENTS.no_scans and config["APIKeys"]["TMDB"] != "Empty":
@@ -3535,8 +3543,9 @@ def start_chocolate():
                     ],
                     start=time(),
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                log_message = f"Error while updating Discord RPC: {e}"
+                log("ERROR", "Discord RPC", log_message)
 
         app.run(host="0.0.0.0", port="8888")
 

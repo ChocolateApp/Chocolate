@@ -58,9 +58,12 @@ def generate_log(request, component):
     log("INFO", component, message)
 
 
-def log(log_type, log_composant, log_message):
+def log(log_type, log_composant=None, log_message=""):
     the_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    log = f"{the_time} - [{log_type}] [{log_composant}] {log_message}\n"
+    log = f"{the_time} - [{log_type}]"
+    if log_composant:
+        log += f" [{log_composant}] {log_message}\n"
+
 
     # if file does not exist, create it
     if not os.path.exists(LOG_PATH):
@@ -108,7 +111,7 @@ def check_authorization(request, token, library=None):
 
 def user_in_lib(user_id, lib):
     user = Users.query.filter_by(id=user_id).first()
-    
+
     if not user or not lib:
         return False
 
@@ -135,7 +138,7 @@ def save_image(url, path, width=600, ratio=73/50):
     if not os.path.exists(f"{path}.webp"):
         with open(f"{path}.png", "wb") as f:
             f.write(image_requests.get(url).content)
-        
+
         try:
             image = Image.open(f"{path}.png")
         except UnidentifiedImageError:
