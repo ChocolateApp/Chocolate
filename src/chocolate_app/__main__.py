@@ -1580,7 +1580,11 @@ def get_artist_tracks(artist_id):
     for track in tracks_list:
         del track["_sa_instance_state"]
         try:
-            album_name = Albums.query.filter_by(id=track["album_id"]).first().name
+            album_name = Albums.query.filter_by(id=track["album_id"]).first()
+            if album_name:
+                album_name = album_name.name
+            else:
+                album_name = "Track"
             track["album_name"] = album_name
         except Exception as e:
             log_message = f"Error while getting album name for track {track['id']}: {e}"
