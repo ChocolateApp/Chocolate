@@ -14,11 +14,16 @@
 
 </div>
 
+**Thanks everyone for the support, I'm still working on Chocolate, way less due to my studies, but I'm still here !**<br>
+**I'm currently working on the 7.2.0 version, which will include the docker image, for all the GPU/CPU users.**<br>
+**I have a lot of ideas for the future, I'm looking at how to make a plugin system, and a watchtogether system, and I'm working on an intro detection system.**<br>
+
 ## About The Project
 Chocolate is a free and Open Source media manager.<br>
 It allows you to manage your media collection and organize it in a way that is easy to use and easy to search.<br>
 Pair your popcorn with Chocolate and enjoy your favorite movie!<br>
 It's a free software.<br>
+
 <p style="display: inline-flex;
     align-items: center;">
 This product uses the TMDB API but is not endorsed or certified by TMDB | <img src="https://www.themoviedb.org/assets/2/v4/logos/v2/blue_square_1-5bdc75aaebeb75dc7ae79426ddd9be3b2be1e342510f8202baf6bffa71d7f5c4.svg" height="20px"></p><br>
@@ -71,7 +76,7 @@ This is what you have to do to get started with Chocolate :
 * Create a directory where you will put all your shows
 * Choose between two ways to organize your shows :
   * One directory per show, with directories for each season, and files for each episode
-  * All files in one directory, for all shows, with a good name that can be analyzed 
+  * All files in one directory, for all shows, with a good name that can be analyzed
 * Create a new library and select the directory you created with the specific type
 * It's done
 
@@ -180,7 +185,7 @@ Impre'visible#2576 - [@romeo_chevrier](https://twitter.com/romeo_chevrier) - imp
 <!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments
 
-If you like this project, please consider giving me a star ⭐ to support my work and the futures update of this project. 
+If you like this project, please consider giving me a star ⭐ to support my work and the futures update of this project.
 [![stars - Chocolate](https://img.shields.io/github/stars/ChocolateApp/Chocolate?style=social)](https://github.com/ChocolateApp/Chocolate)
 
 This tool was made by Impre-visible, some features needed the help of several volunteers, that I thank, you can contact them on this server : [Dev'Area](https://discord.gg/hTmbFePH)
