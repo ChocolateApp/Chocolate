@@ -107,7 +107,7 @@ def create_app():
         __name__, static_folder=f"{dir_path}/static", template_folder=TEMPLATE_FOLDER
     )
 
-    app.secret_key = "ChocolateDBPassword"
+    app.secret_key = os.urandom(24)
 
     CORS(app, supports_credentials=True, resources={r"/*": {"origins": "*"}})
     app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
