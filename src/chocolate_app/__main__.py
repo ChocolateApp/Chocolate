@@ -52,6 +52,7 @@ from . import (
 from .tables import Language, Movies, Series, Seasons, Episodes, OthersVideos, Users, Libraries, Books, Artists, MusicLiked, MusicPlayed, Playlists, Tracks, Albums, Actors, Games, LatestEpisodeWatched, LibrariesMerge
 from . import scans
 from .utils.utils import generate_log, check_authorization, user_in_lib, save_image, is_image_file
+from .plugins_loader import events
 
 app = create_app()
 dir_path = get_dir_path()
@@ -1018,6 +1019,7 @@ def get_all_movies(library):
     username = all_auth_tokens[token]["user"]
 
     movies = Movies.query.filter_by(library_name=library).all()
+    print(movies)
     user = Users.query.filter_by(name=username).first()
 
     movies_list = [movie.__dict__ for movie in movies]
@@ -1055,7 +1057,6 @@ def get_all_movies(library):
                 del movie[key]
 
     movies_list = natsort.natsorted(movies_list, key=itemgetter(*["real_title"]))
-
     return jsonify(movies_list)
 
 
@@ -2957,6 +2958,9 @@ def whoami():
 def main_movie(movie_id):
     movie_id = movie_id.replace(".m3u8", "")
     movie = Movies.query.filter_by(id=movie_id).first()
+
+    events.movie_play_event(movie_id)
+
     video_path = movie.slug
     video_properties = get_video_properties(video_path)
     height = int(video_properties["height"])
@@ -3088,6 +3092,9 @@ def can_i_play_other_video(video_hash):
 @app.route("/main_serie/<episode_id>")
 def main_serie(episode_id):
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
+
+    events.serie_play_event(episode_id)
+
     episode_path = episode.slug
 
     video_properties = get_video_properties(episode_path)

@@ -10,6 +10,7 @@ from werkzeug.security import generate_password_hash
 from chocolate_app import DB, get_dir_path, all_auth_tokens, IMAGES_PATH
 from chocolate_app.tables import Users, InviteCodes
 from ..utils.utils import check_authorization, generate_log
+from ..plugins_loader import events
 
 
 dir_path = get_dir_path()
@@ -49,19 +50,27 @@ def login():
     if user:
         if user.account_type == "Kid":
             generate_log(request, "LOGIN")
+            events.login_event(user.__dict__)
             return jsonify(
                 {"id": user.id, "name": user.name, "error": "None", "token": auth_token}
             )
         elif user.verify_password(account_password):
             generate_log(request, "LOGIN")
+            events.login_event(user.__dict__)
             return jsonify(
                 {"id": user.id, "name": user.name, "error": "None", "token": auth_token}
             )
         else:
             generate_log(request, "ERROR")
+            user = user.__dict__
+            user["error"] = "Unauthorized"
+            events.login_event(user)
             return jsonify({"error": "Unauthorized"})
     else:
         generate_log(request, "ERROR")
+        user = user.__dict__
+        user["error"] = "Unauthorized"
+        events.login_event(user)
         return jsonify({"error": "Unauthorized"})
 
 
@@ -208,6 +217,8 @@ def delete_account():
     user = Users.query.filter_by(id=id).first()
     DB.session.delete(user)
     DB.session.commit()
+
+    events.user_delete_event(user.__dict__)
 
     return jsonify(
         {

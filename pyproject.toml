@@ -36,6 +36,7 @@ dependencies = [
     "tmdbv3api>=1.9.0",
     "natsort>=8.4.0",
     "PyMuPdf>=1.22.5",
+    "pyyaml>=6.0.1",
 ]
 requires-python = ">=3.10"
 readme = "README.md"

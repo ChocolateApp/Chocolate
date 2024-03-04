@@ -18,6 +18,7 @@ from chocolate_app.tables import (
 )
 import chocolate_app.scans as scans
 from ..utils.utils import generate_log
+from ..plugins_loader import events
 
 libraries_bp = Blueprint("libraries", __name__)
 
@@ -154,6 +155,9 @@ def create_lib():
         )
         DB.session.add(new_lib)
         DB.session.commit()
+
+        events.new_library_event(lib_name.__dict__)
+
         try:
             function_to_call[lib_type](lib_name)
         except Exception:
@@ -236,6 +240,9 @@ def delete_lib():
             DB.session.delete(other)
 
     DB.session.commit()
+
+    events.library_delete_event(lib_name.__dict__)
+
     return jsonify({"error": "worked"})
 
 

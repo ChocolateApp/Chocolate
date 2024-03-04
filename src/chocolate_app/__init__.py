@@ -14,6 +14,8 @@ from flask_migrate import Migrate
 
 from tmdbv3api import TMDb
 
+from plugins_loader import loader
+
 DB = SQLAlchemy()
 MIGRATE = Migrate()
 LOGIN_MANAGER = LoginManager()
@@ -32,6 +34,7 @@ parser = argparse.ArgumentParser("Chocolate")
 parser.add_argument("--config", help="Path to the config file (a .ini file)")
 parser.add_argument("--db", help="Path to the database file (a .db file)")
 parser.add_argument("--images", help="Path to the images folder (a folder)")
+parser.add_argument("--plugins", help="Path to the plugins folder (a folder)")
 parser.add_argument("--logs", help="Path to the logs file (a .log file)")
 parser.add_argument("--no-scans", help="Disable startup scans", action="store_true")
 
@@ -42,18 +45,21 @@ paths = {
         "config": f"{os.getenv('APPDATA')}/Chocolate/config.ini",
         "db": f"{os.getenv('APPDATA')}/Chocolate/database.db",
         "images": f"{os.getenv('APPDATA')}/Chocolate/images",
+        "plugins": f"{os.getenv('APPDATA')}/Chocolate/plugins",
         "logs": f"{os.getenv('APPDATA')}/Chocolate/server.log",
     },
     "Linux": {
         "config": "/var/chocolate/config.ini",
         "db": "/var/chocolate/database.db",
         "images": "/var/chocolate/images/",
+        "plugins": "/var/chocolate/plugins/",
         "logs": "/var/chocolate/server.log",
     },
     "Darwin": {
         "config": f"{os.getenv('HOME')}/Library/Application Support/Chocolate/config.ini",
         "db": f"{os.getenv('HOME')}/Library/Application Support/Chocolate/database.db",
         "images": f"{os.getenv('HOME')}/Library/Application Support/Chocolate/images/",
+        "plugins": f"{os.getenv('HOME')}/Library/Application Support/Chocolate/plugins/",
         "logs": f"{os.getenv('HOME')}/Library/Application Support/Chocolate/server.log",
     },
 }
@@ -78,6 +84,12 @@ IMAGES_PATH = ARGUMENTS.images or paths[OPERATING_SYSTEM]["images"]
 IMAGES_PATH = IMAGES_PATH.replace("\\", "/")
 if IMAGES_PATH.endswith("/"):
     IMAGES_PATH = IMAGES_PATH[:-1]
+
+PLUGINS_PATH = ARGUMENTS.plugins or paths[OPERATING_SYSTEM]["plugins"]
+PLUGINS_PATH = PLUGINS_PATH.replace("\\", "/")
+if PLUGINS_PATH.endswith("/"):
+    PLUGINS_PATH = PLUGINS_PATH[:-1]
+
 
 if os.getenv("NO_SCANS") == "true":
     ARGUMENTS.no_scans = True
@@ -173,8 +185,11 @@ def write_config(config):
     with open(CONFIG_PATH, "w") as configfile:
         config.write(configfile)
 
+def register_plugins():
+    loader.load_plugins(PLUGINS_PATH)
 
 check_dependencies()
+register_plugins()
 
 config = get_config()
 tmdb = create_tmdb()

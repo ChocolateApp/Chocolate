@@ -38,8 +38,8 @@ from .tables import (
     Books,
 )
 
-
 from .utils.utils import path_join, save_image, is_video_file, is_music_file, is_book_file, is_image_file, is_directory, log
+from .plugins_loader import events
 
 dir_path = get_dir_path()
 
@@ -145,6 +145,8 @@ def createArtist(artistName, lib):
     DB.session.add(artist)
     DB.session.commit()
 
+    events.new_artist_event(artist.__dict__)
+
     return artist_id
 
 
@@ -198,6 +200,8 @@ def createAlbum(name, artist_id, tracks=[], library=""):
     )
     DB.session.add(album)
     DB.session.commit()
+
+    events.new_album_event(album.__dict__)
 
     return album_id
 
@@ -674,8 +678,7 @@ def getMovies(library_name):
             )
             DB.session.add(filmData)
             DB.session.commit()
-
-
+            events.new_movie_event(filmData.__dict__)
 
 def getSeries(library_name):
     allSeriesPath = Libraries.query.filter_by(lib_name=library_name).first().lib_folder
@@ -939,6 +942,7 @@ def getSeries(library_name):
             )
             DB.session.add(serieObject)
             DB.session.commit()
+            events.new_serie_event(serieObject.__dict__)
 
         for season in seasonsInfo:
             season = transformToDict(season)
@@ -1050,6 +1054,7 @@ def getSeries(library_name):
                             DB.session.rollback()
                             DB.session.add(thisSeason)
                             DB.session.commit()
+                        events.new_season_event(thisSeason.__dict__)
                     if len(allEpisodes) != len(allEpisodesInDB):
                         for episode in allEpisodes:
                             slug = f"{season_dir}/{episode}"
@@ -1146,6 +1151,7 @@ def getSeries(library_name):
                                         DB.session.rollback()
                                         DB.session.add(episodeData)
                                         DB.session.commit()
+                                    events.new_episode_event(episodeData.__dict__)
                         else:
                             pass
 
@@ -1336,6 +1342,7 @@ def getSeries(library_name):
                 )
                 DB.session.add(serieObject)
                 DB.session.commit()
+                events.new_serie_event(serieObject.__dict__)
 
             # print(f"Pour {file}, serie_id = {serie_id} et season_id = {season_id}")
 
@@ -1377,6 +1384,7 @@ def getSeries(library_name):
 
                 DB.session.add(seasonObject)
                 DB.session.commit()
+                events.new_season_event(seasonObject.__dict__)
 
             bigSeason = season_api
 
@@ -1456,6 +1464,7 @@ def getSeries(library_name):
                         DB.session.rollback()
                         DB.session.add(episodeData)
                         DB.session.commit()
+                    events.new_episode_event(episodeData.__dict__)
 
     allSeriesInDB = Series.query.all()
     allSeriesInDB = [
@@ -1668,6 +1677,8 @@ def getGames(library_name):
                     DB.session.add(game)
                     DB.session.commit()
 
+                    events.new_game_event(game.__dict__)
+
                 elif console == "PS1" and file.endswith(".cue") and not exists:
                     if not saidPS1:
                         print(
@@ -1751,6 +1762,8 @@ def getGames(library_name):
                                 )
                                 DB.session.add(game)
                                 DB.session.commit()
+
+                                events.new_game_event(game.__dict__)
                 elif not file.endswith(".bin") and not exists:
                     print(
                         f"{file} is not supported, here's the list of supported files : \n{','.join(supportedFileTypes)}"
@@ -1950,6 +1963,7 @@ def getMusics(library):
                 )
                 DB.session.add(track)
                 DB.session.commit()
+                events.new_track_event(track.__dict__)
         index = 0
         for track in allFiles:
             index += 1
@@ -2007,6 +2021,7 @@ def getMusics(library):
             )
             DB.session.add(track)
             DB.session.commit()
+            events.new_track_event(track.__dict__)
 
     allTracks = Tracks.query.filter_by(library_name=library).all()
     for track in allTracks:
@@ -2085,6 +2100,9 @@ def getBooks(library):
                 book.cover = book_cover
                 book.book_type = book_type
                 DB.session.commit()
+
+                events.new_book_event(book.__dict__)
+                
     allBooksInDb = Books.query.filter_by(library_name=library).all()
     for book in allBooksInDb:
         if not os.path.exists(book.slug):

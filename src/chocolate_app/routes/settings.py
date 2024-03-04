@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request
 
 from chocolate_app import config, write_config, tmdb
 from chocolate_app.tables import Users, Libraries
+from ..plugins_loader import events
 
 settings_bp = Blueprint("settings", __name__)
 
@@ -138,5 +139,7 @@ def save_settings():
         config.set("ChocolateSettings", "allowdownload", "false")
 
     write_config(config)
+    
+    events.settings_change_event(config)
 
     return jsonify({"error": "success"})
