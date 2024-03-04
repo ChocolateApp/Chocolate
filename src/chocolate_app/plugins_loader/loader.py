@@ -12,7 +12,6 @@ def log(*args):
     with open("/var/chocolate/server.log", "a") as logs:
         logs.write(" ".join(args) + "\n")
 
-# Import events, it's a brother module
 from . import events
 
 def handle_default(yaml: dict, key: str, default: str = "Unknown") -> str:
@@ -21,7 +20,6 @@ def handle_default(yaml: dict, key: str, default: str = "Unknown") -> str:
         return default
     else:
         return yaml[key]
-
 
 def load_plugins(plugins_path: str) -> None:
     """Load plugins from the given path"""
