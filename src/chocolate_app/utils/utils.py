@@ -79,7 +79,16 @@ def log(log_type, log_composant=None, log_message=""):
         logs.write(log)
 
 
-def path_join(*args):
+def path_join(*args) -> str:
+    """
+    Join the path with the correct separator
+
+    Args:
+        *args: The path to join
+
+    Returns:
+        str: The joined path
+    """
     return "/".join(args).replace("\\", "/")
 
 
@@ -151,30 +160,95 @@ def save_image(url, path, width=600, ratio=73/50):
 
     return f"{path}.webp"
 
-def check_extension(file, extensions):
+def check_extension(file, extensions: list) -> bool:
+    """
+    Check if the file is of a certain type
+
+    Args:
+        file (str): The file to check
+        extensions (list): The list of extensions to check
+
+    Returns:
+        bool: True if the file is of a certain type, False otherwise
+    """
+
     if file.split(".")[-1] in extensions:
         return True
     return False
 
-def is_video_file(file):
+def is_video_file(file: str) -> bool:
+    """
+    Check if the file is a video file
+
+    Args:
+        file (str): The file to check
+
+    Returns:
+        bool: True if the file is a video file, False otherwise
+    """
     extensions = ["mkv", "avi", "mp4", "webm", "ogg", "m4v", "mov", "wmv", "flv", "3gp"]
     return check_extension(file, extensions)
 
-def is_music_file(file):
+def is_music_file(file: str) -> bool:
+    """
+    Check if the file is a music file
+
+    Args:
+        file (str): The file to check
+
+    Returns:
+        bool: True if the file is a music file, False otherwise
+    """
     extensions = ["mp3", "wav", "ogg", "flac", "m4a", "wma"]
     return check_extension(file, extensions)
 
-def is_book_file(file):
+def is_book_file(file: str) -> bool:
+    """
+    Check if the file is a book file
+
+    Args:
+        file (str): The file to check
+
+    Returns:
+        bool: True if the file is a book file, False otherwise
+    """
     extensions = ["pdf", "epub", "cbz", "cbr"]
     return check_extension(file, extensions)
 
-def is_image_file(file):
+def is_image_file(file: str) -> bool:
+    """
+    Check if the file is an image file
+    
+    Args:
+        file (str): The file to check
+
+    Returns:
+        bool: True if the file is an image file, False otherwise
+    """
     extensions = ["png", "jpg", "jpeg", "gif", "webp"]
     return check_extension(file, extensions)
 
-def is_compressed_file(file):
+def is_compressed_file(file: str) -> bool:
+    """
+    Check if the file is a compressed file
+
+    Args:
+        file (str): The file to check
+
+    Returns:
+        bool: True if the file is a compressed file, False otherwise
+    """
     extensions = ["zip", "rar", "7z", "tar", "gz", "bz2", "xz"]
     return check_extension(file, extensions)
 
-def is_directory(file):
-    return os.path.isdir(file)
+def is_directory(path: str) -> bool:
+    """
+    Check if the path is a directory
+
+    Args:
+        path (str): The path to check
+
+    Returns:
+        bool: True if the path is a directory, False otherwise
+    """
+    return os.path.isdir(path)

@@ -4,13 +4,13 @@ import base64
 import io
 
 from PIL import Image
-from flask import Blueprint, jsonify, request, abort
+from flask import Blueprint, Response, jsonify, request, abort
 from werkzeug.security import generate_password_hash
 
 from chocolate_app import DB, get_dir_path, all_auth_tokens, IMAGES_PATH
 from chocolate_app.tables import Users, InviteCodes
-from ..utils.utils import check_authorization, generate_log
-from ..plugins_loader import events
+from chocolate_app.utils.utils import check_authorization, generate_log
+from chocolate_app.plugins_loader import events
 
 
 dir_path = get_dir_path()
@@ -50,13 +50,14 @@ def login():
     if user:
         if user.account_type == "Kid":
             generate_log(request, "LOGIN")
-            events.login_event(user.__dict__)
+            events.execute_event("on_login", user.__dict__)
+            events.execute_event("on_login", user.__dict__)
             return jsonify(
                 {"id": user.id, "name": user.name, "error": "None", "token": auth_token}
             )
         elif user.verify_password(account_password):
             generate_log(request, "LOGIN")
-            events.login_event(user.__dict__)
+            events.execute_event("on_login", user.__dict__)
             return jsonify(
                 {"id": user.id, "name": user.name, "error": "None", "token": auth_token}
             )
@@ -64,13 +65,13 @@ def login():
             generate_log(request, "ERROR")
             user = user.__dict__
             user["error"] = "Unauthorized"
-            events.login_event(user)
+            events.execute_event("on_login", user)
             return jsonify({"error": "Unauthorized"})
     else:
         generate_log(request, "ERROR")
         user = user.__dict__
         user["error"] = "Unauthorized"
-        events.login_event(user)
+        events.execute_event("on_login", user)
         return jsonify({"error": "Unauthorized"})
 
 
@@ -137,7 +138,7 @@ def create_account():
 
 
 @users_bp.route("/edit_profil", methods=["POST"])
-def edit_profil():
+def edit_profil() -> Response:
     authorization = request.headers.get("Authorization")
 
     if authorization not in all_auth_tokens:
@@ -167,7 +168,7 @@ def edit_profil():
     user = Users.query.filter_by(name=username_in_tokens).first()
     try:
         f = request.files["image"]
-        name, extension = os.path.splitext(f.filename)
+        name, extension = os.path.splitext(f.filename or "")
         profil_picture = f"/static/img/{user_name}{extension}"
         if extension == "":
             profil_picture = "/static/img/avatars/defaultUserProfilePic.png"
@@ -206,7 +207,7 @@ def edit_profil():
 
 
 @users_bp.route("/delete_account", methods=["POST"])
-def delete_account():
+def delete_account() -> Response:
     authorization = request.headers.get("Authorization")
     check_authorization(request, authorization)
     print(authorization)
@@ -218,7 +219,7 @@ def delete_account():
     DB.session.delete(user)
     DB.session.commit()
 
-    events.user_delete_event(user.__dict__)
+    events.execute_event("on_user_delete", user.__dict__)
 
     return jsonify(
         {
@@ -229,7 +230,7 @@ def delete_account():
 
 
 @users_bp.route("/get_profil/<id>")
-def get_profil(id):
+def get_profil(id: int) -> Response:
     user = Users.query.filter_by(id=id).first()
     profil_picture = user.profil_picture
     if not os.path.exists(profil_picture):
@@ -243,7 +244,7 @@ def get_profil(id):
 
 
 @users_bp.route("/is_admin", methods=["GET"])
-def is_admin():
+def is_admin() -> Response:
     authorization = request.headers.get("Authorization")
     check_authorization(request, authorization)
     user = Users.query.filter_by(name=all_auth_tokens[authorization]["user"]).first()
@@ -254,13 +255,13 @@ def is_admin():
 
 
 @users_bp.route("/invite_exist/<hash>", methods=["GET"])
-def invite_exist(hash):
+def invite_exist(hash: str) -> Response:
     can = InviteCodes.query.filter_by(code=hash).first() is not None
     return jsonify(can)
 
 
 @users_bp.route("/create_invite", methods=["POST"])
-def create_invite():
+def create_invite() -> Response:
     authorization = request.headers.get("Authorization")
     check_authorization(request, authorization)
     user = Users.query.filter_by(name=all_auth_tokens[authorization]["user"]).first()

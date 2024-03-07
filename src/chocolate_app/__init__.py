@@ -9,17 +9,19 @@ import shutil
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
-from flask_login import LoginManager
+from flask_login import LoginManager # type: ignore
 from flask_migrate import Migrate
 
-from tmdbv3api import TMDb
+from typing import Dict, Any
 
-from plugins_loader import loader
+from tmdbv3api import TMDb # type: ignore
 
-DB = SQLAlchemy()
-MIGRATE = Migrate()
-LOGIN_MANAGER = LoginManager()
-all_auth_tokens = {}
+from chocolate_app.plugins_loader import loader
+
+DB: SQLAlchemy = SQLAlchemy()
+MIGRATE: Migrate = Migrate()
+LOGIN_MANAGER: LoginManager = LoginManager()
+all_auth_tokens: Dict[Any, Any] = {}
 
 
 class ChocolateException(Exception):
@@ -30,7 +32,7 @@ class UnsupportedSystemDefaultPath(ChocolateException):
     """Raised when the default path for the config file and the database file is not supported by Chocolate"""
 
 
-parser = argparse.ArgumentParser("Chocolate")
+parser: argparse.ArgumentParser = argparse.ArgumentParser("Chocolate")
 parser.add_argument("--config", help="Path to the config file (a .ini file)")
 parser.add_argument("--db", help="Path to the database file (a .db file)")
 parser.add_argument("--images", help="Path to the images folder (a folder)")
@@ -64,28 +66,28 @@ paths = {
     },
 }
 
-OPERATING_SYSTEM = platform.system()
+OPERATING_SYSTEM: str = platform.system()
 
-if OPERATING_SYSTEM not in paths:
+if OPERATING_SYSTEM not in paths.keys():
     raise UnsupportedSystemDefaultPath(
         f"No known default file path for the config / database on your operating system ({OPERATING_SYSTEM}). Please use --config and --database path or create a pull request to add your system to the one supported by Chocolate"
     )
 
-CONFIG_PATH = ARGUMENTS.config or paths[OPERATING_SYSTEM]["config"]
+CONFIG_PATH: str = ARGUMENTS.config or paths[OPERATING_SYSTEM]["config"]
 CONFIG_PATH = CONFIG_PATH.replace("\\", "/")
 
-DB_PATH = ARGUMENTS.db or paths[OPERATING_SYSTEM]["db"]
+DB_PATH: str = ARGUMENTS.db or paths[OPERATING_SYSTEM]["db"]
 DB_PATH = DB_PATH.replace("\\", "/")
 
-LOG_PATH = ARGUMENTS.logs or paths[OPERATING_SYSTEM]["logs"]
+LOG_PATH: str = ARGUMENTS.logs or paths[OPERATING_SYSTEM]["logs"]
 LOG_PATH = LOG_PATH.replace("\\", "/")
 
-IMAGES_PATH = ARGUMENTS.images or paths[OPERATING_SYSTEM]["images"]
+IMAGES_PATH: str = ARGUMENTS.images or paths[OPERATING_SYSTEM]["images"]
 IMAGES_PATH = IMAGES_PATH.replace("\\", "/")
 if IMAGES_PATH.endswith("/"):
     IMAGES_PATH = IMAGES_PATH[:-1]
 
-PLUGINS_PATH = ARGUMENTS.plugins or paths[OPERATING_SYSTEM]["plugins"]
+PLUGINS_PATH: str = ARGUMENTS.plugins or paths[OPERATING_SYSTEM]["plugins"]
 PLUGINS_PATH = PLUGINS_PATH.replace("\\", "/")
 if PLUGINS_PATH.endswith("/"):
     PLUGINS_PATH = PLUGINS_PATH[:-1]
@@ -94,7 +96,13 @@ if PLUGINS_PATH.endswith("/"):
 if os.getenv("NO_SCANS") == "true":
     ARGUMENTS.no_scans = True
 
-def create_app():
+def create_app() -> Flask:
+    """
+    Create the Flask app
+
+    Returns:
+        Flask: The Flask app
+    """
     dir_path = pathlib.Path(__package__).parent
     TEMPLATE_FOLDER = f"{dir_path}/templates"
 
@@ -135,20 +143,34 @@ def create_app():
     return app
 
 
-def check_dependencies():
+def check_dependencies() -> None:
+    """
+    Check if the dependencies are installed
+    """
     if not shutil.which("ffmpeg"):
         logging.warning(
             "ffmpeg is not installed. Chocolate will not be able to play videos."
         )
 
+def get_dir_path() -> str:
+    """
+    Get the directory path of the package
 
-def get_dir_path():
+    Returns:
+        str: The directory path of the package
+    """
     dir_path = os.path.dirname(__file__).replace("\\", "/")
 
     return dir_path
 
 
-def create_tmdb():
+def create_tmdb() -> TMDb:
+    """
+    Create the TMDb object
+
+    Returns:
+        TMDb: The TMDb object
+    """
     tmdb = TMDb()
     api_key_tmdb = config["APIKeys"]["TMDB"]
     if api_key_tmdb == "Empty":
@@ -161,7 +183,13 @@ def create_tmdb():
     return tmdb
 
 
-def get_config():
+def get_config() -> configparser.ConfigParser:
+    """
+    Get the config file
+
+    Returns:
+        configparser.ConfigParser: The config file
+    """
     if not os.path.exists(CONFIG_PATH):
         logging.warning(
             f"Config file not found at {CONFIG_PATH}. Creating a new one..."
@@ -174,22 +202,32 @@ def get_config():
             with open(CONFIG_PATH, "w") as config:
                 config.write(empty_config.read())
 
-    config = configparser.ConfigParser()
-    config.read(CONFIG_PATH)
-    if config["ChocolateSettings"]["language"] == "Empty":
-        config["ChocolateSettings"]["language"] = "EN"
-    return config
+    configParser = configparser.ConfigParser()
+    configParser.read(CONFIG_PATH)
+    if configParser["ChocolateSettings"]["language"] == "Empty":
+        configParser["ChocolateSettings"]["language"] = "EN"
+
+    return configParser
 
 
-def write_config(config):
+def write_config(config) -> None:
+    """
+    Write the config file
+
+    Args:
+        config (configparser.ConfigParser): The config file
+    """
     with open(CONFIG_PATH, "w") as configfile:
         config.write(configfile)
 
-def register_plugins():
+def register_plugins() -> None:
+    """
+    Register the plugins
+    """
     loader.load_plugins(PLUGINS_PATH)
 
 check_dependencies()
 register_plugins()
 
 config = get_config()
-tmdb = create_tmdb()
+tmdb: TMDb = create_tmdb()

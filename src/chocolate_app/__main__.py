@@ -1,4 +1,5 @@
 import datetime
+from enum import Flag
 import io
 import json
 import os
@@ -7,34 +8,36 @@ import re
 import subprocess
 import warnings
 import zipfile
-import rarfile
-import fitz
-import logging
+import rarfile # type: ignore
+import fitz # type: ignore
 import git
-import GPUtil
-import pycountry
+import GPUtil # type: ignore
+import pycountry # type: ignore
 import requests
-import sqlalchemy
+import sqlalchemy # type: ignore
 import natsort
 
 from time import localtime, mktime, time
+from typing import Any, Dict, List
 from uuid import uuid4
-from deep_translator import GoogleTranslator
+from deep_translator import GoogleTranslator # type: ignore
 from flask import (
     abort,
     jsonify,
+    Response,
     make_response,
     request,
     send_file,
     render_template,
+    Flask,
 )
-from guessit import guessit
+from guessit import guessit # type: ignore
 from PIL import Image
-from pypresence import Presence
-from tmdbv3api import TV, Movie, Person, TMDb, Search
-from tmdbv3api.as_obj import AsObj
+from pypresence import Presence # type: ignore
+from tmdbv3api import TV, Movie, Person, TMDb, Search # type: ignore
+from tmdbv3api.as_obj import AsObj # type: ignore
 from unidecode import unidecode
-from videoprops import get_video_properties
+from videoprops import get_video_properties # type: ignore
 from operator import itemgetter
 
 from . import (
@@ -49,21 +52,18 @@ from . import (
     IMAGES_PATH,
     write_config,
 )
-from .tables import Language, Movies, Series, Seasons, Episodes, OthersVideos, Users, Libraries, Books, Artists, MusicLiked, MusicPlayed, Playlists, Tracks, Albums, Actors, Games, LatestEpisodeWatched, LibrariesMerge
+from chocolate_app.tables import Language, Movies, Series, Seasons, Episodes, OthersVideos, Users, Libraries, Books, Artists, MusicLiked, MusicPlayed, Playlists, Tracks, Albums, Actors, Games, LatestEpisodeWatched, LibrariesMerge
 from . import scans
-from .utils.utils import generate_log, check_authorization, user_in_lib, save_image, is_image_file
-from .plugins_loader import events
+from chocolate_app.utils.utils import log, generate_log, check_authorization, user_in_lib, save_image, is_image_file
+from chocolate_app.plugins_loader import events
 
-app = create_app()
-dir_path = get_dir_path()
+app: Flask = create_app()
+dir_path: str = get_dir_path()
 
 with app.app_context():
     DB.create_all()
 
 LOG_LEVEL = "error"
-
-log = logging.getLogger("werkzeug")
-log.setLevel(logging.DEBUG)
 
 start_time = mktime(localtime())
 
@@ -73,26 +73,36 @@ with warnings.catch_warnings():
 langs_dict = GoogleTranslator().get_supported_languages(as_dict=True)
 
 @LOGIN_MANAGER.user_loader
-def load_user(id):
+def load_user(id: int) -> Users | None:
+    """
+    Load the user from the database
+
+    Args:
+        id (int): The user id
+    
+    Returns:
+        Users | None: The user or None
+    """
     return Users.query.get(int(id))
 
+last_commit_hash: str = "xxxxxxx"
+
 try:
-    repo = git.Repo(search_parent_directories=True)
+    repo: git.Repo = git.Repo(search_parent_directories=True)
     last_commit_hash = repo.head.object.hexsha[:7]
 except Exception:
     last_commit_hash = "xxxxxxx"
 
-VIDEO_CODEC = os.getenv("VIDEO_CODEC", "libx264")
+VIDEO_CODEC: str = os.getenv("VIDEO_CODEC", "libx264")
 if VIDEO_CODEC == "":
     VIDEO_CODEC = "libx264"
 
-FFMPEG_ARGS = os.getenv("FFMPEG_ARGS", "")
-if FFMPEG_ARGS == "":
-    FFMPEG_ARGS = []
-else:
-    FFMPEG_ARGS = FFMPEG_ARGS.split(" ")
+FFMPEG_ARGS_STR: str = os.getenv("FFMPEG_ARGS", "")
+FFMPEG_ARGS: list = []
+if FFMPEG_ARGS_STR != "":
+    FFMPEG_ARGS = FFMPEG_ARGS_STR.split(" ")
 
-def translate(string):
+def translate(string: str) -> str:
     language = config["ChocolateSettings"]["language"]
     if language == "EN":
         return string
@@ -105,36 +115,27 @@ def translate(string):
 tmdb.language = config["ChocolateSettings"]["language"].lower()
 tmdb.debug = True
 
-movie = Movie()
-show = TV()
+client_id: str = "771837466020937728"
 
-error_message = True
-client_id = "771837466020937728"
-
-enabled_rpc = config["ChocolateSettings"]["discordrpc"]
-if enabled_rpc == "true":
+enabled_rpc: bool = config["ChocolateSettings"]["discordrpc"] == "true"
+if enabled_rpc:
     try:
         RPC = Presence(client_id)
         RPC.connect()
     except Exception:
-        enabled_rpc == "false"
+        enabled_rpc == False
         config.set("ChocolateSettings", "discordrpc", "false")
         write_config(config)
 
-searched_films = []
-all_movies_not_sorted = []
-searched_series = []
-simple_data_series = {}
-
-config_language = config["ChocolateSettings"]["language"]
+config_language: str = config["ChocolateSettings"]["language"]
 with app.app_context():
-    language_db = DB.session.query(Language).first()
-    exists = DB.session.query(Language).first() is not None
+    language_db: Language = Language.query.first()
+    exists = language_db is not None
     if not exists:
         new_language = Language(language="EN")
         DB.session.add(new_language)
         DB.session.commit()
-    language_db = DB.session.query(Language).first()
+    language_db = Language.query.first()
     if language_db.language != config_language:
         DB.session.query(Movies).delete()
         DB.session.query(Series).delete()
@@ -143,20 +144,25 @@ with app.app_context():
         language_db.language = config_language
         DB.session.commit()
 
-CHUNK_LENGTH = 5
-CHUNK_LENGTH = int(CHUNK_LENGTH)
+CHUNK_LENGTH: int = 5
 
-movies_genre = []
-movie_extension = ""
 websites_trailers = {
     "YouTube": "https://www.youtube.com/embed/",
     "Dailymotion": "https://www.dailymotion.com/video_movie/",
     "Vimeo": "https://vimeo.com/",
 }
 
-
 @app.after_request
-def after_request(response):
+def after_request(response: Response) -> Response:
+    """
+    The after request function
+
+    Args:
+        response (Response): The response
+
+    Returns:
+        Response: The response
+    """
     code_to_status = {
         100: "Keep the change, ya filthy animal",
         101: "I feel the need... the need for speed.",
@@ -236,12 +242,21 @@ def after_request(response):
 
 @app.route("/")
 @app.route("/<path:path>")
-def index(path=None):
+def index(path=None) -> str:
+    """
+    The index route
+
+    Args:
+        path (str, optional): The path. Defaults to None.
+
+    Returns:
+        str: The rendered template
+    """
     return render_template("index.html")
 
 
 @app.route("/check_login", methods=["POST"])
-def check_login():
+def check_login() -> Response:
     global all_auth_tokens
     token = request.get_json()["token"]
     if not token:
@@ -296,7 +311,7 @@ def get_gpu_info() -> str:
     elif platform.system() == "Darwin":
         return subprocess.check_output(
             ["/usr/sbin/sysctl", "-n", "machdep.cpu.brand_string"]
-        ).strip()
+        ).strip() # type: ignore
     elif platform.system() == "Linux":
         return subprocess.check_output(
             ["lshw", "-C", "display", "-short"]
@@ -319,7 +334,7 @@ def gpuname() -> str:
         raise ValueError("No GPUs detected in the system")
     return gpus[0].name
 
-def get_gpu_brand():
+def get_gpu_brand() -> str:
     gpu = get_gpu_info().lower()
     nvidia_possibilities = ["nvidia", "gtx", "rtx", "geforce"]
     amd_possibilities = ["amd", "radeon", "rx", "vega"]
@@ -339,7 +354,7 @@ def get_gpu_brand():
 
 
 @app.route("/language_file")
-def language_file():
+def language_file() -> Response:
     language = config["ChocolateSettings"]["language"]
 
     if (
@@ -359,15 +374,17 @@ def language_file():
     with open(f"{dir_path}/static/lang/en.json", "r", encoding="utf-8") as f:
         en = json.load(f)
 
-    for key in en:
-        if key not in language:
-            language[key] = en[key]
+    language_dict = {}
 
-    return jsonify(language)
+    for key in en:
+        if key not in language_dict:
+            language_dict[key] = en[key]
+
+    return jsonify(language_dict)
 
 
 @app.route("/video_movie/<movie_id>.m3u8", methods=["GET"])
-def create_m3u8(movie_id):
+def create_m3u8(movie_id: int) -> Response:
     movie = Movies.query.filter_by(id=movie_id).first()
     if not movie:
         abort(404)
@@ -396,7 +413,7 @@ def create_m3u8(movie_id):
 
 
 @app.route("/video_movie/<quality>/<movie_id>.m3u8", methods=["GET"])
-def create_m3u8_quality(quality, movie_id):
+def create_m3u8_quality(quality: str, movie_id: int) -> Response:
     movie = Movies.query.filter_by(id=movie_id).first()
     video_path = movie.slug
     duration = length_video(video_path)
@@ -422,7 +439,7 @@ def create_m3u8_quality(quality, movie_id):
 
 
 @app.route("/video_other/<hash>", methods=["GET"])
-def create_other_m3u8(hash):
+def create_other_m3u8(hash: str) -> Response:
     other = OthersVideos.query.filter_by(video_hash=hash).first()
     video_path = other.slug
     duration = length_video(video_path)
@@ -453,7 +470,7 @@ def create_other_m3u8(hash):
 
 
 @app.route("/video_other/<quality>/<hash>", methods=["GET"])
-def create_other_m3u8_quality(quality, hash):
+def create_other_m3u8_quality(quality: str, hash: str) -> Response:
     other = OthersVideos.query.filter_by(video_hash=hash).first()
     video_path = other.slug
     duration = length_video(video_path)
@@ -484,7 +501,7 @@ def create_other_m3u8_quality(quality, hash):
 
 
 @app.route("/video_serie/<episode_id>", methods=["GET"])
-def create_serie_m3u8(episode_id):
+def create_serie_m3u8(episode_id: int) -> Response:
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
     episode_path = episode.slug
     duration = length_video(episode_path)
@@ -515,7 +532,7 @@ def create_serie_m3u8(episode_id):
 
 
 @app.route("/video_serie/<quality>/<episode_id>", methods=["GET"])
-def create_serie_m3u8_quality(quality, episode_id):
+def create_serie_m3u8_quality(quality: str, episode_id: int) -> Response:
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
     episode_path = episode.slug
     duration = length_video(episode_path)
@@ -546,7 +563,7 @@ def create_serie_m3u8_quality(quality, episode_id):
 
 
 @app.route("/chunk_serie/<episode_id>-<int:idx>.ts", methods=["GET"])
-def get_chunk_serie(episode_id, idx=0):
+def get_chunk_serie(episode_id: int, idx: int = 0) -> Response:
     seconds = (idx - 1) * CHUNK_LENGTH
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
     episode_path = episode.slug
@@ -585,6 +602,9 @@ def get_chunk_serie(episode_id, idx=0):
 
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
 
+    if not pipe or not pipe.stdout:
+        abort(404)
+
     response = make_response(pipe.stdout.read())
     response.headers.set("Content-Type", "video/MP2T")
     response.headers.set("Range", "bytes=0-4095")
@@ -598,11 +618,10 @@ def get_chunk_serie(episode_id, idx=0):
 
 
 @app.route("/chunk_serie/<quality>/<episode_id>-<int:idx>.ts", methods=["GET"])
-def get_chunk_serie_quality(quality, episode_id, idx=0):
+def get_chunk_serie_quality(quality: str, episode_id: int, idx: int = 0):
     seconds = (idx - 1) * CHUNK_LENGTH
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
     episode_path = episode.slug
-
     time_start = str(datetime.timedelta(seconds=seconds))
     time_end = str(datetime.timedelta(seconds=seconds + CHUNK_LENGTH))
     video_properties = get_video_properties(episode_path)
@@ -654,6 +673,9 @@ def get_chunk_serie_quality(quality, episode_id, idx=0):
     command = [item for sublist in command for item in (sublist if isinstance(sublist, list) else [sublist])]
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
 
+    if not pipe or not pipe.stdout:
+        abort(404)
+
     response = make_response(pipe.stdout.read())
     response.headers.set("Content-Type", "video/MP2T")
     response.headers.set("Range", "bytes=0-4095")
@@ -667,7 +689,7 @@ def get_chunk_serie_quality(quality, episode_id, idx=0):
 
 
 @app.route("/chunk_movie/<movie_id>-<int:idx>.ts", methods=["GET"])
-def chunk_movie(movie_id, idx=0):
+def chunk_movie(movie_id: int, idx: int = 0) -> Response:
     seconds = (idx - 1) * CHUNK_LENGTH
     movie = Movies.query.filter_by(id=movie_id).first()
     video_path = movie.slug
@@ -705,6 +727,9 @@ def chunk_movie(movie_id, idx=0):
     command = [item for sublist in command for item in (sublist if isinstance(sublist, list) else [sublist])]
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
 
+    if not pipe or not pipe.stdout:
+        abort(404)
+
     response = make_response(pipe.stdout.read())
     response.headers.set("Content-Type", "video/MP2T")
     response.headers.set("Range", "bytes=0-4095")
@@ -718,7 +743,7 @@ def chunk_movie(movie_id, idx=0):
 
 
 @app.route("/chunk_movie/<quality>/<movie_id>-<int:idx>.ts", methods=["GET"])
-def get_chunk_quality(quality, movie_id, idx=0):
+def get_chunk_quality(quality: str, movie_id: int, idx: int = 0) -> Response:
     seconds = (idx - 1) * CHUNK_LENGTH
 
     movie = Movies.query.filter_by(id=movie_id).first()
@@ -746,7 +771,10 @@ def get_chunk_quality(quality, movie_id, idx=0):
         "144": "64k",
     }
 
-    a_bitrate = ((int(quality) - 144) / (1080 - 144)) * (192 - 64) + 64
+    if int(quality) > 1080:
+        audio_bitrate = a_bitrate["1080"]
+    else:
+        audio_bitrate = a_bitrate[quality]
 
     v_bitrate = ((int(quality) - 144) / (1080 - 144)) * (5000 - 1500) + 1500
 
@@ -775,7 +803,7 @@ def get_chunk_quality(quality, movie_id, idx=0):
         "-c:a",
         "aac",
         "-b:a",
-        f"{a_bitrate}k",
+        f"{audio_bitrate}k",
         "-ac",
         "2",
         "-f",
@@ -784,6 +812,9 @@ def get_chunk_quality(quality, movie_id, idx=0):
     ]
     command = [item for sublist in command for item in (sublist if isinstance(sublist, list) else [sublist])]
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
+
+    if not pipe or not pipe.stdout:
+        abort(404)
 
     response = make_response(pipe.stdout.read())
     response.headers.set("Content-Type", "video/MP2T")
@@ -798,7 +829,7 @@ def get_chunk_quality(quality, movie_id, idx=0):
 
 
 @app.route("/chunk_other/<hash>-<int:idx>.ts", methods=["GET"])
-def get_chunk_other(hash, idx=0):
+def get_chunk_other(hash: str, idx: int = 0) -> Response:
     seconds = (idx - 1) * CHUNK_LENGTH
     movie = OthersVideos.query.filter_by(video_hash=hash).first()
     video_path = movie.slug
@@ -836,6 +867,9 @@ def get_chunk_other(hash, idx=0):
     command = [item for sublist in command for item in (sublist if isinstance(sublist, list) else [sublist])]
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
 
+    if not pipe or not pipe.stdout:
+        abort(404)
+
     response = make_response(pipe.stdout.read())
     response.headers.set("Content-Type", "video/MP2T")
     response.headers.set("Range", "bytes=0-4095")
@@ -849,7 +883,7 @@ def get_chunk_other(hash, idx=0):
 
 
 @app.route("/chunk_other/<quality>/<hash>-<int:idx>.ts", methods=["GET"])
-def get_chunk_other_quality(quality, hash, idx=0):
+def get_chunk_other_quality(quality: str, hash: str, idx=0) -> Response:
     seconds = (idx - 1) * CHUNK_LENGTH
     movie = OthersVideos.query.filter_by(video_hash=hash).first()
     video_path = movie.slug
@@ -905,6 +939,9 @@ def get_chunk_other_quality(quality, hash, idx=0):
     command = [item for sublist in command for item in (sublist if isinstance(sublist, list) else [sublist])]
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
 
+    if not pipe or not pipe.stdout:
+        abort(404)
+
     response = make_response(pipe.stdout.read())
     response.headers.set("Content-Type", "video/MP2T")
     response.headers.set("Range", "bytes=0-4095")
@@ -918,7 +955,7 @@ def get_chunk_other_quality(quality, hash, idx=0):
 
 
 @app.route("/chunk_caption/<index>/<movie_id>.vtt", methods=["GET"])
-def chunk_caption(movie_id, index):
+def chunk_caption(movie_id: int, index: int = 0) -> Response:
     movie = Movies.query.filter_by(id=movie_id).first()
     video_path = movie.slug
     extract_captions_command = [
@@ -947,7 +984,7 @@ def chunk_caption(movie_id, index):
 
 
 @app.route("/captionMovie/<movie_id>_<id>.m3u8", methods=["GET"])
-def caption_movie_by_id_to_m3_u8(movie_id, id):
+def caption_movie_by_id_to_m3_u8(movie_id: int, id: int) -> Response:
     movie = Movies.query.filter_by(id=movie_id).first()
     duration = movie.duration
     duration = sum(x * int(t) for x, t in zip([3600, 60, 1], duration.split(":")))
@@ -973,7 +1010,7 @@ def caption_movie_by_id_to_m3_u8(movie_id, id):
 
 
 @app.route("/chunk_caption_serie/<language>/<index>/<episode_id>.vtt", methods=["GET"])
-def chunk_caption_serie(language, index, episode_id):
+def chunk_caption_serie(language: str, index: int, episode_id: int) -> Response:
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
     video_path = episode.slug
 
@@ -1006,20 +1043,19 @@ def chunk_caption_serie(language, index, episode_id):
 
 
 @app.route("/get_language", methods=["GET"])
-def get_language():
+def get_language() -> Response:
     language = config["ChocolateSettings"]["language"]
     return jsonify({"language": language})
 
 
 @app.route("/get_all_movies/<library>", methods=["GET"])
-def get_all_movies(library):
+def get_all_movies(library: str) -> Response:
     token = request.headers.get("Authorization")
     check_authorization(request, token, library)
     generate_log(request, "SERVER")
     username = all_auth_tokens[token]["user"]
 
     movies = Movies.query.filter_by(library_name=library).all()
-    print(movies)
     user = Users.query.filter_by(name=username).first()
 
     movies_list = [movie.__dict__ for movie in movies]
@@ -1061,7 +1097,7 @@ def get_all_movies(library):
 
 
 @app.route("/get_all_books/<library>", methods=["GET"])
-def get_all_books(library):
+def get_all_books(library: str) -> Response:
     token = request.headers.get("Authorization")
     check_authorization(request, token, library)
     generate_log(request, "SUCCESS")
@@ -1089,7 +1125,7 @@ def get_all_books(library):
 
 
 @app.route("/get_all_playlists/<library>", methods=["GET"])
-def get_all_playlists(library):
+def get_all_playlists(library: str) -> Response:
     token = request.headers.get("Authorization")
     check_authorization(request, token, library)
     generate_log(request, "SUCCESS")
@@ -1109,11 +1145,11 @@ def get_all_playlists(library):
     playlists_list = natsort.natsorted(playlists_list, key=itemgetter(*["name"]))
 
     liked_music = MusicLiked.query.filter_by(user_id=user_id, liked="true").all()
-    musics = []
+    musicsList = []
     for music in liked_music:
         music_id = music.music_id
-        musics.append(music_id)
-    musics = ",".join(musics)
+        musicsList.append(music_id)
+    musics = ",".join(musicsList)
 
     if len(musics) > 0:
         playlists_list.insert(
@@ -1130,7 +1166,7 @@ def get_all_playlists(library):
 
 
 @app.route("/get_all_albums/<library>", methods=["GET"])
-def get_all_albums(library):
+def get_all_albums(library: str) -> Response:
     token = request.headers.get("Authorization")
     check_authorization(request, token, library)
     generate_log(request, "SUCCESS")
@@ -1147,7 +1183,7 @@ def get_all_albums(library):
 
 
 @app.route("/get_all_artists/<library>", methods=["GET"])
-def get_all_artists(library):
+def get_all_artists(library: str) -> Response:
     token = request.headers.get("Authorization")
     check_authorization(request, token, library)
     generate_log(request, "SUCCESS")
@@ -1164,7 +1200,7 @@ def get_all_artists(library):
 
 
 @app.route("/get_all_tracks/<library>", methods=["GET"])
-def get_all_tracks(library):
+def get_all_tracks(library: str) -> Response:
     token = request.headers.get("Authorization")
     check_authorization(request, token, library)
     generate_log(request, "SUCCESS")
@@ -1192,7 +1228,7 @@ def get_all_tracks(library):
 
 
 @app.route("/get_album_tracks/<album_id>")
-def get_album_tracks(album_id):
+def get_album_tracks(album_id: int) -> Response:
     token = request.headers.get("Authorization")
 
     try:
@@ -1229,7 +1265,7 @@ def get_album_tracks(album_id):
 
 
 @app.route("/get_playlist_tracks/<playlist_id>")
-def get_playlist_tracks(playlist_id):
+def get_playlist_tracks(playlist_id: int) -> Response:
     token = request.headers.get("Authorization")
 
     try:
@@ -1303,7 +1339,7 @@ def get_playlist_tracks(playlist_id):
 
 
 @app.route("/play_track/<id>/<user_id>", methods=["POST"])
-def play_track(id, user_id):
+def play_track(id: int, user_id: int) -> Response:
     exists_in_music_played = MusicPlayed.query.filter_by(
         music_id=id, user_id=user_id
     ).first()
@@ -1329,7 +1365,7 @@ def play_track(id, user_id):
 
 
 @app.route("/like_track/<id>/<user_id>", methods=["POST"])
-def like_track(id, user_id):
+def like_track(id: int, user_id: int) -> Response:
     exist_in_mucis_liked = MusicLiked.query.filter_by(
         music_id=id, user_id=user_id
     ).first()
@@ -1354,7 +1390,7 @@ def like_track(id, user_id):
 
 
 @app.route("/create_playlist", methods=["POST"])
-def create_playlist():
+def create_playlist() -> Response:
     body = request.get_json()
 
     name = body["name"]
@@ -1387,7 +1423,7 @@ def create_playlist():
     return jsonify({"status": "success", "playlist_id": playlist.id})
 
 
-def generate_playlist_cover(id):
+def generate_playlist_cover(id: int) -> str:
     if isinstance(id, str) or isinstance(id, int):
         id = int(id)
         track = Tracks.query.filter_by(id=id).first()
@@ -1453,7 +1489,7 @@ def generate_playlist_cover(id):
 
 
 @app.route("/add_track_to_playlist", methods=["POST"])
-def add_track_to_playlist():
+def add_track_to_playlist() -> Response:
     body = request.get_json()
 
     playlist_id = body["playlist_id"]
@@ -1473,7 +1509,7 @@ def add_track_to_playlist():
     )
 
 @app.route("/remove_track_from_playlist", methods=["POST"])
-def remove_track_from_playlist():
+def remove_track_from_playlist() -> Response:
     body = request.get_json()
     playlist_id = body["playlist_id"]
     track_id = body["track_id"]
@@ -1493,14 +1529,14 @@ def remove_track_from_playlist():
     )
 
 @app.route("/get_track/<id>")
-def get_track(id):
+def get_track(id: int) -> Response:
     track = Tracks.query.filter_by(id=id).first().slug
 
     return send_file(track)
 
 
 @app.route("/get_album/<album_id>")
-def get_album(album_id):
+def get_album(album_id: int) -> Response:
     generate_log(request, "SUCCESS")
 
     album = Albums.query.filter_by(id=album_id).first()
@@ -1514,7 +1550,7 @@ def get_album(album_id):
 
 
 @app.route("/get_playlist/<playlist_id>")
-def get_playlist(playlist_id):
+def get_playlist(playlist_id: int) -> Response:
     generate_log(request, "SUCCESS")
     token = request.headers.get("Authorization")
     user = all_auth_tokens[token]["user"]
@@ -1544,7 +1580,7 @@ def get_playlist(playlist_id):
 
 
 @app.route("/get_artist/<artist_id>")
-def get_artist(artist_id):
+def get_artist(artist_id: int) -> Response:
     generate_log(request, "SUCCESS")
 
     artist = Artists.query.filter_by(id=artist_id).first()
@@ -1555,7 +1591,7 @@ def get_artist(artist_id):
 
 
 @app.route("/get_artist_albums/<artist_id>")
-def get_artist_albums(artist_id):
+def get_artist_albums(artist_id: int) -> Response:
     albums = Albums.query.filter_by(artist_id=artist_id).all()
     artist = Artists.query.filter_by(id=artist_id).first()
     library = artist.library_name
@@ -1572,7 +1608,7 @@ def get_artist_albums(artist_id):
 
 
 @app.route("/get_artist_tracks/<artist_id>")
-def get_artist_tracks(artist_id):
+def get_artist_tracks(artist_id: int) -> Response:
     generate_log(request, "SUCCESS")
 
     tracks = Tracks.query.filter_by(artist_id=artist_id).all()
@@ -1602,7 +1638,7 @@ def get_artist_tracks(artist_id):
 
 
 @app.route("/get_all_series/<library>", methods=["GET"])
-def get_all_series(library):
+def get_all_series(library: str) -> Response:
     token = request.headers.get("Authorization")
     if token not in all_auth_tokens:
         abort(401)
@@ -1650,7 +1686,7 @@ def get_all_series(library):
     return jsonify(series_list)
 
 
-def get_seasons(id):
+def get_seasons(id: int) -> List[Dict]:
     seasons = Seasons.query.filter_by(serie=id).all()
     seasons_list = [season.__dict__ for season in seasons]
     for season in seasons_list:
@@ -1659,25 +1695,25 @@ def get_seasons(id):
     return seasons_list
 
 
-def get_similar_movies(movie_id):
-    global searched_films
+def get_similar_movies(movie_id: int) -> List[Dict]:
     similar_movies_possessed = []
     movie = Movie()
     similar_movies = movie.recommendations(movie_id)
     for movie_info in similar_movies:
-        movie_name = movie_info.title
-        for movie in searched_films:
-            if movie_name == movie:
-                similar_movies_possessed.append(movie)
-                break
+        movie_id = movie_info.id
+        movie = Movies.query.filter_by(id=movie_id).first()
+        if movie:
+            movie = movie.__dict__
+            del movie["_sa_instance_state"]
+            similar_movies_possessed.append(movie)
     return similar_movies_possessed
 
 
 @app.route("/get_movie_data/<movie_id>", methods=["GET"])
-def get_movie_data(movie_id):
-    exists = Movies.query.filter_by(id=movie_id).first() is not None
-    if exists:
-        movie = Movies.query.filter_by(id=movie_id).first().__dict__
+def get_movie_data(movie_id: int) -> Response:
+    movie = Movies.query.filter_by(id=movie_id).first()
+    if movie is not None:
+        movie = movie.__dict__
         del movie["_sa_instance_state"]
         movie["similarMovies"] = get_similar_movies(movie_id)
         return jsonify(movie)
@@ -1686,7 +1722,7 @@ def get_movie_data(movie_id):
 
 
 @app.route("/get_other_data/<video_hash>", methods=["GET"])
-def get_other_data(video_hash):
+def get_other_data(video_hash: str) -> Response:
     exists = OthersVideos.query.filter_by(video_hash=video_hash).first() is not None
     if exists:
         other = OthersVideos.query.filter_by(video_hash=video_hash).first().__dict__
@@ -1697,7 +1733,7 @@ def get_other_data(video_hash):
 
 
 @app.route("/get_serie_data/<serie_id>", methods=["GET"])
-def get_series_data(serie_id):
+def get_series_data(serie_id: int) -> Response:
     exists = Series.query.filter_by(id=serie_id).first() is not None
     if exists:
         serie = Series.query.filter_by(id=serie_id).first().__dict__
@@ -1717,7 +1753,7 @@ def get_series_data(serie_id):
         abort(404)
 
 
-def get_serie_seasons(id):
+def get_serie_seasons(id: int) -> Dict:
     seasons = Seasons.query.filter_by(serie=id).all()
     seasons_dict = {}
     for season in seasons:
@@ -1726,14 +1762,14 @@ def get_serie_seasons(id):
     return seasons_dict
 
 
-def transform(obj):
+def transform(obj: Any) -> str:
     if isinstance(obj, AsObj):
         return str(obj)
     return obj.replace('"', '\\"')
 
 
 @app.route("/edit_movie/<id>/<library>", methods=["GET", "POST"])
-def edit_movie(id, library):
+def edit_movie(id: int, library: str) -> Response:
     if request.method == "GET":
         the_movie = Movies.query.filter_by(id=id, library_name=library).first()
         the_movie = the_movie.__dict__
@@ -1894,7 +1930,7 @@ def edit_movie(id, library):
 
 
 @app.route("/edit_serie/<id>/<library>", methods=["GET", "POST"])
-def edit_serie(id, library):
+def edit_serie(id: int, library: str):
     if request.method == "GET":
         serie = Series.query.filter_by(id=id, library_name=library).first().__dict__
 
@@ -2052,7 +2088,7 @@ def edit_serie(id, library):
 
 
 @app.route("/get_season_data/<season_id>", methods=["GET"])
-def get_season_data(season_id):
+def get_season_data(season_id: int) -> Response:
     season = Seasons.query.filter_by(season_id=season_id).first()
     if season is None:
         abort(404)
@@ -2067,12 +2103,12 @@ def get_season_data(season_id):
     return jsonify(season)
 
 
-def sort_by_episode_number(episode):
+def sort_by_episode_number(episode: Dict) -> int:
     return episode["episode_number"]
 
 
 @app.route("/get_episodes/<season_id>", methods=["GET"])
-def get_episodes(season_id):
+def get_episodes(season_id: int) -> Response:
     token = request.headers.get("Authorization")
     if token not in all_auth_tokens:
         abort(401)
@@ -2122,7 +2158,7 @@ def get_episodes(season_id):
 
 
 @app.route("/get_episode_data/<episode_id>", methods=["GET"])
-def get_episode_data(episode_id):
+def get_episode_data(episode_id: int) -> Response:
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
     if episode is None:
         abort(404)
@@ -2156,7 +2192,7 @@ def get_episode_data(episode_id):
 
 
 @app.route("/book_url/<id>")
-def book_url(id):
+def book_url(id: int) -> Response:
     book = Books.query.filter_by(id=id).first()
     if book is None:
         abort(404)
@@ -2165,7 +2201,7 @@ def book_url(id):
 
 
 @app.route("/book_url/<id>/<page>")
-def book_url_page(id, page):
+def book_url_page(id: int, page: int) -> Response:
     book = Books.query.filter_by(id=id).first()
     if book is None:
         abort(404)
@@ -2203,7 +2239,7 @@ def book_url_page(id, page):
 
 
 @app.route("/book_data/<id>")
-def book_data(id):
+def book_data(id: int) -> Response:
     book = Books.query.filter_by(id=id).first().__dict__
     del book["_sa_instance_state"]
     book_type = book["book_type"]
@@ -2223,7 +2259,7 @@ def book_data(id):
 
 
 @app.route("/download_other/<video_hash>")
-def download_other(video_hash):
+def download_other(video_hash: str) -> Response:
     video = OthersVideos.query.filter_by(video_hash=video_hash).first()
     video = video.__dict__
     del video["_sa_instance_state"]
@@ -2231,7 +2267,7 @@ def download_other(video_hash):
 
 
 @app.route("/get_all_others/<library>")
-def get_all_others(library):
+def get_all_others(library: str) -> Response:
     token = request.headers.get("Authorization")
     if token not in all_auth_tokens:
         abort(401)
@@ -2265,7 +2301,7 @@ def get_all_others(library):
 
 
 @app.route("/get_tv/<tv_name>/<id>")
-def get_tv(tv_name, id):
+def get_tv(tv_name: str, id: str) -> Response:
     if id != "undefined":
         tv = Libraries.query.filter_by(lib_name=tv_name).first()
         lib_folder = tv.lib_folder
@@ -2319,7 +2355,7 @@ def get_tv(tv_name, id):
 
 
 @app.route("/get_channels/<channels>")
-def get_channels(channels):
+def get_channels(channels: str) -> Response:
     token = request.headers.get("Authorization")
     check_authorization(request, token, channels)
 
@@ -2379,7 +2415,7 @@ def get_channels(channels):
 
 
 @app.route("/search_tv/<library>/<search>")
-def search_tv(library, search):
+def search_tv(library: str, search: str) -> Response:
     token = request.headers.get("Authorization")
     check_authorization(request, token, library)
 
@@ -2457,7 +2493,7 @@ def search_tv(library, search):
 
 
 @app.route("/search_tracks/<library>/<search>")
-def search_tracks(library, search):
+def search_tracks(library: str, search: str) -> Response:
     tracks = Tracks.query.filter_by(library_name=library).all()
 
     search = search.lower()
@@ -2492,7 +2528,7 @@ def search_tracks(library, search):
 
 
 @app.route("/search_albums/<library>/<search>")
-def search_albums(library, search):
+def search_albums(library: str, search: str) -> Response:
     albums = Albums.query.filter_by(library_name=library).all()
 
     search = search.lower()
@@ -2521,7 +2557,7 @@ def search_albums(library, search):
 
 
 @app.route("/search_artists/<library>/<search>")
-def search_artists(library, search):
+def search_artists(library: str, search: str) -> Response:
     artists = Artists.query.filter_by(library_name=library).all()
 
     search = search.lower()
@@ -2547,7 +2583,7 @@ def search_artists(library, search):
 
 
 @app.route("/search_playlists/<library>/<search>")
-def search_playlists(library, search):
+def search_playlists(library: str, search: str) -> Response:
     playlists = Playlists.query.filter_by(library_name=library).all()
 
     search = search.lower()
@@ -2579,7 +2615,7 @@ def search_playlists(library, search):
     return jsonify(search_results)
 
 
-def is_valid_url(url):
+def is_valid_url(url: str) -> bool:
     try:
         response = requests.get(url)
         return response.status_code == requests.codes.ok
@@ -2588,7 +2624,7 @@ def is_valid_url(url):
 
 
 @app.route("/get_all_consoles/<library>")
-def get_all_consoles(library):
+def get_all_consoles(library: str) -> Response:
     token = request.headers.get("Authorization")
     check_authorization(request, token, library)
     generate_log(request, "SUCCESS")
@@ -2643,7 +2679,7 @@ def get_all_consoles(library):
 
 
 @app.route("/get_all_games/<lib>/<console_name>")
-def get_all_games(lib, console_name):
+def get_all_games(lib: str, console_name: str) -> Response:
     token = request.headers.get("Authorization")
     check_authorization(request, token, lib)
     generate_log(request, "SUCCESS")
@@ -2660,7 +2696,7 @@ def get_all_games(lib, console_name):
 
 
 @app.route("/game_data/<lib>/<game_id>")
-def game_data(lib, game_id):
+def game_data(lib: str, game_id: int) -> Response:
     game_id = Games.query.filter_by(id=game_id, library_name=lib).first()
     if not game_id:
         abort(404)
@@ -2671,7 +2707,7 @@ def game_data(lib, game_id):
 
 
 @app.route("/game_file/<lib>/<id>")
-def game_file(lib, id):
+def game_file(lib: str, id: int) -> Response:
     if id is not None:
         game = Games.query.filter_by(id=id, library_name=lib).first()
         game = game.__dict__
@@ -2680,7 +2716,7 @@ def game_file(lib, id):
 
 
 @app.route("/bios/<console>")
-def bios(console):
+def bios(console: str) -> Response:
     if console is not None:
         if not os.path.exists(f"{dir_path}/static/bios/{console}"):
             abort(404)
@@ -2698,7 +2734,7 @@ def bios(console):
 
 
 @app.route("/search_movies/<library>/<search>")
-def search_movies(library, search):
+def search_movies(library: str, search: str) -> Response:
     token = request.headers.get("Authorization")
     check_authorization(request, token, library)
 
@@ -2765,7 +2801,7 @@ def search_movies(library, search):
 
 
 @app.route("/search_series/<library>/<search>")
-def search_series(library, search):
+def search_series(library: str, search: str) -> Response:
     token = request.headers.get("Authorization")
     check_authorization(request, token, library)
 
@@ -2817,7 +2853,7 @@ def search_series(library, search):
 
 
 @app.route("/search_books/<library>/<search>")
-def search_books(library, search):
+def search_books(library: str, search: str) -> Response:
     token = request.headers.get("Authorization")
     check_authorization(request, token, library)
 
@@ -2856,7 +2892,7 @@ def search_books(library, search):
 
 
 @app.route("/search_others/<library>/<search>")
-def search_others(library, search):
+def search_others(library: str, search: str) -> Response:
     token = request.headers.get("Authorization")
     check_authorization(request, token, library)
 
@@ -2900,7 +2936,7 @@ def search_others(library, search):
 
 
 @app.route("/set_vues_time_code/", methods=["POST"])
-def set_vues_time_code():
+def set_vues_time_code() -> str:
     time_code = request.get_json()
     movie_id = time_code["movie_id"]
     time_code = time_code["time_code"]
@@ -2921,7 +2957,7 @@ def set_vues_time_code():
 
 
 @app.route("/set_vues_other_time_code/", methods=["POST"])
-def set_vues_other_time_code():
+def set_vues_other_time_code() -> str:
     data = request.get_json()
     video_hash = data["movieHASH"]
     time_code = data["time_code"]
@@ -2942,7 +2978,7 @@ def set_vues_other_time_code():
 
 
 @app.route("/whoami", methods=["POST"])
-def whoami():
+def whoami() -> Response:
     data = request.get_json()
     user_id = data["user_id"]
 
@@ -2955,11 +2991,11 @@ def whoami():
 
 
 @app.route("/main_movie/<movie_id>")
-def main_movie(movie_id):
+def main_movie(movie_id: int) -> Response:
     movie_id = movie_id.replace(".m3u8", "")
     movie = Movies.query.filter_by(id=movie_id).first()
 
-    events.movie_play_event(movie_id)
+    events.execute_event("on_movie_play", movie.__dict__)
 
     video_path = movie.slug
     video_properties = get_video_properties(video_path)
@@ -2994,7 +3030,7 @@ def main_movie(movie_id):
 
 
 @app.route("/can_i_play_movie/<movie_id>")
-def can_i_play_movie(movie_id):
+def can_i_play_movie(movie_id: int) -> Response:
     token = request.headers.get("Authorization")
     if token not in all_auth_tokens:
         return jsonify({"can_I_play": False})
@@ -3017,7 +3053,7 @@ def can_i_play_movie(movie_id):
 
 
 @app.route("/can_i_play_episode/<episode_id>")
-def can_i_play_episode(episode_id):
+def can_i_play_episode(episode_id: int) -> Response:
     token = request.headers.get("Authorization")
     if token not in all_auth_tokens:
         return jsonify({"can_I_play": False})
@@ -3066,7 +3102,7 @@ def can_i_play_episode(episode_id):
 
 
 @app.route("/can_i_play_other_video/<video_hash>")
-def can_i_play_other_video(video_hash):
+def can_i_play_other_video(video_hash: str) -> Response:
     token = request.headers.get("Authorization")
     if token not in all_auth_tokens:
         return jsonify({"can_I_play": False})
@@ -3090,10 +3126,10 @@ def can_i_play_other_video(video_hash):
 
 
 @app.route("/main_serie/<episode_id>")
-def main_serie(episode_id):
+def main_serie(episode_id: int) -> Response:
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
 
-    events.serie_play_event(episode_id)
+    events.execute_event("on_serie_play", episode.__dict__)
 
     episode_path = episode.slug
 
@@ -3131,7 +3167,7 @@ def main_serie(episode_id):
 
 
 @app.route("/main_other/<other_hash>")
-def main_other(other_hash):
+def main_other(other_hash: str) -> Response:
     movie = OthersVideos.query.filter_by(video_hash=other_hash).first()
     video_path = movie.slug
     video_properties = get_video_properties(video_path)
@@ -3165,7 +3201,7 @@ def main_other(other_hash):
     return response
 
 
-def generate_caption_serie(episode_id):
+def generate_caption_serie(episode_id: int) -> str:
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
     slug = episode.slug
     caption_command = [
@@ -3219,7 +3255,7 @@ def generate_caption_serie(episode_id):
     return all_captions
 
 
-def generate_caption_movie(movie_id):
+def generate_caption_movie(movie_id: int) -> str:
     movie_path = Movies.query.filter_by(id=movie_id).first()
     slug = movie_path.slug
 
@@ -3273,7 +3309,7 @@ def generate_caption_movie(movie_id):
 
 
 @app.route("/get_actor_data/<actor_id>", methods=["GET", "POST"])
-def get_actor_data(actor_id):
+def get_actor_data(actor_id: int) -> Response:
     if actor_id == "undefined":
         abort(404)
     movies_data = []
@@ -3320,7 +3356,7 @@ def get_actor_data(actor_id):
 
 
 @app.route("/get_this_episode_data/<episode_id>", methods=["GET", "POST"])
-def get_this_episode_data(episode_id):
+def get_this_episode_data(episode_id: int) -> Response:
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
     episode_data = {
         "episode_name": episode.episode_name,
@@ -3331,12 +3367,12 @@ def get_this_episode_data(episode_id):
 
 
 @app.route("/is_chocolate", methods=["GET", "POST"])
-def is_chocolate():
+def is_chocolate() -> Response:
     return jsonify({"is_chocolate": True})
 
 
 @app.route("/download_movie/<movie_id>")
-def download_movie(movie_id):
+def download_movie(movie_id: int) -> Response:
     can_download = config["ChocolateSettings"]["allowDownload"].lower() == "true"
     if not can_download:
         return jsonify({"error": "download not allowed"})
@@ -3345,7 +3381,7 @@ def download_movie(movie_id):
 
 
 @app.route("/download_episode/<episode_id>")
-def download_episode(episode_id):
+def download_episode(episode_id: int) -> Response:
     can_download = config["ChocolateSettings"]["allowDownload"].lower() == "true"
     if not can_download:
         return jsonify({"error": "download not allowed"})
@@ -3355,7 +3391,7 @@ def download_episode(episode_id):
 
 
 @app.route("/movie_cover/<id>")
-def movie_cover(id):
+def movie_cover(id: int) -> Response:
     movie = Movies.query.filter_by(id=id).first()
     if movie is None:
         abort(404)
@@ -3366,7 +3402,7 @@ def movie_cover(id):
 
 
 @app.route("/movie_banner/<id>")
-def movie_banner(id):
+def movie_banner(id: int) -> Response:
     movie = Movies.query.filter_by(id=id).first()
     movie_banner = movie.banner
     if not os.path.exists(movie_banner):
@@ -3375,7 +3411,7 @@ def movie_banner(id):
 
 
 @app.route("/serie_cover/<id>")
-def serie_cover(id):
+def serie_cover(id: int) -> Response:
     serie = Series.query.filter_by(id=id).first()
     serie_cover = serie.cover
     if not os.path.exists(serie_cover):
@@ -3384,7 +3420,7 @@ def serie_cover(id):
 
 
 @app.route("/serie_banner/<id>")
-def serie_banner(id):
+def serie_banner(id: int) -> Response:
     serie = Series.query.filter_by(id=id).first()
     serie_banner = serie.banner
     if not os.path.exists(serie_banner):
@@ -3393,7 +3429,7 @@ def serie_banner(id):
 
 
 @app.route("/season_cover/<id>")
-def season_cover(id):
+def season_cover(id: int) -> Response:
     season = Seasons.query.filter_by(season_id=id).first()
     season_cover = season.cover
     if not os.path.exists(season_cover):
@@ -3402,7 +3438,7 @@ def season_cover(id):
 
 
 @app.route("/episode_cover/<id>")
-def episode_cover(id):
+def episode_cover(id: int) -> Response:
     episode = Episodes.query.filter_by(episode_id=id).first()
     episode_cover = episode.episode_cover_path
     if not os.path.exists(episode_cover):
@@ -3410,9 +3446,9 @@ def episode_cover(id):
     return send_file(episode_cover, as_attachment=True)
 
 
-@app.route("/other_cover/<id>")
-def other_cover(id):
-    other = OthersVideos.query.filter_by(video_hash=id).first()
+@app.route("/other_cover/<hash>")
+def other_cover(hash: str) -> Response:
+    other = OthersVideos.query.filter_by(video_hash=hash).first()
     other_cover = other.banner
     if not os.path.exists(other_cover):
         abort(404)
@@ -3420,7 +3456,7 @@ def other_cover(id):
 
 
 @app.route("/book_cover/<id>")
-def book_cover(id):
+def book_cover(id: int) -> Response:
     book = Books.query.filter_by(id=id).first()
     book_cover = book.cover
     if not os.path.exists(book_cover):
@@ -3429,7 +3465,7 @@ def book_cover(id):
 
 
 @app.route("/actor_image/<id>")
-def actor_image(id):
+def actor_image(id: int) -> Response:
     actor = Actors.query.filter_by(actor_id=id).first()
     actor_image = actor.actor_image
     if not os.path.exists(actor_image):
@@ -3438,7 +3474,7 @@ def actor_image(id):
 
 
 @app.route("/artist_image/<id>")
-def artist_image(id):
+def artist_image(id: int) -> Response:
     artist = Artists.query.filter_by(id=id).first()
     artist_image = artist.cover
     if not os.path.exists(artist_image):
@@ -3447,7 +3483,7 @@ def artist_image(id):
 
 
 @app.route("/album_cover/<id>")
-def album_cover(id):
+def album_cover(id: int) -> Response:
     album = Albums.query.filter_by(id=id).first()
     if not album or not os.path.exists(album.cover):
         abort(404)
@@ -3455,7 +3491,7 @@ def album_cover(id):
 
 
 @app.route("/playlist_cover/<id>")
-def playlist_cover(id):
+def playlist_cover(id: int) -> Response:
     playlist = Playlists.query.filter_by(id=id).first()
     playlist_cover = None
     if id and id != "0" and playlist:
@@ -3471,7 +3507,7 @@ def playlist_cover(id):
 
 
 @app.route("/track_cover/<id>")
-def track_cover(id):
+def track_cover(id: int) -> Response:
     track = Tracks.query.filter_by(id=id).first()
     track_cover = track.cover
     if not os.path.exists(track_cover):
@@ -3480,7 +3516,7 @@ def track_cover(id):
 
 
 @app.route("/user_image/<id>")
-def user_image(id):
+def user_image(id: int) -> Response:
     user = Users.query.filter_by(id=id).first()
     user_image = user.profil_picture
 
@@ -3492,72 +3528,73 @@ def user_image(id):
 
     return send_file(user_image, as_attachment=True)
 
-def start_chocolate():
-    if __name__ == "__main__":
-        enabled_rpc = config["ChocolateSettings"]["discordrpc"]
-        if enabled_rpc == "true":
-            try:
-                RPC.update(
-                    state="Loading Chocolate...",
-                    details=f"The Universal MediaManager | ({last_commit_hash})",
-                    large_image="loader",
-                    large_text="Chocolate",
-                    buttons=[
-                        {
-                            "label": "Github",
-                            "url": "https://github.com/ChocolateApp/Chocolate",
-                        }
-                    ],
-                    start=start_time,
-                )
-            except Exception as e:
-                log_message = f"Error while updating Discord RPC: {e}"
-                log("ERROR", "Discord RPC", log_message)
+def start_chocolate() -> None:
+    enabled_rpc = config["ChocolateSettings"]["discordrpc"]
+    if enabled_rpc == "true":
+        try:
+            RPC.update(
+                state="Loading Chocolate...",
+                details=f"The Universal MediaManager | ({last_commit_hash})",
+                large_image="loader",
+                large_text="Chocolate",
+                buttons=[
+                    {
+                        "label": "Github",
+                        "url": "https://github.com/ChocolateApp/Chocolate",
+                    }
+                ],
+                start=start_time,
+            )
+        except Exception as e:
+            log_message = f"Error while updating Discord RPC: {e}"
+            log("ERROR", "Discord RPC", log_message)
 
-        with app.app_context():
-            if not ARGUMENTS.no_scans and config["APIKeys"]["TMDB"] != "Empty":
-                libraries = Libraries.query.all()
-                libraries = [library.__dict__ for library in libraries]
+    with app.app_context():
+        if not ARGUMENTS.no_scans and config["APIKeys"]["TMDB"] != "Empty":
+            libraries = Libraries.query.all()
+            libraries = [library.__dict__ for library in libraries]
 
-                libraries = natsort.natsorted(libraries, key=itemgetter(*["lib_name"]))
-                libraries = natsort.natsorted(libraries, key=itemgetter(*["lib_type"]))
+            libraries = natsort.natsorted(libraries, key=itemgetter(*["lib_name"]))
+            libraries = natsort.natsorted(libraries, key=itemgetter(*["lib_type"]))
 
-                type_to_call = {
-                    "series": scans.getSeries,
-                    "movies": scans.getMovies,
-                    "consoles": scans.getGames,
-                    "others": scans.getOthersVideos,
-                    "books": scans.getBooks,
-                    "musics": scans.getMusics,
-                }
+            type_to_call = {
+                "series": scans.getSeries,
+                "movies": scans.getMovies,
+                "consoles": scans.getGames,
+                "others": scans.getOthersVideos,
+                "books": scans.getBooks,
+                "musics": scans.getMusics,
+            }
 
-                for library in libraries:
-                    if library["lib_type"] in type_to_call:
-                        type_to_call[library["lib_type"]](library["lib_name"])
+            for library in libraries:
+                if library["lib_type"] in type_to_call:
+                    type_to_call[library["lib_type"]](library["lib_name"])
 
-                print()
-        print("\033[?25h", end="")
+            print()
+    print("\033[?25h", end="")
 
-        enabled_rpc = config["ChocolateSettings"]["discordrpc"]
-        if enabled_rpc == "true":
-            try:
-                RPC.update(
-                    state="Idling",
-                    details=f"The Universal MediaManager | ({last_commit_hash})",
-                    large_image="largeimage",
-                    large_text="Chocolate",
-                    buttons=[
-                        {
-                            "label": "Github",
-                            "url": "https://github.com/ChocolateApp/Chocolate",
-                        }
-                    ],
-                    start=time(),
-                )
-            except Exception as e:
-                log_message = f"Error while updating Discord RPC: {e}"
-                log("ERROR", "Discord RPC", log_message)
+    enabled_rpc = config["ChocolateSettings"]["discordrpc"]
+    if enabled_rpc == "true":
+        try:
+            RPC.update(
+                state="Idling",
+                details=f"The Universal MediaManager | ({last_commit_hash})",
+                large_image="largeimage",
+                large_text="Chocolate",
+                buttons=[
+                    {
+                        "label": "Github",
+                        "url": "https://github.com/ChocolateApp/Chocolate",
+                    }
+                ],
+                start=time(),
+            )
+        except Exception as e:
+            log_message = f"Error while updating Discord RPC: {e}"
+            log("ERROR", "Discord RPC", log_message)
 
-        app.run(host="0.0.0.0", port="8888")
+    app.run(host="0.0.0.0", port="8888")
 
-start_chocolate()
+
+if __name__ == "__main__":
+    start_chocolate()

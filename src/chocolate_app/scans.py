@@ -1,26 +1,28 @@
-import deezer
+import deezer # type: ignore
 import requests
 import os
-import rarfile
+import rarfile # type: ignore
 import zipfile
 import zlib
 import ast
 import datetime
-import sqlalchemy
+import sqlalchemy # type: ignore
 import re
 import subprocess
 import io
 import uuid
-import fitz
+import fitz # type: ignore
 
-from guessit import guessit
-from Levenshtein import distance as lev
-from tmdbv3api import TV, Episode, Movie, Person, Search, Group
-from tmdbv3api.as_obj import AsObj
-from tmdbv3api.exceptions import TMDbException
-from PIL import Image
-from tinytag import TinyTag
-from deep_translator import GoogleTranslator
+from guessit import guessit # type: ignore
+from Levenshtein import distance as lev # type: ignore
+from tmdbv3api import TV, Episode, Movie, Person, Search, Group # type: ignore
+from tmdbv3api.as_obj import AsObj # type: ignore
+from tmdbv3api.exceptions import TMDbException # type: ignore
+from PIL import Image # type: ignore
+from tinytag import TinyTag # type: ignore
+from deep_translator import GoogleTranslator  # type: ignore
+
+from typing import Any, Tuple, Dict
 
 from . import DB, get_dir_path, config, IMAGES_PATH
 from .tables import (
@@ -38,8 +40,8 @@ from .tables import (
     Books,
 )
 
-from .utils.utils import path_join, save_image, is_video_file, is_music_file, is_book_file, is_image_file, is_directory, log
-from .plugins_loader import events
+from chocolate_app.utils.utils import path_join, save_image, is_video_file, is_music_file, is_book_file, is_image_file, is_directory, log
+from chocolate_app.plugins_loader import events, overrides
 
 dir_path = get_dir_path()
 
@@ -85,7 +87,16 @@ websites_trailers = {
 }
 
 
-def transformToDict(obj):
+def transformToDict(obj: AsObj | list) -> dict | list:
+    """
+    Transform an AsObj to a dict
+
+    Args:
+        obj (AsObj | list): The object to transform
+
+    Returns:
+        dict: The transformed object
+    """
     if isinstance(obj, list):
         return obj
     if isinstance(obj, AsObj):
@@ -95,7 +106,16 @@ def transformToDict(obj):
     return obj
 
 
-def transformToList(obj):
+def transformToList(obj: AsObj | list) -> list:
+    """
+    Transform an AsObj to a list
+
+    Args:
+        obj (AsObj | list): The object to transform
+
+    Returns:
+        list: The transformed object
+    """
     if isinstance(obj, AsObj):
         return list(obj)
     if isinstance(obj, list):
@@ -126,7 +146,7 @@ def length_video(path: str) -> float:
         return 0
 
 
-def createArtist(artistName, lib):
+def createArtist(artistName: str, lib: str) -> int:
     exists = Artists.query.filter_by(name=artistName).first() is not None
     if exists:
         return Artists.query.filter_by(name=artistName).first().id
@@ -145,12 +165,12 @@ def createArtist(artistName, lib):
     DB.session.add(artist)
     DB.session.commit()
 
-    events.new_artist_event(artist.__dict__)
+    events.execute_event("on_new_artist", artist.__dict__)
 
     return artist_id
 
 
-def createAlbum(name, artist_id, tracks=[], library=""):
+def createAlbum(name: str, artist_id: int, tracks: list = [], library: str = "") -> int | None:
     exists = (
         Albums.query.filter_by(dir_name=name, artist_id=artist_id).first() is not None
     )
@@ -187,7 +207,7 @@ def createAlbum(name, artist_id, tracks=[], library=""):
     album_name = album.title
     cover = save_image(album.cover_big, f"{IMAGES_PATH}/Album_{album_id}")
 
-    tracks = ",".join(tracks)
+    tracks_list = ",".join(tracks)
 
     album = Albums(
         id=album_id,
@@ -195,17 +215,17 @@ def createAlbum(name, artist_id, tracks=[], library=""):
         dir_name=name,
         artist_id=artist_id,
         cover=cover,
-        tracks=tracks,
+        tracks=tracks_list,
         library_name=library,
     )
     DB.session.add(album)
     DB.session.commit()
 
-    events.new_album_event(album.__dict__)
+    events.execute_event("on_new_album", album.__dict__)
 
     return album_id
 
-def getAlbumImage(album_name, path):
+def getAlbumImage(album_name: str, path: str) -> str | None:
     album = deezer.search_albums(album_name)
     if len(album) == 0:
         return None
@@ -214,13 +234,13 @@ def getAlbumImage(album_name, path):
     return cover
 
 
-def getArtistImage(artist_name, path):
+def getArtistImage(artist_name: str, path: str) -> str:
     artist = deezer.search_artists(artist_name)[0]
     cover = save_image(artist.picture_big, path)
     return cover
 
 
-def generateImage(title, librairie, banner):
+def generateImage(title: str, librairie: str, banner: str) -> None:
     from PIL import Image, ImageDraw, ImageFont
 
     largeur = 1280
@@ -236,8 +256,8 @@ def generateImage(title, librairie, banner):
     font_librairie = ImageFont.truetype(font_path, size=50)
 
     # Positionner les textes au centre de l'image
-    titre_larg, titre_haut = draw.textsize(title, font=font_title)
-    librairie_larg, librairie_haut = draw.textsize(librairie, font=font_librairie)
+    titre_larg, titre_haut = draw.textsize(title, font=font_title) # type: ignore
+    librairie_larg, librairie_haut = draw.textsize(librairie, font=font_librairie) # type: ignore
     x_title = int((largeur - titre_larg) / 2)
     y_title = int((hauteur - titre_haut - librairie_haut - 50) / 2)
     x_librairie = int((largeur - librairie_larg) / 2)
@@ -260,7 +280,7 @@ def generateImage(title, librairie, banner):
     image.save(banner, "webp")
 
 
-def is_connected():
+def is_connected() -> bool:
     try:
         requests.get("https://ww.google.com/").status_code
         return True
@@ -268,7 +288,7 @@ def is_connected():
         return False
 
 
-def print_loading(filesList, index, title):
+def print_loading(filesList: list, index: int, title: str) -> None:
     terminal_size = os.get_terminal_size().columns - 1
     percentage = index * 100 / len(filesList)
 
@@ -291,12 +311,12 @@ def print_loading(filesList, index, title):
     print(loading, end="\r", flush=True)
 
 
-def searchGame(game, console):
+def searchGame(game: str, console: str) -> dict | None:
     url = f"https://www.igdb.com/search_autocomplete_all?q={game.replace(' ', '%20')}"
     return IGDBRequest(url, console)
 
 
-def translate(string):
+def translate(string: str) -> str:
     language = config["ChocolateSettings"]["language"]
     if language == "EN":
         return string
@@ -306,7 +326,7 @@ def translate(string):
     return translated
 
 
-def IGDBRequest(url, console):
+def IGDBRequest(url: str, console: str) -> Dict | None:
     custom_headers = {
         "User-Agent": "Mozilla/5.0 (X11; UwUntu; Linux x86_64; rv:100.0) Gecko/20100101 Firefox/100.0",
         "Accept": "*/*",
@@ -329,8 +349,8 @@ def IGDBRequest(url, console):
     if response.status_code == 200 and client_id and client_secret:
         grant_type = "client_credentials"
         get_access_token = f"https://id.twitch.tv/oauth2/token?client_id={client_id}&client_secret={client_secret}&grant_type={grant_type}"
-        token = requests.request("POST", get_access_token)
-        token = token.json()
+        token_req = requests.request("POST", get_access_token)
+        token = token_req.json()
         if "message" in token and token["message"] == "invalid client secret":
             print("Invalid client secret")
             return None
@@ -403,7 +423,7 @@ def IGDBRequest(url, console):
                     genres = []
                     for genre in game["genres"]:
                         genres.append(genre["name"])
-                    genres = ", ".join(genres)
+                    genres_list = ", ".join(genres)
 
                     game_data = {
                         "title": game["name"],
@@ -411,7 +431,7 @@ def IGDBRequest(url, console):
                         "description": game["summary"],
                         "note": game["total_rating"],
                         "date": game["first_release_date"],
-                        "genre": genres,
+                        "genre": genres_list,
                         "id": game["id"],
                     }
                     return game_data
@@ -420,11 +440,16 @@ def IGDBRequest(url, console):
                     log("ERROR", "GAME SCAN", log_message)
                     continue
         return None
+    return None
 
 
-def getMovies(library_name):
-    all_movies_not_sorted = []
+def getMovies(library_name: str) -> None:
     path = Libraries.query.filter_by(lib_name=library_name).first().lib_folder
+    
+    if overrides.have_override("scan_movie"):
+        return overrides.execute_override("scan_movie", path, library_name)
+    
+    all_movies_not_sorted = []
 
     movie_files = Movies.query.filter_by(library_name=library_name).all()
     for movie in movie_files:
@@ -570,7 +595,7 @@ def getMovies(library_name):
                     actor = Actors.query.filter_by(actor_id=cast.id).first()
                     actor.actor_programs = f"{actor.actor_programs} {movie_id}"
                     DB.session.commit()
-            theCast = ",".join([str(i) for i in theCast])
+            theCastStr = ",".join([str(i) for i in theCast])
             try:
                 date = datetime.datetime.strptime(date, "%Y-%m-%d").strftime("%d/%m/%Y")
             except ValueError:
@@ -579,28 +604,28 @@ def getMovies(library_name):
                 date = "Unknown"
 
             genre = res["genre_ids"]
+            length: str
+            list_length: list = []
             try:
-                length = length_video(video_path)
-                length = str(datetime.timedelta(seconds=length))
-                length = length.split(":")
+                list_length = str(datetime.timedelta(seconds=length_video(video_path))).split(":")
             except Exception:
-                length = []
+                list_length = []
 
-            if len(length) == 3:
-                hours = length[0]
-                minutes = length[1]
-                seconds = str(round(float(length[2])))
+            if len(list_length) == 3:
+                hours = list_length[0]
+                minutes = list_length[1]
+                seconds = str(round(float(list_length[2])))
                 if int(seconds) < 10:
                     seconds = f"0{seconds}"
                 length = f"{hours}:{minutes}:{seconds}"
-            elif len(length) == 2:
-                minutes = length[0]
-                seconds = str(round(float(length[1])))
+            elif len(list_length) == 2:
+                minutes = list_length[0]
+                seconds = str(round(float(list_length[1])))
                 if int(seconds) < 10:
                     seconds = f"0{seconds}"
                 length = f"{minutes}:{seconds}"
-            elif len(length) == 1:
-                seconds = str(round(float(length[0])))
+            elif len(list_length) == 1:
+                seconds = str(round(float(list_length[0])))
                 if int(seconds) < 10:
                     seconds = f"0{seconds}"
                 length = f"00:{seconds}"
@@ -609,10 +634,10 @@ def getMovies(library_name):
 
             duration = length
 
-            movieGenre = []
+            movieGenreList = []
             for genre_id in genre:
-                movieGenre.append(genre_list[genre_id])
-            movieGenre = ",".join(movieGenre)
+                movieGenreList.append(genre_list[genre_id])
+            movieGenre = ",".join(movieGenreList)
 
             bandeAnnonce = details.videos.results
             bande_annonce_url = ""
@@ -655,7 +680,6 @@ def getMovies(library_name):
 
             alternatives_names = list(dict.fromkeys(alternatives_names))
 
-            alternatives_names = ",".join(alternatives_names)
 
             filmData = Movies(
                 id=movie_id,
@@ -669,19 +693,23 @@ def getMovies(library_name):
                 date=date,
                 genre=movieGenre,
                 duration=str(duration),
-                cast=theCast,
+                cast=theCastStr,
                 bande_annonce_url=bande_annonce_url,
                 adult=str(res["adult"]),
                 library_name=library_name,
-                alternatives_names=alternatives_names,
+                alternatives_names=",".join(alternatives_names),
                 file_date=os.path.getmtime(video_path),
             )
             DB.session.add(filmData)
             DB.session.commit()
-            events.new_movie_event(filmData.__dict__)
+            events.execute_event("on_new_movie", filmData.__dict__)
 
-def getSeries(library_name):
+def getSeries(library_name: str) -> None:
     allSeriesPath = Libraries.query.filter_by(lib_name=library_name).first().lib_folder
+
+    if overrides.have_override("scan_serie"):
+        return overrides.execute_override("scan_serie", allSeriesPath, library_name)
+        
     if not os.path.exists(allSeriesPath):
         return
 
@@ -779,19 +807,19 @@ def getSeries(library_name):
 
         seasonsNumber = []
         seasons = os.listdir(seriePath)
-        for season in seasons:
-            if os.path.isdir(f"{seriePath}/{season}") and season != "":
-                season = re.sub(r"\D", "", season)
-                if season == "":
+        for seasonFolder in seasons:
+            if os.path.isdir(f"{seriePath}/{seasonFolder}") and seasonFolder != "":
+                seasonFolder = re.sub(r"\D", "", seasonFolder)
+                if seasonFolder == "":
                     continue
-                seasonsNumber.append(int(season))
+                seasonsNumber.append(int(seasonFolder))
 
         episodes = []
-        for season in seasons:
-            allEpisodes = os.listdir(f"{seriePath}/{season}")
+        for seasonFolder in seasons:
+            allEpisodes = os.listdir(f"{seriePath}/{seasonFolder}")
             for episode in allEpisodes:
                 if os.path.isfile(
-                    f"{seriePath}/{season}/{episode}"
+                    f"{seriePath}/{seasonFolder}/{episode}"
                 ):
                     episodes.append(episode)
 
@@ -809,8 +837,8 @@ def getSeries(library_name):
                 if nbEpisodes >= groupNbEpisodes * 0.95 and nbSeasons == groupNbSeasons:
                     theGroup = Group()
                     seasonsInfo = theGroup.details(group.id).groups
-                    for season in seasonsInfo:
-                        season = season.__dict__
+                    for seasonDict in seasonsInfo:
+                        season = seasonDict.__dict__
                         if len(season["episodes"]) > 0:
                             season["season_number"] = season["order"]
                             season["episode_count"] = len(season["episodes"])
@@ -890,7 +918,7 @@ def getSeries(library_name):
             genreList = []
             for genre in serieGenre:
                 genreList.append(str(genre.name))
-            genreList = ",".join(genreList)
+            genre_list = ",".join(genreList)
             newCast = []
             cast = list(cast)[:5]
             for actor in cast:
@@ -921,16 +949,16 @@ def getSeries(library_name):
                     DB.session.commit()
 
             newCast = newCast[:5]
-            newCast = ",".join([str(i) for i in newCast])
+            cast = ",".join([str(i) for i in newCast])
             isAdult = str(details["adult"])
             serieObject = Series(
                 id=serie_id,
                 name=name,
                 original_name=originalSerieTitle,
-                genre=genreList,
+                genre=genre_list,
                 duration=duration,
                 description=description,
-                cast=newCast,
+                cast=cast,
                 bande_annonce_url=bande_annonce_url,
                 cover=cover,
                 banner=banner,
@@ -942,7 +970,7 @@ def getSeries(library_name):
             )
             DB.session.add(serieObject)
             DB.session.commit()
-            events.new_serie_event(serieObject.__dict__)
+            events.execute_event("on_new_serie", serieObject.__dict__)
 
         for season in seasonsInfo:
             season = transformToDict(season)
@@ -1054,7 +1082,7 @@ def getSeries(library_name):
                             DB.session.rollback()
                             DB.session.add(thisSeason)
                             DB.session.commit()
-                        events.new_season_event(thisSeason.__dict__)
+                        events.execute_event("on_new_season", thisSeason.__dict__)
                     if len(allEpisodes) != len(allEpisodesInDB):
                         for episode in allEpisodes:
                             slug = f"{season_dir}/{episode}"
@@ -1070,7 +1098,6 @@ def getSeries(library_name):
                                 episodeIndex = guess["season"]
                             elif "title" in guess:
                                 episodeIndex = guess["title"]
-
                             else:
                                 print(
                                     f"Can't find the episode index of {episodeName}, data: {guess}, slug: {slug}"
@@ -1082,6 +1109,11 @@ def getSeries(library_name):
                                     if isinstance(episodeIndex[i], int):
                                         episodeIndex[i] = str(episodeIndex[i])
                                 episodeIndex = "".join(episodeIndex)
+                            
+                            if not isinstance(episodeIndex, int) and not episodeIndex.isnumeric():
+                                print(f"Episode index {episodeIndex} is not a number")
+                                log("ERROR", "SERIE SCAN", f"Episode index {episodeIndex} is not a number")
+                                continue
 
                             exists = Episodes.query.filter_by(episode_number=int(episodeIndex), season_id=season_id).first() is not None
 
@@ -1151,7 +1183,7 @@ def getSeries(library_name):
                                         DB.session.rollback()
                                         DB.session.add(episodeData)
                                         DB.session.commit()
-                                    events.new_episode_event(episodeData.__dict__)
+                                    events.execute_event("on_new_episode", episodeData.__dict__)
                         else:
                             pass
 
@@ -1178,7 +1210,7 @@ def getSeries(library_name):
                     season, episode = guess["season"]
                 else:
                     season = guess["season"]
-                    episode = int(guess["episode_title"])
+                    episode = str(int(guess["episode_title"]))
             else:
                 season = guess["season"]
                 episode = guess["episode"]
@@ -1288,7 +1320,7 @@ def getSeries(library_name):
                 genreList = []
                 for genre in serieGenre:
                     genreList.append(str(genre.name))
-                genreList = ",".join(genreList)
+                genre_list = ",".join(genreList)
                 newCast = []
                 cast = list(cast)[:5]
                 for actor in cast:
@@ -1321,16 +1353,16 @@ def getSeries(library_name):
                         DB.session.commit()
 
                 newCast = newCast[:5]
-                newCast = ",".join([str(i) for i in newCast])
+                cast = ",".join([str(i) for i in newCast])
                 isAdult = str(details["adult"])
                 serieObject = Series(
                     id=serie_id,
                     name=name,
                     original_name=originalSerieTitle,
-                    genre=genreList,
+                    genre=genre_list,
                     duration=duration,
                     description=description,
-                    cast=newCast,
+                    cast=cast,
                     bande_annonce_url=bande_annonce_url,
                     cover=cover,
                     banner=banner,
@@ -1342,7 +1374,7 @@ def getSeries(library_name):
                 )
                 DB.session.add(serieObject)
                 DB.session.commit()
-                events.new_serie_event(serieObject.__dict__)
+                events.execute_event("on_new_serie", serieObject.__dict__)
 
             # print(f"Pour {file}, serie_id = {serie_id} et season_id = {season_id}")
 
@@ -1384,7 +1416,7 @@ def getSeries(library_name):
 
                 DB.session.add(seasonObject)
                 DB.session.commit()
-                events.new_season_event(seasonObject.__dict__)
+                events.execute_event("on_new_season", seasonObject.__dict__)
 
             bigSeason = season_api
 
@@ -1464,7 +1496,7 @@ def getSeries(library_name):
                         DB.session.rollback()
                         DB.session.add(episodeData)
                         DB.session.commit()
-                    events.new_episode_event(episodeData.__dict__)
+                    events.execute_event("on_new_episode", episodeData.__dict__)
 
     allSeriesInDB = Series.query.all()
     allSeriesInDB = [
@@ -1479,15 +1511,15 @@ def getSeries(library_name):
         if serie not in allSeriesName:
             for season in allSeasons:
                 season_id = season.season_id
-                allEpisodes = Episodes.query.filter_by(season_id=season_id).all()
-                for episode in allEpisodes:
-                    if not os.path.exists(episode.slug):
+                allEpisodes= Episodes.query.filter_by(season_id=season_id).all()
+                for episode_data in allEpisodes:
+                    if not os.path.exists(episode_data.slug): #type: ignore
                         try:
-                            DB.session.delete(episode)
+                            DB.session.delete(episode_data)
                             DB.session.commit()
                         except Exception:
                             DB.session.rollback()
-                            DB.session.delete(episode)
+                            DB.session.delete(episode_data)
                             DB.session.commit()
 
         for season in allSeasons:
@@ -1512,8 +1544,12 @@ def getSeries(library_name):
                 DB.session.commit()
 
 
-def getGames(library_name):
+def getGames(library_name: str) -> None:
     allGamesPath = Libraries.query.filter_by(lib_name=library_name).first().lib_folder
+
+    if overrides.have_override("scan_game"):
+            return overrides.execute_override("scan_game", allGamesPath, library_name)
+        
     try:
         allConsoles = [
             name
@@ -1677,7 +1713,7 @@ def getGames(library_name):
                     DB.session.add(game)
                     DB.session.commit()
 
-                    events.new_game_event(game.__dict__)
+                    events.execute_event("on_new_game", game.__dict__)
 
                 elif console == "PS1" and file.endswith(".cue") and not exists:
                     if not saidPS1:
@@ -1763,7 +1799,7 @@ def getGames(library_name):
                                 DB.session.add(game)
                                 DB.session.commit()
 
-                                events.new_game_event(game.__dict__)
+                                events.execute_event("on_new_game", game.__dict__)
                 elif not file.endswith(".bin") and not exists:
                     print(
                         f"{file} is not supported, here's the list of supported files : \n{','.join(supportedFileTypes)}"
@@ -1777,7 +1813,7 @@ def getGames(library_name):
                 DB.session.commit()
 
 
-def getOthersVideos(library, allVideosPath=None):
+def getOthersVideos(library: str, allVideosPath=str | None) -> None:
     if not allVideosPath:
         allVideosPath = Libraries.query.filter_by(lib_name=library).first().lib_folder
         try:
@@ -1818,10 +1854,10 @@ def getOthersVideos(library, allVideosPath=None):
             video_hash_hex = hex(video_hash)[2:]
 
             # Récupération des 10 premiers caractères
-            video_hash = video_hash_hex[:10]
+            hash = video_hash_hex[:10]
             videoDuration = length_video(slug)
             middle = videoDuration // 2
-            banner = f"{IMAGES_PATH}/Other_Banner_{library}_{video_hash}.webp"
+            banner = f"{IMAGES_PATH}/Other_Banner_{library}_{hash}.webp"
             command = [
                 "ffmpeg",
                 "-i",
@@ -1839,11 +1875,11 @@ def getOthersVideos(library, allVideosPath=None):
                 )
                 if os.path.getsize(f"{banner}") == 0:
                     generateImage(title, library, f"{banner}")
-                banner = f"{IMAGES_PATH}/Other_Banner_{library}_{video_hash}.webp"
+                banner = f"{IMAGES_PATH}/Other_Banner_{library}_{hash}.webp"
             except Exception:
                 banner = "/static/img/broken.webp"
             video = OthersVideos(
-                video_hash=video_hash,
+                video_hash=hash,
                 title=title,
                 slug=slug,
                 banner=banner,
@@ -1860,8 +1896,13 @@ def getOthersVideos(library, allVideosPath=None):
             DB.session.commit()
 
 
-def getMusics(library):
+def getMusics(library: str) -> None:
     allMusicsPath = Libraries.query.filter_by(lib_name=library).first().lib_folder
+    
+    if overrides.have_override("scan_music"):
+        return overrides.execute_override("scan_music", allMusicsPath, library)
+        
+
     allMusics = os.listdir(allMusicsPath)
 
     allArtists = [
@@ -1963,7 +2004,7 @@ def getMusics(library):
                 )
                 DB.session.add(track)
                 DB.session.commit()
-                events.new_track_event(track.__dict__)
+                events.execute_event("on_new_track", track.__dict__)
         index = 0
         for track in allFiles:
             index += 1
@@ -2021,20 +2062,20 @@ def getMusics(library):
             )
             DB.session.add(track)
             DB.session.commit()
-            events.new_track_event(track.__dict__)
+            events.execute_event("on_new_track", track.__dict__)
 
     allTracks = Tracks.query.filter_by(library_name=library).all()
-    for track in allTracks:
-        path = track.slug
+    for trackData in allTracks:
+        path = trackData.slug # type: ignore
         if not os.path.exists(path):
-            DB.session.delete(track)
+            DB.session.delete(trackData)
             DB.session.commit()
 
     allAlbums = Albums.query.filter_by(library_name=library).all()
-    for album in allAlbums:
-        tracks = album.tracks
+    for albumData in allAlbums:
+        tracks = albumData.tracks # type: ignore
         if tracks == "":
-            DB.session.delete(album)
+            DB.session.delete(albumData)
             DB.session.commit()
             continue
 
@@ -2049,9 +2090,11 @@ def getMusics(library):
             continue
 
 
-def getBooks(library):
-    allBooks = Libraries.query.filter_by(lib_name=library)
-    allBooksPath = allBooks.first().lib_folder
+def getBooks(library: str) -> None:
+    allBooksPath = Libraries.query.filter_by(lib_name=library).first().lib_folder
+
+    if overrides.have_override("scan_book"):
+        return overrides.execute_override("scan_book", allBooksPath, library)
 
     allBooks = os.walk(allBooksPath)
     books = []
@@ -2063,7 +2106,6 @@ def getBooks(library):
             if is_book_file(file):
                 books.append(path)
 
-    allBooks = books
 
     imageFunctions = {
         ".pdf": getPDFCover,
@@ -2073,12 +2115,12 @@ def getBooks(library):
     }
 
     index = 0
-    for book in allBooks:
+    for book in books:
         index += 1
         name, extension = os.path.splitext(book)
         name = name.split("/")[-1]
 
-        print_loading(allBooks, index, name)
+        print_loading(books, index, name)
 
         slug = f"{book}"
 
@@ -2101,23 +2143,23 @@ def getBooks(library):
                 book.book_type = book_type
                 DB.session.commit()
 
-                events.new_book_event(book.__dict__)
+                events.execute_event("on_new_book", book.__dict__)
                 
     allBooksInDb = Books.query.filter_by(library_name=library).all()
     for book in allBooksInDb:
-        if not os.path.exists(book.slug):
+        if not os.path.exists(book.slug): # type: ignore
             DB.session.delete(book)
             DB.session.commit()
 
 
-def getPDFCover(path, name, id):
+def getPDFCover(path: str, name: str, id: int) -> Tuple[str, str]:
     pdfDoc = fitz.open(path)
     # Récupérez la page demandée
     page = pdfDoc[0]
     # Créez une image à partir de la page
     pix = page.get_pixmap()
     # Enregistre l'image
-    img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+    img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples) # type: ignore
     if os.path.exists(f"{IMAGES_PATH}/Books_Banner_{id}.webp"):
         os.remove(f"{IMAGES_PATH}/Books_Banner_{id}.webp")
 

@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 from pyarr import LidarrAPI, RadarrAPI, ReadarrAPI, SonarrAPI
-from tmdbv3api import Find
+from tmdbv3api import Find # type: ignore
 
 from chocolate_app import config
 
