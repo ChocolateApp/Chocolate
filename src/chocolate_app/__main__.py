@@ -3529,6 +3529,7 @@ def user_image(id: int) -> Response:
     return send_file(user_image, as_attachment=True)
 
 def start_chocolate() -> None:
+    events.execute_event("before_start")
     enabled_rpc = config["ChocolateSettings"]["discordrpc"]
     if enabled_rpc == "true":
         try:
@@ -3593,7 +3594,8 @@ def start_chocolate() -> None:
             log_message = f"Error while updating Discord RPC: {e}"
             log("ERROR", "Discord RPC", log_message)
 
-    app.run(host="0.0.0.0", port="8888")
+    app.run(host="0.0.0.0", port=8888)
+    events.execute_event("after_start")
 
 
 if __name__ == "__main__":
