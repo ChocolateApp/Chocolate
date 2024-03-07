@@ -41,7 +41,7 @@ from videoprops import get_video_properties # type: ignore
 from operator import itemgetter
 
 from . import (
-    create_app,
+    app,
     get_dir_path,
     DB,
     LOGIN_MANAGER,
@@ -57,7 +57,6 @@ from . import scans
 from chocolate_app.utils.utils import log, generate_log, check_authorization, user_in_lib, save_image, is_image_file
 from chocolate_app.plugins_loader import events
 
-app: Flask = create_app()
 dir_path: str = get_dir_path()
 
 with app.app_context():

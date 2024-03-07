@@ -5,9 +5,6 @@ import importlib
 import yaml
 import datetime
 
-from . import events
-from . import overrides
-
 def log(log_type, log_composant=None, log_message=""):
     the_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     log = f"{the_time} - [{log_type}]"
@@ -67,4 +64,5 @@ def load_plugins(plugins_path: str) -> None:
                     if not specs.loader:
                         log("Error", "Plugin Loader", f"Could not load plugin {plugin_name} v{plugin_version} by {plugin_author}")
                         continue
+
                     specs.loader.exec_module(new_module)

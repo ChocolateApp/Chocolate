@@ -24,8 +24,8 @@ from deep_translator import GoogleTranslator  # type: ignore
 
 from typing import Any, Tuple, Dict
 
-from . import DB, get_dir_path, config, IMAGES_PATH
-from .tables import (
+from chocolate_app import DB, get_dir_path, config, IMAGES_PATH
+from chocolate_app.tables import (
     Libraries,
     Movies,
     Series,

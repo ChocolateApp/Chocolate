@@ -22,5 +22,7 @@ def link(override_name: str):
     return decorator
 
 def execute_override(override_name, *args, **kwargs):
-    if override_name in OVERRIDE_MAP:
-        return OVERRIDE_MAP[override_name](*args, **kwargs)
+    from chocolate_app import app
+    with app.app_context():
+        if override_name in OVERRIDE_MAP:
+            return OVERRIDE_MAP[override_name](*args, **kwargs)

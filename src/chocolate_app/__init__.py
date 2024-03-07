@@ -227,7 +227,9 @@ def register_plugins() -> None:
     loader.load_plugins(PLUGINS_PATH)
 
 check_dependencies()
-register_plugins()
 
 config = get_config()
 tmdb: TMDb = create_tmdb()
+app = create_app()
+
+register_plugins()
