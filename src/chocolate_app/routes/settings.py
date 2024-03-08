@@ -140,6 +140,6 @@ def save_settings():
 
     write_config(config)
     
-    events.execute_event("on_settings_change", config)
+    events.execute_event(events.SETTINGS_UPDATE, config)
 
     return jsonify({"error": "success"})

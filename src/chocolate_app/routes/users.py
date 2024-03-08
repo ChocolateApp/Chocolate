@@ -50,14 +50,13 @@ def login():
     if user:
         if user.account_type == "Kid":
             generate_log(request, "LOGIN")
-            events.execute_event("on_login", user.__dict__)
-            events.execute_event("on_login", user.__dict__)
+            events.execute_event(events.LOGIN, user)
             return jsonify(
                 {"id": user.id, "name": user.name, "error": "None", "token": auth_token}
             )
         elif user.verify_password(account_password):
             generate_log(request, "LOGIN")
-            events.execute_event("on_login", user.__dict__)
+            events.execute_event(events.LOGIN, user)
             return jsonify(
                 {"id": user.id, "name": user.name, "error": "None", "token": auth_token}
             )
@@ -65,13 +64,13 @@ def login():
             generate_log(request, "ERROR")
             user = user.__dict__
             user["error"] = "Unauthorized"
-            events.execute_event("on_login", user)
+            events.execute_event(events.LOGIN, user)
             return jsonify({"error": "Unauthorized"})
     else:
         generate_log(request, "ERROR")
         user = user.__dict__
         user["error"] = "Unauthorized"
-        events.execute_event("on_login", user)
+        events.execute_event(events.LOGIN, user)
         return jsonify({"error": "Unauthorized"})
 
 
@@ -219,7 +218,7 @@ def delete_account() -> Response:
     DB.session.delete(user)
     DB.session.commit()
 
-    events.execute_event("on_user_delete", user.__dict__)
+    events.execute_event(events.USER_DELETE, user)
 
     return jsonify(
         {

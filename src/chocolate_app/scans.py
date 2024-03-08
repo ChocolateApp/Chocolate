@@ -165,7 +165,7 @@ def createArtist(artistName: str, lib: str) -> int:
     DB.session.add(artist)
     DB.session.commit()
 
-    events.execute_event("on_new_artist", artist.__dict__)
+    events.execute_event(events.NEW_ARTIST, artist)
 
     return artist_id
 
@@ -221,7 +221,7 @@ def createAlbum(name: str, artist_id: int, tracks: list = [], library: str = "")
     DB.session.add(album)
     DB.session.commit()
 
-    events.execute_event("on_new_album", album.__dict__)
+    events.execute_event(events.NEW_ALBUM, album)
 
     return album_id
 
@@ -702,7 +702,7 @@ def getMovies(library_name: str) -> None:
             )
             DB.session.add(filmData)
             DB.session.commit()
-            events.execute_event("on_new_movie", filmData.__dict__)
+            events.execute_event(events.NEW_MOVIE, filmData)
 
 def getSeries(library_name: str) -> None:
     allSeriesPath = Libraries.query.filter_by(lib_name=library_name).first().lib_folder
@@ -970,7 +970,7 @@ def getSeries(library_name: str) -> None:
             )
             DB.session.add(serieObject)
             DB.session.commit()
-            events.execute_event("on_new_serie", serieObject.__dict__)
+            events.execute_event(events.NEW_SERIE, serieObject)
 
         for season in seasonsInfo:
             season = transformToDict(season)
@@ -1082,7 +1082,7 @@ def getSeries(library_name: str) -> None:
                             DB.session.rollback()
                             DB.session.add(thisSeason)
                             DB.session.commit()
-                        events.execute_event("on_new_season", thisSeason.__dict__)
+                        events.execute_event(events.NEW_SEASON, thisSeason)
                     if len(allEpisodes) != len(allEpisodesInDB):
                         for episode in allEpisodes:
                             slug = f"{season_dir}/{episode}"
@@ -1183,7 +1183,7 @@ def getSeries(library_name: str) -> None:
                                         DB.session.rollback()
                                         DB.session.add(episodeData)
                                         DB.session.commit()
-                                    events.execute_event("on_new_episode", episodeData.__dict__)
+                                    events.execute_event(events.NEW_EPISODE, episodeData)
                         else:
                             pass
 
@@ -1374,7 +1374,7 @@ def getSeries(library_name: str) -> None:
                 )
                 DB.session.add(serieObject)
                 DB.session.commit()
-                events.execute_event("on_new_serie", serieObject.__dict__)
+                events.execute_event(events.NEW_SERIE, serieObject)
 
             # print(f"Pour {file}, serie_id = {serie_id} et season_id = {season_id}")
 
@@ -1416,7 +1416,7 @@ def getSeries(library_name: str) -> None:
 
                 DB.session.add(seasonObject)
                 DB.session.commit()
-                events.execute_event("on_new_season", seasonObject.__dict__)
+                events.execute_event(events.NEW_SEASON, seasonObject)
 
             bigSeason = season_api
 
@@ -1496,7 +1496,7 @@ def getSeries(library_name: str) -> None:
                         DB.session.rollback()
                         DB.session.add(episodeData)
                         DB.session.commit()
-                    events.execute_event("on_new_episode", episodeData.__dict__)
+                    events.execute_event(events.NEW_EPISODE, episodeData)
 
     allSeriesInDB = Series.query.all()
     allSeriesInDB = [
@@ -1713,7 +1713,7 @@ def getGames(library_name: str) -> None:
                     DB.session.add(game)
                     DB.session.commit()
 
-                    events.execute_event("on_new_game", game.__dict__)
+                    events.execute_event(events.NEW_GAME, game)
 
                 elif console == "PS1" and file.endswith(".cue") and not exists:
                     if not saidPS1:
@@ -1799,7 +1799,7 @@ def getGames(library_name: str) -> None:
                                 DB.session.add(game)
                                 DB.session.commit()
 
-                                events.execute_event("on_new_game", game.__dict__)
+                                events.execute_event(events.NEW_GAME, game)
                 elif not file.endswith(".bin") and not exists:
                     print(
                         f"{file} is not supported, here's the list of supported files : \n{','.join(supportedFileTypes)}"
@@ -2004,7 +2004,7 @@ def getMusics(library: str) -> None:
                 )
                 DB.session.add(track)
                 DB.session.commit()
-                events.execute_event("on_new_track", track.__dict__)
+                events.execute_event(events.NEW_TRACK, track)
         index = 0
         for track in allFiles:
             index += 1
@@ -2062,7 +2062,7 @@ def getMusics(library: str) -> None:
             )
             DB.session.add(track)
             DB.session.commit()
-            events.execute_event("on_new_track", track.__dict__)
+            events.execute_event(events.NEW_TRACK, track)
 
     allTracks = Tracks.query.filter_by(library_name=library).all()
     for trackData in allTracks:
@@ -2143,7 +2143,7 @@ def getBooks(library: str) -> None:
                 book.book_type = book_type
                 DB.session.commit()
 
-                events.execute_event("on_new_book", book.__dict__)
+                events.execute_event(events.NEW_BOOK, book)
                 
     allBooksInDb = Books.query.filter_by(library_name=library).all()
     for book in allBooksInDb:

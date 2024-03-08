@@ -156,7 +156,7 @@ def create_lib():
         DB.session.add(new_lib)
         DB.session.commit()
 
-        events.execute_event("on_new_library", lib_name.__dict__)
+        events.execute_event(events.NEW_LIBRARY, lib_name)
 
         try:
             function_to_call[lib_type](lib_name)
@@ -241,7 +241,7 @@ def delete_lib():
 
     DB.session.commit()
 
-    events.execute_event("on_library_delete", lib_name.__dict__)
+    events.execute_event(events.LIBRARY_DELETE, lib_name)
 
     return jsonify({"error": "worked"})
 

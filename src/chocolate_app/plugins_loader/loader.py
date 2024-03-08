@@ -64,5 +64,6 @@ def load_plugins(plugins_path: str) -> None:
                     if not specs.loader:
                         log("Error", "Plugin Loader", f"Could not load plugin {plugin_name} v{plugin_version} by {plugin_author}")
                         continue
-
-                    specs.loader.exec_module(new_module)
+                    from chocolate_app import app
+                    with app.app_context():
+                        specs.loader.exec_module(new_module)
