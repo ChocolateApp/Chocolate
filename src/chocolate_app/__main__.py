@@ -802,7 +802,7 @@ def get_chunk_quality(quality: str, movie_id: int, idx: int = 0) -> Response:
         "-c:a",
         "aac",
         "-b:a",
-        f"{audio_bitrate}k",
+        f"{audio_bitrate}",
         "-ac",
         "2",
         "-f",
@@ -1368,7 +1368,7 @@ def like_track(id: int, user_id: int) -> Response:
     exist_in_mucis_liked = MusicLiked.query.filter_by(
         music_id=id, user_id=user_id
     ).first()
-    liked = False
+    liked = "false"
     like_dict = {"true": "false", "false": "true"}
     if exist_in_mucis_liked:
         exist_in_mucis_liked.liked = like_dict[exist_in_mucis_liked.liked]
@@ -1422,7 +1422,7 @@ def create_playlist() -> Response:
     return jsonify({"status": "success", "playlist_id": playlist.id})
 
 
-def generate_playlist_cover(id: int) -> str:
+def generate_playlist_cover(id: str | int | list) -> str | None:
     if isinstance(id, str) or isinstance(id, int):
         id = int(id)
         track = Tracks.query.filter_by(id=id).first()
@@ -1562,11 +1562,11 @@ def get_playlist(playlist_id: int) -> Response:
         del playlist_dict["_sa_instance_state"]
     else:
         liked_music = MusicLiked.query.filter_by(user_id=user_id, liked="true").all()
-        musics = []
+        musics_list = []
         for music in liked_music:
             music_id = music.music_id
-            musics.append(music_id)
-        musics = ",".join(musics)
+            musics_list.append(music_id)
+        musics = ",".join(musics_list)
 
         playlist_dict = {
             "id": 0,
@@ -1629,7 +1629,7 @@ def get_artist_tracks(artist_id: int) -> Response:
         try:
             artist_name = Artists.query.filter_by(id=track["artist_id"]).first().name
             track["artist_name"] = artist_name
-        except Exception:
+        except Exception as e:
             log_message = f"Error while getting artist name for track {track['id']}: {e}"
             log("ERROR", "GET_ARTIST_TRACKS", log_message)
 
@@ -1862,19 +1862,16 @@ def edit_movie(id: int, library: str) -> Response:
         for official_alternative_name in official_alternative_names:
             alternatives_names.append(official_alternative_name.title)
 
-    alternatives_names = list(dict.fromkeys(alternatives_names))
+    alternatives_names_list = list(dict.fromkeys(alternatives_names))
 
-    alternatives_names = ",".join(alternatives_names)
-
-    the_movie.alternatives_names = alternatives_names
+    the_movie.alternatives_names = ",".join(alternatives_names_list)
 
     movie_genre = []
     genre = movie_info.genres
     for genre_info in genre:
         movie_genre.append(genre_info.name)
-    movie_genre = ",".join(movie_genre)
+    the_movie.genre  = ",".join(movie_genre)
 
-    the_movie.genre = movie_genre
     casts = movie_info.casts.__dict__["cast"]
 
     the_cast = []
@@ -2062,15 +2059,13 @@ def edit_serie(id: int, library: str):
             f"{all_series_path}/{the_serie.original_name}"
         )
 
-        new_cast = ",".join(new_cast[:5])
-        genre_list = ",".join(genre_list)
+        the_serie.cast = ",".join(new_cast[:5])
+        the_serie.genre = ",".join(genre_list)
         is_adult = str(details["adult"])
         the_serie.id = serie_id
         the_serie.name = name
-        the_serie.genre = genre_list
         the_serie.duration = duration
         the_serie.description = description
-        the_serie.cast = new_cast
         the_serie.bande_annonce_url = bande_annonce_url
         the_serie.cover = cover
         the_serie.banner = banner
@@ -2212,7 +2207,7 @@ def book_url_page(id: int, page: int) -> Response:
         if book_type == "PDF" or book_type == "EPUB":
             pdf_doc = fitz.open(book_slug)
             page = pdf_doc[int(page)]
-            image_stream = io.BytesIO(page.get_pixmap().tobytes("jpg"))
+            image_stream = io.BytesIO(page.get_pixmap().tobytes("jpg")) # type: ignore
             image_stream.seek(0)
             return send_file(image_stream, mimetype="image/jpeg")
 
@@ -2228,7 +2223,7 @@ def book_url_page(id: int, page: int) -> Response:
         elif book_type == "CBR":
             with rarfile.RarFile(book_slug, "r") as rar:
                 image_file = rar.infolist()[int(page)]
-                if is_image_file(image_file.filename):
+                if is_image_file(image_file.filename): # type: ignore
                     with rar.open(image_file) as image:
                         image_stream = io.BytesIO(image.read())
                         image_stream.seek(0)
@@ -2306,8 +2301,7 @@ def get_tv(tv_name: str, id: str) -> Response:
         lib_folder = tv.lib_folder
 
         if is_valid_url(lib_folder):
-            m3u = requests.get(lib_folder).text
-            m3u = m3u.split("\n")
+            m3u = requests.get(lib_folder).text.split("\n")
         else:
             with open(lib_folder, "r", encoding="utf-8") as f:
                 m3u = f.readlines()
@@ -2361,45 +2355,44 @@ def get_channels(channels: str) -> Response:
     channels = Libraries.query.filter_by(lib_name=channels).first()
     if not channels:
         abort(404, "Library not found")
-    lib_folder = channels.lib_folder
+    lib_folder = channels.lib_folder # type: ignore
 
     try:
         with open(lib_folder, "r", encoding="utf-8") as f:
             m3u = f.readlines()
     except OSError:
         lib_folder = lib_folder.replace("\\", "/")
-        m3u = requests.get(lib_folder).text
-        m3u = m3u.split("\n")
+        m3u = requests.get(lib_folder).text.split("\n")
 
     m3u.pop(0)
     while m3u[0] == "\n":
         m3u.pop(0)
 
-    channels = []
+    channels_list = []
     for i in m3u:
         if not i.startswith(("#EXTINF", "http")):
             m3u.remove(i)
         elif i == "\n":
             m3u.remove(i)
-    for i in range(0, len(m3u) - 1, 2):
+    for i in range(0, len(m3u) - 1, 2): # type: ignore
         data = {}
         try:
-            data["name"] = m3u[i].split(",")[-1].replace("\n", "")
+            data["name"] = m3u[i].split(",")[-1].replace("\n", "") # type: ignore
             work = True
         except Exception:
             work = False
         if work:
-            data["url"] = m3u[i + 1].replace("\n", "")
+            data["url"] = m3u[i + 1].replace("\n", "") # type: ignore
             data["channelID"] = i
             tvg_id_regex = r'tvg-id="(.+?)"'
             tvg_id = None
-            match = re.search(tvg_id_regex, m3u[i])
+            match = re.search(tvg_id_regex, m3u[i]) # type: ignore
             if match:
                 tvg_id = match.group(1)
                 data["id"] = tvg_id
 
             tvg_logo_regex = r'tvg-logo="(.+?)"'
-            match = re.search(tvg_logo_regex, m3u[i])
+            match = re.search(tvg_logo_regex, m3u[i]) # type: ignore
             if match and match.group(1) != '" group-title=':
                 tvg_logo = match.group(1)
                 data["logo"] = tvg_logo
@@ -2407,10 +2400,10 @@ def get_channels(channels: str) -> Response:
                 broken_path = ""
                 data["logo"] = broken_path
 
-            channels.append(data)
+            channels_list.append(data)
 
-    channels = natsort.natsorted(channels, key=itemgetter(*["name"]))
-    return jsonify(channels)
+    channels_list = natsort.natsorted(channels_list, key=itemgetter(*["name"]))
+    return jsonify(channels_list)
 
 
 @app.route("/search_tv/<library>/<search>")
@@ -2421,15 +2414,14 @@ def search_tv(library: str, search: str) -> Response:
     library = Libraries.query.filter_by(lib_name=library).first()
     if not library:
         abort(404, "Library not found")
-    lib_folder = library.lib_folder
+    lib_folder = library.lib_folder # type: ignore
 
     try:
         with open(lib_folder, "r", encoding="utf-8") as f:
             m3u = f.readlines()
     except OSError:
         lib_folder = lib_folder.replace("\\", "/")
-        m3u = requests.get(lib_folder).text
-        m3u = m3u.split("\n")
+        m3u = requests.get(lib_folder).text.split("\n")
 
     m3u.pop(0)
     while m3u[0] == "\n":
@@ -2441,25 +2433,25 @@ def search_tv(library: str, search: str) -> Response:
             m3u.remove(i)
         elif i == "\n":
             m3u.remove(i)
-    for i in range(0, len(m3u) - 1, 2):
+    for i in range(0, len(m3u) - 1, 2): # type: ignore
         data = {}
         try:
-            data["name"] = m3u[i].split(",")[-1].replace("\n", "")
+            data["name"] = m3u[i].split(",")[-1].replace("\n", "") # type: ignore
             work = True
         except Exception:
             work = False
         if work:
-            data["url"] = m3u[i + 1].replace("\n", "")
+            data["url"] = m3u[i + 1].replace("\n", "") # type: ignore
             data["channelID"] = i
             tvg_id_regex = r'tvg-id="(.+?)"'
             tvg_id = None
-            match = re.search(tvg_id_regex, m3u[i])
+            match = re.search(tvg_id_regex, m3u[i]) # type: ignore
             if match:
                 tvg_id = match.group(1)
                 data["id"] = tvg_id
 
             tvg_logo_regex = r'tvg-logo="(.+?)"'
-            match = re.search(tvg_logo_regex, m3u[i])
+            match = re.search(tvg_logo_regex, m3u[i]) # type: ignore
             if match and match.group(1) != '" group-title=':
                 tvg_logo = match.group(1)
                 data["logo"] = tvg_logo
@@ -2696,13 +2688,12 @@ def get_all_games(lib: str, console_name: str) -> Response:
 
 @app.route("/game_data/<lib>/<game_id>")
 def game_data(lib: str, game_id: int) -> Response:
-    game_id = Games.query.filter_by(id=game_id, library_name=lib).first()
-    if not game_id:
+    game = Games.query.filter_by(id=game_id, library_name=lib).first()
+    if not game:
         abort(404)
-    game_id = game_id.__dict__
-    del game_id["_sa_instance_state"]
-
-    return jsonify(game_id)
+    game = game.__dict__
+    del game["_sa_instance_state"]
+    return jsonify(game)
 
 
 @app.route("/game_file/<lib>/<id>")
@@ -2724,12 +2715,12 @@ def bios(console: str) -> Response:
             for i in os.listdir(f"{dir_path}/static/bios/{console}")
             if i.endswith(".bin")
         ]
-        bios = f"{dir_path}/static/bios/{console}/{bios[0]}"
+        bios_str = f"{dir_path}/static/bios/{console}/{bios[0]}"
 
-        if not os.path.exists(bios):
+        if not os.path.exists(bios_str):
             abort(404)
 
-        return send_file(bios, as_attachment=True)
+        return send_file(bios_str, as_attachment=True)
 
 
 @app.route("/search_movies/<library>/<search>")
@@ -2753,7 +2744,7 @@ def search_movies(library: str, search: str) -> Response:
     movies = Movies.query.filter_by(library_name=library).all()
     results = {}
     for movie in movies:
-        count = 0
+        count = 0.0
         title = movie.title.lower()
         real_title = movie.real_title.lower()
         slug = movie.slug.lower()
@@ -2784,7 +2775,7 @@ def search_movies(library: str, search: str) -> Response:
         if count > 0:
             results[movie] = count
 
-    results = sorted(results.items(), key=lambda x: x[1], reverse=True)
+    results = sorted(results.items(), key=lambda x: x[1], reverse=True) # type: ignore
 
     movies = [i[0].__dict__ for i in results]
     for i in movies:
@@ -2990,11 +2981,11 @@ def whoami() -> Response:
 
 
 @app.route("/main_movie/<movie_id>")
-def main_movie(movie_id: int) -> Response:
+def main_movie(movie_id: str) -> Response:
     movie_id = movie_id.replace(".m3u8", "")
     movie = Movies.query.filter_by(id=movie_id).first()
 
-    events.execute_event("on_movie_play", movie.__dict__)
+    events.execute_event(events.MOVIE_PLAY, movie)
 
     video_path = movie.slug
     video_properties = get_video_properties(video_path)
@@ -3014,8 +3005,8 @@ def main_movie(movie_id: int) -> Response:
             file.append(m3u8_line)
     last_line = f"#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH={width*height},CODECS=\"avc1.4d4033,mp4a.40.2\",AUDIO=\"audio\",RESOLUTION={width}x{height}\n/video_movie/{movie_id}.m3u8\n\n\n"
     file.append(last_line)
-    file = "".join(file)
-    m3u8_file += file
+    file_str = "".join(file)
+    m3u8_file += file_str
     response = make_response(m3u8_file)
 
     response.headers.set("Content-Type", "application/x-mpegURL")
@@ -3128,7 +3119,7 @@ def can_i_play_other_video(video_hash: str) -> Response:
 def main_serie(episode_id: int) -> Response:
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
 
-    events.execute_event("on_serie_play", episode.__dict__)
+    events.execute_event(events.SERIE_PLAY, episode)
 
     episode_path = episode.slug
 
@@ -3150,8 +3141,8 @@ def main_serie(episode_id: int) -> Response:
     last_line = f"#EXT-X-STREAM-INF:BANDWIDTH={width*height},RESOLUTION={width}x{height}\n/video_serie/{episode_id}\n"
     file.append(last_line)
     file = file[::-1]
-    file = "".join(file)
-    m3u8_file += file
+    file_str = "".join(file)
+    m3u8_file += file_str
 
     response = make_response(m3u8_file)
 
@@ -3186,8 +3177,8 @@ def main_other(other_hash: str) -> Response:
     last_line = f"#EXT-X-STREAM-INF:BANDWIDTH={width*height},RESOLUTION={width}x{height}\n/video_other/{other_hash}\n"
     file.append(last_line)
     file = file[::-1]
-    file = "".join(file)
-    m3u8_file += file
+    file_str = "".join(file)
+    m3u8_file += file_str
     response = make_response(m3u8_file)
 
     response.headers.set("Content-Type", "application/x-mpegURL")
@@ -3200,7 +3191,7 @@ def main_other(other_hash: str) -> Response:
     return response
 
 
-def generate_caption_serie(episode_id: int) -> str:
+def generate_caption_serie(episode_id: int) -> list[dict[str, Any]]:
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
     slug = episode.slug
     caption_command = [
@@ -3216,7 +3207,7 @@ def generate_caption_serie(episode_id: int) -> str:
         slug,
     ]
     caption_pipe = subprocess.Popen(caption_command, stdout=subprocess.PIPE)
-    caption_response = caption_pipe.stdout.read().decode("utf-8")
+    caption_response = caption_pipe.stdout.read().decode("utf-8") # type: ignore
     caption_response = caption_response.split("\n")
 
     all_captions = []
@@ -3254,7 +3245,7 @@ def generate_caption_serie(episode_id: int) -> str:
     return all_captions
 
 
-def generate_caption_movie(movie_id: int) -> str:
+def generate_caption_movie(movie_id: str | int) -> str:
     movie_path = Movies.query.filter_by(id=movie_id).first()
     slug = movie_path.slug
 
@@ -3272,7 +3263,7 @@ def generate_caption_movie(movie_id: int) -> str:
     ]
 
     caption_pipe = subprocess.Popen(caption_command, stdout=subprocess.PIPE)
-    caption_response = caption_pipe.stdout.read().decode("utf-8")
+    caption_response = caption_pipe.stdout.read().decode("utf-8") # type: ignore
     caption_response = caption_response.split("\n")
     caption_response.pop()
 
@@ -3528,7 +3519,7 @@ def user_image(id: int) -> Response:
     return send_file(user_image, as_attachment=True)
 
 def start_chocolate() -> None:
-    events.execute_event("before_start")
+    events.execute_event(events.BEFORE_START)
     enabled_rpc = config["ChocolateSettings"]["discordrpc"]
     if enabled_rpc == "true":
         try:
@@ -3568,7 +3559,7 @@ def start_chocolate() -> None:
 
             for library in libraries:
                 if library["lib_type"] in type_to_call:
-                    type_to_call[library["lib_type"]](library["lib_name"])
+                    type_to_call[library["lib_type"]](library["lib_name"]) # type: ignore
 
             print()
     print("\033[?25h", end="")
@@ -3594,8 +3585,7 @@ def start_chocolate() -> None:
             log("ERROR", "Discord RPC", log_message)
 
     app.run(host="0.0.0.0", port=8888)
-    events.execute_event("after_start")
-
+    events.execute_event(events.AFTER_START)
 
 if __name__ == "__main__":
     start_chocolate()
