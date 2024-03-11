@@ -127,7 +127,7 @@ def save_settings():
         client_secret = igdb_secret_key
 
     if language != "undefined":
-        config.set("ChocolateSettings", "language", language)
+        config.set("ChocolateSettings", "language", language.lower())
 
     try:
         allow_download = body["allowDownloadsCheckbox"]
