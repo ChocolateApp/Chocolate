@@ -5,27 +5,6 @@ import importlib
 import yaml
 import datetime
 
-def log(log_type, log_composant=None, log_message=""):
-    the_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    log = f"{the_time} - [{log_type}]"
-    LOG_PATH = "/var/chocolate/server.log"
-    if log_composant:
-        log += f" [{log_composant}] {log_message}\n"
-
-
-    # if file does not exist, create it
-    if not os.path.exists(LOG_PATH):
-        with open(LOG_PATH, "w") as logs:
-            logs.write(log)
-        return
-
-    with open(LOG_PATH, "r") as logs:
-        if log in logs.read():
-            return
-
-    with open(LOG_PATH, "a") as logs:
-        logs.write(log)
-
 
 def handle_default(yaml: dict, key: str, default: str = "Unknown") -> str:
     """Handle the default values for the plugin.yaml file"""
@@ -52,6 +31,7 @@ def load_plugins(plugins_path: str) -> None:
                     plugin_module = os.path.basename(plugin_file).split('.')[0]
 
                     plugin_file = f"{path}/{plugin_module}.py"
+                    from chocolate_app.utils.utils import log
 
                     log(f"Loading plugin {plugin_name} v{plugin_version} by {plugin_author}")
 
