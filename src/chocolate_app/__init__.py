@@ -47,8 +47,10 @@ paths = {
         "config": f"{os.getenv('APPDATA')}/Chocolate/config.ini",
         "db": f"{os.getenv('APPDATA')}/Chocolate/database.db",
         "images": f"{os.getenv('APPDATA')}/Chocolate/images",
-        "plugins": f"{os.getenv('APPDATA')}/Chocolate/plugins",
         "logs": f"{os.getenv('APPDATA')}/Chocolate/server.log",
+        "plugins": f"{os.getenv('APPDATA')}/Chocolate/plugins",
+        "replace_from": "",
+        "replace_to": ""
     },
     "Linux": {
         "config": "/var/chocolate/config.ini",
@@ -56,6 +58,8 @@ paths = {
         "images": "/var/chocolate/images/",
         "plugins": "/var/chocolate/plugins/",
         "logs": "/var/chocolate/server.log",
+        "replace_from": "/var/chocolate",
+        "replace_to": f"{os.getenv('HOME')}/.local/share/chocolate"
     },
     "Darwin": {
         "config": f"{os.getenv('HOME')}/Library/Application Support/Chocolate/config.ini",
@@ -63,6 +67,8 @@ paths = {
         "images": f"{os.getenv('HOME')}/Library/Application Support/Chocolate/images/",
         "plugins": f"{os.getenv('HOME')}/Library/Application Support/Chocolate/plugins/",
         "logs": f"{os.getenv('HOME')}/Library/Application Support/Chocolate/server.log",
+        "replace_from": "",
+        "replace_to": ""
     },
 }
 
@@ -92,6 +98,17 @@ PLUGINS_PATH = PLUGINS_PATH.replace("\\", "/")
 if PLUGINS_PATH.endswith("/"):
     PLUGINS_PATH = PLUGINS_PATH[:-1]
 
+def replace_path(path: str) -> str:
+    return path.replace(paths[OPERATING_SYSTEM]["replace_from"], paths[OPERATING_SYSTEM]["replace_to"])
+
+try:
+    if not os.path.isdir(os.path.dirname(CONFIG_PATH)):
+        os.mkdir(os.path.dirname(CONFIG_PATH))
+except PermissionError:
+    CONFIG_PATH = replace_path(CONFIG_PATH)
+    DB_PATH = replace_path(DB_PATH)
+    LOG_PATH = replace_path(LOG_PATH)
+    IMAGES_PATH = replace_path(IMAGES_PATH)
 
 if os.getenv("NO_SCANS") == "true":
     ARGUMENTS.no_scans = True
