@@ -40,7 +40,7 @@ from unidecode import unidecode
 from videoprops import get_video_properties # type: ignore
 from operator import itemgetter
 
-from . import (
+from chocolate_app import (
     app,
     get_dir_path,
     DB,
@@ -51,11 +51,12 @@ from . import (
     ARGUMENTS,
     IMAGES_PATH,
     write_config,
+    scans,
+    CHUNK_LENGTH
 )
 from chocolate_app.tables import Language, Movies, Series, Seasons, Episodes, OthersVideos, Users, Libraries, Books, Artists, MusicLiked, MusicPlayed, Playlists, Tracks, Albums, Actors, Games, LatestEpisodeWatched, LibrariesMerge
-from . import scans
 from chocolate_app.utils.utils import log, generate_log, check_authorization, user_in_lib, save_image, is_image_file
-from chocolate_app.plugins_loader import events
+from chocolate_app.plugins_loader import events, routes
 
 dir_path: str = get_dir_path()
 
@@ -143,7 +144,6 @@ with app.app_context():
         language_db.language = config_language
         DB.session.commit()
 
-CHUNK_LENGTH: int = 5
 
 websites_trailers = {
     "YouTube": "https://www.youtube.com/embed/",
@@ -251,6 +251,9 @@ def index(path=None) -> str:
     Returns:
         str: The rendered template
     """
+    if routes.have_route(path):
+        return routes.execute_route(path, request)
+    
     return render_template("index.html")
 
 
