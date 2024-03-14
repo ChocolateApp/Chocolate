@@ -33,17 +33,16 @@ def load_plugins(plugins_path: str) -> None:
                     plugin_file = f"{path}/{plugin_module}.py"
                     from chocolate_app.utils.utils import log
 
-                    log(f"Loading plugin {plugin_name} v{plugin_version} by {plugin_author}")
-
                     plugin_module_name = f"plugin_{plugin_name}"
                     specs = importlib.util.spec_from_file_location(plugin_module_name, plugin_file)
                     if not specs:
-                        log("Error", "Plugin Loader", f"Could not load plugin {plugin_name} v{plugin_version} by {plugin_author}")
+                        log("Error", "Plugin Loader", f"Could not load plugin {plugin_name} v{plugin_version} by {plugin_author}\n")
                         continue
                     new_module = importlib.util.module_from_spec(specs)
                     if not specs.loader:
-                        log("Error", "Plugin Loader", f"Could not load plugin {plugin_name} v{plugin_version} by {plugin_author}")
+                        log("Error", "Plugin Loader", f"Could not load plugin {plugin_name} v{plugin_version} by {plugin_author}\n")
                         continue
+
                     from chocolate_app import app
                     with app.app_context():
                         specs.loader.exec_module(new_module)
