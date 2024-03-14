@@ -1444,7 +1444,7 @@ def getSeries(library_name: str) -> None:
                     is not None
                 )
             if not exists:
-                if isinstance(season_id, int) or season_id.isnumeric():
+                if season_id and (isinstance(season_id, int) or season_id.isnumeric()):
                     showEpisode = Episode()
                     episodeDetails = showEpisode.details(
                         serie_id, season_number, episodeIndex
