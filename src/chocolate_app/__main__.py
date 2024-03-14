@@ -229,6 +229,17 @@ def after_request(response: Response) -> Response:
         511: "Network Authentication Required",
     }
 
+    ip_address = request.remote_addr
+
+    if "CF-Connecting-IP" in request.headers:
+        ip_address = request.headers["CF-Connecting-IP"]
+    elif "X-Real-IP" in request.headers:
+        ip_address = request.headers["X-Real-IP"]
+    elif "X-Forwarded-For" in request.headers:
+        ip_address = request.headers["X-Forwarded-For"]
+    
+    request.remote_addr = ip_address
+
     if response.status_code in code_to_status:
         generate_log(
             request, f"{response.status_code} - {code_to_status[response.status_code]}"
