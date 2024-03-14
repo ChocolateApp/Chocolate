@@ -116,11 +116,14 @@ def render_template(template: str, **kwargs) -> str | None:
     Returns:
         Response: The response of the template
     """
+    url_path = request.path
     template_file = None
 
     for pattern, folder_path, handler, methods  in ROUTES:
-        if os.path.exists(f"{folder_path}/{template}"):
-            template_file = template
+        if match_rule(pattern, url_path):
+            if os.path.exists(f"{folder_path}/{template}"):
+                template_file = template
+                break
 
     if not template_file:
         return None
