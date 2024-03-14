@@ -3,7 +3,7 @@ import datetime
 import json
 import requests
 
-from flask import abort
+from flask import Request, abort
 
 from PIL import Image, UnidentifiedImageError
 
@@ -13,11 +13,21 @@ from chocolate_app.tables import Users, Libraries
 dir_path = get_dir_path()
 
 
-def generate_log(request, component):
+def generate_log(request: Request, component: str) -> None:
+    """
+    Generate a log
+
+    Args:
+        request: The request
+        component: The component of the log
+
+    Returns:
+        None
+    """
     method = request.method
 
     token = request.headers.get("Authorization")
-
+    ip_address = request.remote_addr
     path = request.path
 
     try:
@@ -55,15 +65,30 @@ def generate_log(request, component):
             f"Request {method} at {path}. from {username} with data: {json.dumps(data)}"
         )
 
-    log("INFO", component, message)
+    log("INFO", component, message, ip_address)
 
 
-def log(log_type, log_composant=None, log_message=""):
+def log(log_type: str, log_composant=None, log_message="", ip_address="") -> None:
+    """
+    Log a message
+
+    Args:
+        log_type (str): The type of the log
+        log_composant (str, optional): The component of the log. Defaults to None.
+        log_message (str, optional): The message of the log. Defaults to "".
+        ip_address (str, optional): The IP address of the log. Defaults to "".
+
+    Returns:
+        None
+    """
+
     the_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     log = f"{the_time} - [{log_type}]"
     if log_composant:
         log += f" [{log_composant}] {log_message}\n"
 
+    if ip_address and ip_address != "":
+        log = f"[{ip_address}] {log}"
 
     # if file does not exist, create it
     if not os.path.exists(LOG_PATH):
