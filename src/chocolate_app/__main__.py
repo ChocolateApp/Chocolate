@@ -239,8 +239,8 @@ def after_request(response: Response) -> Response:
     return response
 
 
-@app.route("/")
-@app.route("/<path:path>")
+@app.route("/", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "CONNECT", "OPTIONS", "TRACE"])
+@app.route("/<path:path>", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "CONNECT", "OPTIONS", "TRACE"])
 def index(path=None) -> str:
     """
     The index route
