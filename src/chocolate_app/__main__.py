@@ -56,7 +56,7 @@ from chocolate_app import (
 )
 from chocolate_app.tables import Language, Movies, Series, Seasons, Episodes, OthersVideos, Users, Libraries, Books, Artists, MusicLiked, MusicPlayed, Playlists, Tracks, Albums, Actors, Games, LatestEpisodeWatched, LibrariesMerge
 from chocolate_app.utils.utils import log, generate_log, check_authorization, user_in_lib, save_image, is_image_file, get_chunk_user_token
-from chocolate_app.plugins_loader import events, routes
+from chocolate_app.plugins_loader import events, routes, inject_html
 
 dir_path: str = get_dir_path()
 
@@ -3180,6 +3180,15 @@ def can_i_play_other_video(video_hash: str) -> Response:
             if user not in available_for:
                 return jsonify({"can_I_play": False})
         return jsonify({"can_I_play": True})
+
+@app.route("/plugins_dynamic")
+def plugins_dynamic() -> Response:
+    js_code = inject_html.generate_js()
+
+    js_file = make_response(js_code)
+
+    js_file.headers.set("Content-Type", "application/javascript")
+    return js_file
 
 
 @app.route("/main_serie/<episode_id>")
