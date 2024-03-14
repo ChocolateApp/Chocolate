@@ -31,6 +31,8 @@ class ChocolateException(Exception):
 class UnsupportedSystemDefaultPath(ChocolateException):
     """Raised when the default path for the config file and the database file is not supported by Chocolate"""
 
+class TemplateNotFound(ChocolateException):
+    """Raised when a template was not found"""
 
 parser: argparse.ArgumentParser = argparse.ArgumentParser("Chocolate")
 parser.add_argument("--config", help="Path to the config file (a .ini file)")
