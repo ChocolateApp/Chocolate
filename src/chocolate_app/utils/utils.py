@@ -277,3 +277,19 @@ def is_directory(path: str) -> bool:
         bool: True if the path is a directory, False otherwise
     """
     return os.path.isdir(path)
+
+def get_chunk_user_token(request: Request) -> int | None:
+    """
+    Get the user token from the request
+
+    Args:
+        request: The request
+
+    Returns:
+        str: The user token
+    """
+    token = request.headers.get("X-User-Token")
+    if f"Bearer {token}" not in all_auth_tokens:
+        return None
+    user = all_auth_tokens[f"Bearer {token}"]["user"]
+    return Users.query.filter_by(name=user).first().id

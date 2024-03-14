@@ -55,7 +55,7 @@ from chocolate_app import (
     CHUNK_LENGTH
 )
 from chocolate_app.tables import Language, Movies, Series, Seasons, Episodes, OthersVideos, Users, Libraries, Books, Artists, MusicLiked, MusicPlayed, Playlists, Tracks, Albums, Actors, Games, LatestEpisodeWatched, LibrariesMerge
-from chocolate_app.utils.utils import log, generate_log, check_authorization, user_in_lib, save_image, is_image_file
+from chocolate_app.utils.utils import log, generate_log, check_authorization, user_in_lib, save_image, is_image_file, get_chunk_user_token
 from chocolate_app.plugins_loader import events, routes
 
 dir_path: str = get_dir_path()
@@ -584,6 +584,13 @@ def get_chunk_serie(episode_id: int, idx: int = 0) -> Response:
     time_start = str(datetime.timedelta(seconds=seconds))
     time_end = str(datetime.timedelta(seconds=seconds + CHUNK_LENGTH))
 
+    token = get_chunk_user_token(request)
+
+    if not token:
+        abort(401)
+        
+    events.execute_event(events.CHUNK_EPISODE_PLAY, episode, token, time=time_start)
+
     command = [
         "ffmpeg",
         FFMPEG_ARGS,
@@ -637,6 +644,15 @@ def get_chunk_serie_quality(quality: str, episode_id: int, idx: int = 0):
     episode_path = episode.slug
     time_start = str(datetime.timedelta(seconds=seconds))
     time_end = str(datetime.timedelta(seconds=seconds + CHUNK_LENGTH))
+
+    
+    token = get_chunk_user_token(request)
+
+    if not token:
+        abort(401)
+        
+    events.execute_event(events.CHUNK_EPISODE_PLAY, episode, token, time=time_start)
+
     video_properties = get_video_properties(episode_path)
     width = video_properties["width"]
     height = video_properties["height"]
@@ -703,13 +719,22 @@ def get_chunk_serie_quality(quality: str, episode_id: int, idx: int = 0):
 
 @app.route("/chunk_movie/<movie_id>-<int:idx>.ts", methods=["GET"])
 def chunk_movie(movie_id: int, idx: int = 0) -> Response:
+
     seconds = (idx - 1) * CHUNK_LENGTH
+
+
     movie = Movies.query.filter_by(id=movie_id).first()
     video_path = movie.slug
 
     time_start = str(datetime.timedelta(seconds=seconds))
     time_end = str(datetime.timedelta(seconds=seconds + CHUNK_LENGTH))
 
+    token = get_chunk_user_token(request)
+
+    if not token:
+        abort(401)
+
+    events.execute_event(events.CHUNK_MOVIE_PLAY, movie, token, time=time_start)
 
     command = [
         "ffmpeg",
@@ -764,6 +789,14 @@ def get_chunk_quality(quality: str, movie_id: int, idx: int = 0) -> Response:
 
     time_start = str(datetime.timedelta(seconds=seconds))
     time_end = str(datetime.timedelta(seconds=seconds + CHUNK_LENGTH))
+
+    token = get_chunk_user_token(request)
+
+    if not token:
+        abort(401)
+        
+    events.execute_event(events.CHUNK_MOVIE_PLAY, movie, token, time=time_start)
+
     video_properties = get_video_properties(video_path)
     width = video_properties["width"]
     height = video_properties["height"]
@@ -850,6 +883,12 @@ def get_chunk_other(hash: str, idx: int = 0) -> Response:
     time_start = str(datetime.timedelta(seconds=seconds))
     time_end = str(datetime.timedelta(seconds=seconds + CHUNK_LENGTH))
 
+    token = get_chunk_user_token(request)
+
+    if not token:
+        abort(401)
+        
+    events.execute_event(events.CHUNK_OTHER_PLAY, movie, token, time=time_start)
 
     command = [
         "ffmpeg",
@@ -903,6 +942,15 @@ def get_chunk_other_quality(quality: str, hash: str, idx=0) -> Response:
 
     time_start = str(datetime.timedelta(seconds=seconds))
     time_end = str(datetime.timedelta(seconds=seconds + CHUNK_LENGTH))
+
+    
+    token = get_chunk_user_token(request)
+
+    if not token:
+        abort(401)
+        
+    events.execute_event(events.CHUNK_OTHER_PLAY, movie, token, time=time_start)
+
     video_properties = get_video_properties(video_path)
     width = video_properties["width"]
     height = video_properties["height"]
@@ -2998,8 +3046,13 @@ def whoami() -> Response:
 def main_movie(movie_id: str) -> Response:
     movie_id = movie_id.replace(".m3u8", "")
     movie = Movies.query.filter_by(id=movie_id).first()
+    
+    token = get_chunk_user_token(request)
+    
+    if not token:
+        abort(401)
 
-    events.execute_event(events.MOVIE_PLAY, movie)
+    events.execute_event(events.MOVIE_PLAY, movie_id, token)
 
     video_path = movie.slug
     video_properties = get_video_properties(video_path)
@@ -3133,8 +3186,13 @@ def can_i_play_other_video(video_hash: str) -> Response:
 def main_serie(episode_id: int) -> Response:
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
 
-    events.execute_event(events.SERIE_PLAY, episode)
+    token = get_chunk_user_token(request)
 
+    if not token:
+        abort(401)
+
+    events.execute_event(events.SERIE_PLAY, episode_id, token)
+    
     episode_path = episode.slug
 
     video_properties = get_video_properties(episode_path)
@@ -3173,6 +3231,15 @@ def main_serie(episode_id: int) -> Response:
 @app.route("/main_other/<other_hash>")
 def main_other(other_hash: str) -> Response:
     movie = OthersVideos.query.filter_by(video_hash=other_hash).first()
+
+    token = get_chunk_user_token(request)
+
+    if not token:
+        abort(401)
+
+    events.execute_event(events.OTHER_PLAY, other_hash, token)
+
+    
     video_path = movie.slug
     video_properties = get_video_properties(video_path)
     height = int(video_properties["height"])

@@ -19,7 +19,11 @@ SETTINGS_UPDATE = "settings_update"
 USER_DELETE = "user_delete"
 LOGIN = "login"
 MOVIE_PLAY = "movie_play"
-SERIE_PLAY = "serie_play"
+EPISODE_PLAY = "episode_play"
+OTHER_PLAY = "other_play"
+CHUNK_MOVIE_PLAY = "chunk_movie_play"
+CHUNK_EPISODE_PLAY = "chunk_episode_play"
+CHUNK_OTHER_PLAY = "chunk_other_play"
 
 def on(event_name):
     def decorator(handler):
