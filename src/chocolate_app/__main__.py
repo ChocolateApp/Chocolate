@@ -3191,7 +3191,7 @@ def main_serie(episode_id: int) -> Response:
     if not token:
         abort(401)
 
-    events.execute_event(events.SERIE_PLAY, episode_id, token)
+    events.execute_event(events.EPISODE_PLAY, episode_id, token)
     
     episode_path = episode.slug
 
