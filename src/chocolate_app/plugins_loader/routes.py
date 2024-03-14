@@ -1,8 +1,10 @@
 from typing import Any, Callable, Dict
 from flask import Flask, Response, jsonify, make_response, request, send_file
-import re, os
 
+import re, os
 import jinja2
+
+from chocolate_app import TemplateNotFound
 
 app = Flask(__name__)
 
@@ -124,6 +126,8 @@ def render_template(template: str, **kwargs) -> str | None:
             if os.path.exists(f"{folder_path}/{template}"):
                 template_file = template
                 break
+            else:
+                raise TemplateNotFound(f"Template {template} not found in {folder_path}")
 
     if not template_file:
         return None
