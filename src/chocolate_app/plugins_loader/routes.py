@@ -1,10 +1,12 @@
 from typing import Any, Callable, Dict
-from flask import Flask, Response, jsonify, make_response
-import re
+from flask import Flask, Response, jsonify, make_response, request, send_file
+import re, os
+
+import jinja2
 
 app = Flask(__name__)
 
-ROUTES: list[tuple[str, Callable]] = []
+ROUTES: list[tuple[str, str, Callable, list]] = []
 
 def match_rule(rule: str, path: str) -> bool:
     """
@@ -22,7 +24,7 @@ def match_rule(rule: str, path: str) -> bool:
 
     return re.match(rule_regex, path) is not None
 
-def new(path: str) -> Callable:
+def new(path: str, **kwargs) -> Callable:
     """
     Decorator to create a new route
 
@@ -34,9 +36,13 @@ def new(path: str) -> Callable:
     """
 
     def decorator(handler):
-        ROUTES.append((path, handler))
+        file_path = '/'.join(handler.__code__.co_filename.split('/')[:-1]) + "/templates"
+        methods = ["GET"]
+        if "methods" in kwargs:
+            methods = kwargs["methods"]
+
+        ROUTES.append((path, file_path, handler, methods))
         
-        @app.route(path)
         def wrapper(*args, **kwargs):
             response = handler(*args, **kwargs)
 
@@ -98,12 +104,40 @@ def get_attributes(pattern: str, path: str) -> list:
     
     return attributes
 
+def render_template(template: str, **kwargs) -> str | None:
+    """
+    Render a template
+
+    Args:
+        template (str): The template to render
+        args: The arguments of the template
+        kwargs: The keyword arguments of the template
+
+    Returns:
+        Response: The response of the template
+    """
+    template_file = None
+
+    for pattern, folder_path, handler, methods  in ROUTES:
+        if os.path.exists(f"{folder_path}/{template}"):
+            template_file = template
+
+    if not template_file:
+        return None
+    html = ""
+
+    with open(f"{folder_path}/{template_file}", "r") as file:
+        html = file.read()
+
+    return jinja2.Template(html).render(kwargs)
+
 def execute_route(path: str, *args, **kwargs) -> Any:
     """
     Execute a route
 
     Args:
         path (str): The path of the route
+        methods (list): The methods of the route (default: ["GET"])
         args: The arguments of the route
         kwargs: The keyword arguments of the route
 
@@ -112,20 +146,29 @@ def execute_route(path: str, *args, **kwargs) -> Any:
     """
     if not path.startswith('/'):
         path = '/' + path
+        
     with app.app_context():
-        try:
-            response = None
-            for pattern, handler in ROUTES:
-                if match_rule(pattern, path):
-                    response = handler(*get_attributes(pattern, path), *args, **kwargs)
+        response = None
+
+        methods = ["GET"]
+        if "methods" in kwargs:
+            methods = kwargs["methods"]
+
+        for pattern, folder_path, handler, methods in ROUTES:
+            if match_rule(pattern, path):
+                if request.method not in methods:
+                    return make_response("Method not allowed", 405)
+                response = handler(*get_attributes(pattern, path), methods=methods, *args, **kwargs)
+                try:
+                    return response
+                except:
                     break
-            
-            if isinstance(response, Dict):
-                response = jsonify(response)
-            elif not isinstance(response, Response):
-                response = make_response(response)
-            return response
-        except Exception as e:
-            from chocolate_app.utils.utils import log
-            log("Error", "Routes", f"An error occurred while executing the route {path}: {str(e)}")
-            return make_response('', 404)
+                
+        if isinstance(response, str):
+            return send_file(f"{folder_path}/{response}")
+        elif isinstance(response, Dict):
+            response = jsonify(response)
+        elif not isinstance(response, Response):
+            response = make_response(response)
+
+        return response
