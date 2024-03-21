@@ -288,8 +288,8 @@ def get_chunk_user_token(request: Request) -> int | None:
     Returns:
         str: The user token
     """
-    token = request.headers.get("X-User-Token")
-    if f"Bearer {token}" not in all_auth_tokens:
+    token = request.headers.get("Authorization")
+    if token not in all_auth_tokens:
         return None
-    user = all_auth_tokens[f"Bearer {token}"]["user"]
+    user = all_auth_tokens[token]["user"]
     return Users.query.filter_by(name=user).first().id

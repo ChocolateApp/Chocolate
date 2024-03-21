@@ -5,7 +5,7 @@
 groups = ["default", "lint"]
 strategy = ["cross_platform"]
 lock_version = "4.4.1"
-content_hash = "sha256:f5be6bfe39b19b7861617cde0192b5361d6b6fd747b58dfbd8d6138ff31abdf9"
+content_hash = "sha256:b5d8868728f400ac90b95b4e63872b51daa2239c0c297c47c5b39eff194c6e73"
 
 [[package]]
 name = "alembic"
@@ -41,7 +41,18 @@ files = [
     {file = "babelfish-0.6.0.tar.gz", hash = "sha256:2dadfadd1b205ca5fa5dc9fa637f5b7933160a0418684c7c46a7a664033208a2"},
 ]
 
-
+[[package]]
+name = "beautifulsoup4"
+version = "4.12.3"
+requires_python = ">=3.6.0"
+summary = "Screen-scraping library"
+dependencies = [
+    "soupsieve>1.2",
+]
+files = [
+    {file = "beautifulsoup4-4.12.3-py3-none-any.whl", hash = "sha256:b80878c9f40111313e55da8ba20bdba06d8fa3969fc68304167741bbf9e082ed"},
+    {file = "beautifulsoup4-4.12.3.tar.gz", hash = "sha256:74e3d1928edc070d21748185c46e3fb33490f22f52a3addee9aee0f4f7781051"},
+]
 
 [[package]]
 name = "black"
@@ -184,6 +195,14 @@ dependencies = [
 ]
 files = [
     {file = "EbookLib-0.18.tar.gz", hash = "sha256:38562643a7bc94d9bf56e9930b4927e4e93b5d1d0917f697a6454db5a1c1a533"},
+]
+
+[[package]]
+name = "editorconfig"
+version = "0.12.4"
+summary = "EditorConfig File Locator and Interpreter for Python"
+files = [
+    {file = "EditorConfig-0.12.4.tar.gz", hash = "sha256:24857fa1793917dd9ccf0c7810a07e05404ce9b823521c7dce22a4fb5d125f80"},
 ]
 
 [[package]]
@@ -383,6 +402,18 @@ dependencies = [
 files = [
     {file = "Jinja2-3.1.2-py3-none-any.whl", hash = "sha256:6088930bfe239f0e6710546ab9c19c9ef35e29792895fed6e6e31a023a182a61"},
     {file = "Jinja2-3.1.2.tar.gz", hash = "sha256:31351a702a408a9e7595a8fc6150fc3f43bb6bf7e319770cbc0db9df9437e852"},
+]
+
+[[package]]
+name = "jsbeautifier"
+version = "1.15.1"
+summary = "JavaScript unobfuscator and beautifier."
+dependencies = [
+    "editorconfig>=0.12.2",
+    "six>=1.13.0",
+]
+files = [
+    {file = "jsbeautifier-1.15.1.tar.gz", hash = "sha256:ebd733b560704c602d744eafc839db60a1ee9326e30a2a80c4adb8718adc1b24"},
 ]
 
 [[package]]

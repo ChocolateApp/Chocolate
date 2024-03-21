@@ -56,7 +56,7 @@ from chocolate_app import (
 )
 from chocolate_app.tables import Language, Movies, Series, Seasons, Episodes, OthersVideos, Users, Libraries, Books, Artists, MusicLiked, MusicPlayed, Playlists, Tracks, Albums, Actors, Games, LatestEpisodeWatched, LibrariesMerge
 from chocolate_app.utils.utils import log, generate_log, check_authorization, user_in_lib, save_image, is_image_file, get_chunk_user_token
-from chocolate_app.plugins_loader import events, routes, inject_html
+from chocolate_app.plugins_loader import events, routes
 
 dir_path: str = get_dir_path()
 
@@ -518,8 +518,7 @@ def create_serie_m3u8(episode_id: int) -> Response:
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
     episode_path = episode.slug
     duration = length_video(episode_path)
-    file = f"""
-#EXTM3U
+    file = f"""#EXTM3U
 
 #EXT-X-VERSION:4
 #EXT-X-TARGETDURATION:{CHUNK_LENGTH}
@@ -529,8 +528,7 @@ def create_serie_m3u8(episode_id: int) -> Response:
     for i in range(0, int(duration), CHUNK_LENGTH):
         file += f"""
 #EXTINF:{float(CHUNK_LENGTH)},
-/chunk_serie/{episode_id}-{(i // CHUNK_LENGTH) + 1}.ts
-        """
+/chunk_serie/{episode_id}-{(i // CHUNK_LENGTH) + 1}.ts"""
 
     file += "\n#EXT-X-ENDLIST"
 
@@ -549,8 +547,7 @@ def create_serie_m3u8_quality(quality: str, episode_id: int) -> Response:
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
     episode_path = episode.slug
     duration = length_video(episode_path)
-    file = f"""
-#EXTM3U
+    file = f"""#EXTM3U
 
 #EXT-X-VERSION:4
 #EXT-X-TARGETDURATION:{CHUNK_LENGTH}
@@ -560,8 +557,7 @@ def create_serie_m3u8_quality(quality: str, episode_id: int) -> Response:
     for i in range(0, int(duration), CHUNK_LENGTH):
         file += f"""
 #EXTINF:{float(CHUNK_LENGTH)},
-/chunk_serie/{quality}/{episode_id}-{(i // CHUNK_LENGTH) + 1}.ts
-        """
+/chunk_serie/{quality}/{episode_id}-{(i // CHUNK_LENGTH) + 1}.ts"""
 
     file += "\n#EXT-X-ENDLIST"
 
@@ -587,7 +583,8 @@ def get_chunk_serie(episode_id: int, idx: int = 0) -> Response:
     token = get_chunk_user_token(request)
 
     if not token:
-        abort(401)
+        pass
+        #abort(401)
         
     events.execute_event(events.CHUNK_EPISODE_PLAY, episode, token, time=time_start)
 
@@ -649,7 +646,8 @@ def get_chunk_serie_quality(quality: str, episode_id: int, idx: int = 0):
     token = get_chunk_user_token(request)
 
     if not token:
-        abort(401)
+        pass
+        #abort(401)
         
     events.execute_event(events.CHUNK_EPISODE_PLAY, episode, token, time=time_start)
 
@@ -732,7 +730,8 @@ def chunk_movie(movie_id: int, idx: int = 0) -> Response:
     token = get_chunk_user_token(request)
 
     if not token:
-        abort(401)
+        pass
+        #abort(401)
 
     events.execute_event(events.CHUNK_MOVIE_PLAY, movie, token, time=time_start)
 
@@ -793,7 +792,8 @@ def get_chunk_quality(quality: str, movie_id: int, idx: int = 0) -> Response:
     token = get_chunk_user_token(request)
 
     if not token:
-        abort(401)
+        pass
+        #abort(401)
         
     events.execute_event(events.CHUNK_MOVIE_PLAY, movie, token, time=time_start)
 
@@ -886,7 +886,8 @@ def get_chunk_other(hash: str, idx: int = 0) -> Response:
     token = get_chunk_user_token(request)
 
     if not token:
-        abort(401)
+        pass
+        #abort(401)
         
     events.execute_event(events.CHUNK_OTHER_PLAY, movie, token, time=time_start)
 
@@ -947,7 +948,8 @@ def get_chunk_other_quality(quality: str, hash: str, idx=0) -> Response:
     token = get_chunk_user_token(request)
 
     if not token:
-        abort(401)
+        pass
+        #abort(401)
         
     events.execute_event(events.CHUNK_OTHER_PLAY, movie, token, time=time_start)
 
@@ -1044,7 +1046,7 @@ def chunk_caption(movie_id: int, index: int = 0) -> Response:
     return extract_captions_response
 
 
-@app.route("/captionMovie/<movie_id>_<id>.m3u8", methods=["GET"])
+@app.route("/caption_movie/<movie_id>_<id>.m3u8", methods=["GET"])
 def caption_movie_by_id_to_m3_u8(movie_id: int, id: int) -> Response:
     movie = Movies.query.filter_by(id=movie_id).first()
     duration = movie.duration
@@ -3050,7 +3052,8 @@ def main_movie(movie_id: str) -> Response:
     token = get_chunk_user_token(request)
     
     if not token:
-        abort(401)
+        pass
+        #abort(401)
 
     events.execute_event(events.MOVIE_PLAY, movie_id, token)
 
@@ -3181,16 +3184,6 @@ def can_i_play_other_video(video_hash: str) -> Response:
                 return jsonify({"can_I_play": False})
         return jsonify({"can_I_play": True})
 
-@app.route("/plugins_dynamic")
-def plugins_dynamic() -> Response:
-    js_code = inject_html.generate_js()
-
-    js_file = make_response(js_code)
-
-    js_file.headers.set("Content-Type", "application/javascript")
-    return js_file
-
-
 @app.route("/main_serie/<episode_id>")
 def main_serie(episode_id: int) -> Response:
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
@@ -3198,7 +3191,8 @@ def main_serie(episode_id: int) -> Response:
     token = get_chunk_user_token(request)
 
     if not token:
-        abort(401)
+        pass
+        #abort(401)
 
     events.execute_event(events.EPISODE_PLAY, episode_id, token)
     
@@ -3244,7 +3238,8 @@ def main_other(other_hash: str) -> Response:
     token = get_chunk_user_token(request)
 
     if not token:
-        abort(401)
+        pass
+        #abort(401)
 
     events.execute_event(events.OTHER_PLAY, other_hash, token)
 
@@ -3376,7 +3371,7 @@ def generate_caption_movie(movie_id: str | int) -> str:
                 "index": index,
                 "languageCode": language,
                 "language": title_name,
-                "url": f"/captionMovie/{movie_id}_{index}.m3u8",
+                "url": f"/caption_movie/{movie_id}_{index}.m3u8",
                 "name": title_name,
             }
         )
@@ -3609,6 +3604,8 @@ def user_image(id: int) -> Response:
     return send_file(user_image, as_attachment=True)
 
 def start_chocolate() -> None:
+    from chocolate_app.plugins_loader import FrontEndRebuilder
+    FrontEndRebuilder.rebuild_frontend()
     events.execute_event(events.BEFORE_START)
     enabled_rpc = config["ChocolateSettings"]["discordrpc"]
     if enabled_rpc == "true":
