@@ -9,12 +9,12 @@ import shutil
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
-from flask_login import LoginManager # type: ignore
+from flask_login import LoginManager  # type: ignore
 from flask_migrate import Migrate
 
 from typing import Dict, Any
 
-from tmdbv3api import TMDb # type: ignore
+from tmdbv3api import TMDb  # type: ignore
 
 from chocolate_app.plugins_loader import loader
 
@@ -31,11 +31,14 @@ class ChocolateException(Exception):
 class UnsupportedSystemDefaultPath(ChocolateException):
     """Raised when the default path for the config file and the database file is not supported by Chocolate"""
 
+
 class TemplateNotFound(ChocolateException):
     """Raised when a template was not found"""
 
+
 parser: argparse.ArgumentParser = argparse.ArgumentParser("Chocolate")
 parser.add_argument("--config", help="Path to the config file (a .ini file)")
+parser.add_argument("--artefacts", help="Path to the artefacts folder (a folder)")
 parser.add_argument("--db", help="Path to the database file (a .db file)")
 parser.add_argument("--images", help="Path to the images folder (a folder)")
 parser.add_argument("--plugins", help="Path to the plugins folder (a folder)")
@@ -51,8 +54,9 @@ paths = {
         "images": f"{os.getenv('APPDATA')}/Chocolate/images",
         "logs": f"{os.getenv('APPDATA')}/Chocolate/server.log",
         "plugins": f"{os.getenv('APPDATA')}/Chocolate/plugins",
+        "artefacts": f"{os.getenv('APPDATA')}/Chocolate/artefacts",
         "replace_from": "",
-        "replace_to": ""
+        "replace_to": "",
     },
     "Linux": {
         "config": "/var/chocolate/config.ini",
@@ -60,8 +64,9 @@ paths = {
         "images": "/var/chocolate/images/",
         "plugins": "/var/chocolate/plugins/",
         "logs": "/var/chocolate/server.log",
+        "artefacts": "/var/chocolate/artefacts/",
         "replace_from": "/var/chocolate",
-        "replace_to": f"{os.getenv('HOME')}/.local/share/chocolate"
+        "replace_to": f"{os.getenv('HOME')}/.local/share/chocolate",
     },
     "Darwin": {
         "config": f"{os.getenv('HOME')}/Library/Application Support/Chocolate/config.ini",
@@ -69,8 +74,9 @@ paths = {
         "images": f"{os.getenv('HOME')}/Library/Application Support/Chocolate/images/",
         "plugins": f"{os.getenv('HOME')}/Library/Application Support/Chocolate/plugins/",
         "logs": f"{os.getenv('HOME')}/Library/Application Support/Chocolate/server.log",
+        "artefacts": f"{os.getenv('HOME')}/Library/Application Support/Chocolate/artefacts/",
         "replace_from": "",
-        "replace_to": ""
+        "replace_to": "",
     },
 }
 
@@ -100,8 +106,17 @@ PLUGINS_PATH = PLUGINS_PATH.replace("\\", "/")
 if PLUGINS_PATH.endswith("/"):
     PLUGINS_PATH = PLUGINS_PATH[:-1]
 
+ARTEFACTS_PATH: str = ARGUMENTS.artefacts or paths[OPERATING_SYSTEM]["artefacts"]
+ARTEFACTS_PATH = ARTEFACTS_PATH.replace("\\", "/")
+if ARTEFACTS_PATH.endswith("/"):
+    ARTEFACTS_PATH = ARTEFACTS_PATH[:-1]
+
+
 def replace_path(path: str) -> str:
-    return path.replace(paths[OPERATING_SYSTEM]["replace_from"], paths[OPERATING_SYSTEM]["replace_to"])
+    return path.replace(
+        paths[OPERATING_SYSTEM]["replace_from"], paths[OPERATING_SYSTEM]["replace_to"]
+    )
+
 
 try:
     if not os.path.isdir(os.path.dirname(CONFIG_PATH)):
@@ -116,6 +131,7 @@ CHUNK_LENGTH: int = 5
 
 if os.getenv("NO_SCANS") == "true":
     ARGUMENTS.no_scans = True
+
 
 def create_app() -> Flask:
     """
@@ -172,6 +188,7 @@ def check_dependencies() -> None:
         logging.warning(
             "ffmpeg is not installed. Chocolate will not be able to play videos."
         )
+
 
 def get_dir_path() -> str:
     """
@@ -241,11 +258,13 @@ def write_config(config) -> None:
     with open(CONFIG_PATH, "w") as configfile:
         config.write(configfile)
 
+
 def register_plugins() -> None:
     """
     Register the plugins
     """
     loader.load_plugins(PLUGINS_PATH)
+
 
 check_dependencies()
 

@@ -8,19 +8,19 @@ import re
 import subprocess
 import warnings
 import zipfile
-import rarfile # type: ignore
-import fitz # type: ignore
+import rarfile  # type: ignore
+import fitz  # type: ignore
 import git
-import GPUtil # type: ignore
-import pycountry # type: ignore
+import GPUtil  # type: ignore
+import pycountry  # type: ignore
 import requests
-import sqlalchemy # type: ignore
+import sqlalchemy  # type: ignore
 import natsort
 
 from time import localtime, mktime, time
 from typing import Any, Dict, List
 from uuid import uuid4
-from deep_translator import GoogleTranslator # type: ignore
+from deep_translator import GoogleTranslator  # type: ignore
 from flask import (
     abort,
     jsonify,
@@ -31,13 +31,13 @@ from flask import (
     render_template,
     Flask,
 )
-from guessit import guessit # type: ignore
+from guessit import guessit  # type: ignore
 from PIL import Image
-from pypresence import Presence # type: ignore
-from tmdbv3api import TV, Movie, Person, TMDb, Search # type: ignore
-from tmdbv3api.as_obj import AsObj # type: ignore
+from pypresence import Presence  # type: ignore
+from tmdbv3api import TV, Movie, Person, TMDb, Search  # type: ignore
+from tmdbv3api.as_obj import AsObj  # type: ignore
 from unidecode import unidecode
-from videoprops import get_video_properties # type: ignore
+from videoprops import get_video_properties  # type: ignore
 from operator import itemgetter
 
 from chocolate_app import (
@@ -52,11 +52,40 @@ from chocolate_app import (
     IMAGES_PATH,
     write_config,
     scans,
-    CHUNK_LENGTH
+    CHUNK_LENGTH,
 )
-from chocolate_app.tables import Language, Movies, Series, Seasons, Episodes, OthersVideos, Users, Libraries, Books, Artists, MusicLiked, MusicPlayed, Playlists, Tracks, Albums, Actors, Games, LatestEpisodeWatched, LibrariesMerge
-from chocolate_app.utils.utils import log, generate_log, check_authorization, user_in_lib, save_image, is_image_file, get_chunk_user_token
-from chocolate_app.plugins_loader import events, routes, inject_html
+from chocolate_app.tables import (
+    Language,
+    Movies,
+    Series,
+    Seasons,
+    Episodes,
+    OthersVideos,
+    Users,
+    Libraries,
+    Books,
+    Artists,
+    MusicLiked,
+    MusicPlayed,
+    Playlists,
+    Tracks,
+    Albums,
+    Actors,
+    Games,
+    LatestEpisodeWatched,
+    LibrariesMerge,
+    RecurringContent,
+)
+from chocolate_app.utils.utils import (
+    log,
+    generate_log,
+    check_authorization,
+    user_in_lib,
+    save_image,
+    is_image_file,
+    get_chunk_user_token,
+)
+from chocolate_app.plugins_loader import events, routes
 
 dir_path: str = get_dir_path()
 
@@ -72,6 +101,7 @@ with warnings.catch_warnings():
 
 langs_dict = GoogleTranslator().get_supported_languages(as_dict=True)
 
+
 @LOGIN_MANAGER.user_loader
 def load_user(id: int) -> Users | None:
     """
@@ -79,11 +109,12 @@ def load_user(id: int) -> Users | None:
 
     Args:
         id (int): The user id
-    
+
     Returns:
         Users | None: The user or None
     """
     return Users.query.get(int(id))
+
 
 last_commit_hash: str = "xxxxxxx"
 
@@ -101,6 +132,7 @@ FFMPEG_ARGS_STR: str = os.getenv("FFMPEG_ARGS", "")
 FFMPEG_ARGS: list = []
 if FFMPEG_ARGS_STR != "":
     FFMPEG_ARGS = FFMPEG_ARGS_STR.split(" ")
+
 
 def translate(string: str) -> str:
     language = config["ChocolateSettings"]["language"]
@@ -150,6 +182,7 @@ websites_trailers = {
     "Dailymotion": "https://www.dailymotion.com/video_movie/",
     "Vimeo": "https://vimeo.com/",
 }
+
 
 @app.after_request
 def after_request(response: Response) -> Response:
@@ -237,7 +270,7 @@ def after_request(response: Response) -> Response:
         ip_address = request.headers["X-Real-IP"]
     elif "X-Forwarded-For" in request.headers:
         ip_address = request.headers["X-Forwarded-For"]
-    
+
     request.remote_addr = ip_address
 
     if response.status_code in code_to_status:
@@ -250,8 +283,34 @@ def after_request(response: Response) -> Response:
     return response
 
 
-@app.route("/", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "CONNECT", "OPTIONS", "TRACE"])
-@app.route("/<path:path>", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "CONNECT", "OPTIONS", "TRACE"])
+@app.route(
+    "/",
+    methods=[
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "PATCH",
+        "HEAD",
+        "CONNECT",
+        "OPTIONS",
+        "TRACE",
+    ],
+)
+@app.route(
+    "/<path:path>",
+    methods=[
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "PATCH",
+        "HEAD",
+        "CONNECT",
+        "OPTIONS",
+        "TRACE",
+    ],
+)
 def index(path=None) -> str:
     """
     The index route
@@ -264,7 +323,7 @@ def index(path=None) -> str:
     """
     if routes.have_route(path):
         return routes.execute_route(path, request)
-    
+
     return render_template("index.html")
 
 
@@ -324,11 +383,11 @@ def get_gpu_info() -> str:
     elif platform.system() == "Darwin":
         return subprocess.check_output(
             ["/usr/sbin/sysctl", "-n", "machdep.cpu.brand_string"]
-        ).strip() # type: ignore
+        ).strip()  # type: ignore
     elif platform.system() == "Linux":
-        return subprocess.check_output(
-            ["lshw", "-C", "display", "-short"]
-        ).decode("utf-8")
+        return subprocess.check_output(["lshw", "-C", "display", "-short"]).decode(
+            "utf-8"
+        )
     return ""
 
 
@@ -339,13 +398,12 @@ def gpuname() -> str:
     except Exception as e:
         log_message = f"Unable to detect GPU model: {e}"
         log("ERROR", "GPU", log_message)
-        print(
-            "Unable to detect GPU model."
-        )
+        print("Unable to detect GPU model.")
         return "UNKNOWN"
     if len(gpus) == 0:
         raise ValueError("No GPUs detected in the system")
     return gpus[0].name
+
 
 def get_gpu_brand() -> str:
     gpu = get_gpu_info().lower()
@@ -363,7 +421,6 @@ def get_gpu_brand() -> str:
         return "Apple"
     else:
         return "UNKNOWN"
-
 
 
 @app.route("/language_file")
@@ -409,7 +466,7 @@ def create_m3u8(movie_id: int) -> Response:
 #EXT-X-TARGETDURATION:{CHUNK_LENGTH}\n\n"""
 
     for i in range(0, int(duration), CHUNK_LENGTH):
-        file += f"#EXTINF:{int(CHUNK_LENGTH)},\n/chunk_movie/{movie_id}-{(i // CHUNK_LENGTH) + 1}.ts\n" # noqa
+        file += f"#EXTINF:{int(CHUNK_LENGTH)},\n/chunk_movie/{movie_id}-{(i // CHUNK_LENGTH) + 1}.ts\n"  # noqa
 
     file += "#EXT-X-ENDLIST"
 
@@ -587,8 +644,9 @@ def get_chunk_serie(episode_id: int, idx: int = 0) -> Response:
     token = get_chunk_user_token(request)
 
     if not token:
-        abort(401)
-        
+        pass
+        # abort(401)
+
     events.execute_event(events.CHUNK_EPISODE_PLAY, episode, token, time=time_start)
 
     command = [
@@ -618,7 +676,11 @@ def get_chunk_serie(episode_id: int, idx: int = 0) -> Response:
         "pipe:1",
     ]
 
-    command = [item for sublist in command for item in (sublist if isinstance(sublist, list) else [sublist])]
+    command = [
+        item
+        for sublist in command
+        for item in (sublist if isinstance(sublist, list) else [sublist])
+    ]
 
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
 
@@ -645,12 +707,11 @@ def get_chunk_serie_quality(quality: str, episode_id: int, idx: int = 0):
     time_start = str(datetime.timedelta(seconds=seconds))
     time_end = str(datetime.timedelta(seconds=seconds + CHUNK_LENGTH))
 
-    
     token = get_chunk_user_token(request)
 
     if not token:
         abort(401)
-        
+
     events.execute_event(events.CHUNK_EPISODE_PLAY, episode, token, time=time_start)
 
     video_properties = get_video_properties(episode_path)
@@ -660,7 +721,6 @@ def get_chunk_serie_quality(quality: str, episode_id: int, idx: int = 0):
     new_height = round(float(width) / float(height) * new_width)
     if (new_height % 2) != 0:
         new_height += 1
-
 
     bitrate = {
         "1080": "192k",
@@ -699,7 +759,11 @@ def get_chunk_serie_quality(quality: str, episode_id: int, idx: int = 0):
         "mpegts",
         "pipe:1",
     ]
-    command = [item for sublist in command for item in (sublist if isinstance(sublist, list) else [sublist])]
+    command = [
+        item
+        for sublist in command
+        for item in (sublist if isinstance(sublist, list) else [sublist])
+    ]
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
 
     if not pipe or not pipe.stdout:
@@ -721,7 +785,6 @@ def get_chunk_serie_quality(quality: str, episode_id: int, idx: int = 0):
 def chunk_movie(movie_id: int, idx: int = 0) -> Response:
 
     seconds = (idx - 1) * CHUNK_LENGTH
-
 
     movie = Movies.query.filter_by(id=movie_id).first()
     video_path = movie.slug
@@ -762,7 +825,11 @@ def chunk_movie(movie_id: int, idx: int = 0) -> Response:
         "mpegts",
         "pipe:1",
     ]
-    command = [item for sublist in command for item in (sublist if isinstance(sublist, list) else [sublist])]
+    command = [
+        item
+        for sublist in command
+        for item in (sublist if isinstance(sublist, list) else [sublist])
+    ]
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
 
     if not pipe or not pipe.stdout:
@@ -794,7 +861,7 @@ def get_chunk_quality(quality: str, movie_id: int, idx: int = 0) -> Response:
 
     if not token:
         abort(401)
-        
+
     events.execute_event(events.CHUNK_MOVIE_PLAY, movie, token, time=time_start)
 
     video_properties = get_video_properties(video_path)
@@ -827,7 +894,6 @@ def get_chunk_quality(quality: str, movie_id: int, idx: int = 0) -> Response:
     if v_bitrate < 1500:
         v_bitrate = 1500
 
-
     command = [
         "ffmpeg",
         FFMPEG_ARGS,
@@ -856,7 +922,11 @@ def get_chunk_quality(quality: str, movie_id: int, idx: int = 0) -> Response:
         "mpegts",
         "pipe:1",
     ]
-    command = [item for sublist in command for item in (sublist if isinstance(sublist, list) else [sublist])]
+    command = [
+        item
+        for sublist in command
+        for item in (sublist if isinstance(sublist, list) else [sublist])
+    ]
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
 
     if not pipe or not pipe.stdout:
@@ -887,7 +957,7 @@ def get_chunk_other(hash: str, idx: int = 0) -> Response:
 
     if not token:
         abort(401)
-        
+
     events.execute_event(events.CHUNK_OTHER_PLAY, movie, token, time=time_start)
 
     command = [
@@ -916,7 +986,11 @@ def get_chunk_other(hash: str, idx: int = 0) -> Response:
         "mpegts",
         "pipe:1",
     ]
-    command = [item for sublist in command for item in (sublist if isinstance(sublist, list) else [sublist])]
+    command = [
+        item
+        for sublist in command
+        for item in (sublist if isinstance(sublist, list) else [sublist])
+    ]
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
 
     if not pipe or not pipe.stdout:
@@ -943,12 +1017,11 @@ def get_chunk_other_quality(quality: str, hash: str, idx=0) -> Response:
     time_start = str(datetime.timedelta(seconds=seconds))
     time_end = str(datetime.timedelta(seconds=seconds + CHUNK_LENGTH))
 
-    
     token = get_chunk_user_token(request)
 
     if not token:
         abort(401)
-        
+
     events.execute_event(events.CHUNK_OTHER_PLAY, movie, token, time=time_start)
 
     video_properties = get_video_properties(video_path)
@@ -967,7 +1040,6 @@ def get_chunk_other_quality(quality: str, hash: str, idx=0) -> Response:
         "240": "96k",
         "144": "64k",
     }
-
 
     command = [
         "ffmpeg",
@@ -997,7 +1069,11 @@ def get_chunk_other_quality(quality: str, hash: str, idx=0) -> Response:
         "mpegts",
         "pipe:1",
     ]
-    command = [item for sublist in command for item in (sublist if isinstance(sublist, list) else [sublist])]
+    command = [
+        item
+        for sublist in command
+        for item in (sublist if isinstance(sublist, list) else [sublist])
+    ]
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
 
     if not pipe or not pipe.stdout:
@@ -1138,7 +1214,6 @@ def get_all_movies(library: str) -> Response:
         "note",
         "duration",
     ]
-
 
     merged_lib = LibrariesMerge.query.filter_by(parent_lib=library).all()
     merged_lib = [child.child_lib for child in merged_lib]
@@ -1569,6 +1644,7 @@ def add_track_to_playlist() -> Response:
         {"status": "success", "playlist_id": playlist_id, "track_id": track_id}
     )
 
+
 @app.route("/remove_track_from_playlist", methods=["POST"])
 def remove_track_from_playlist() -> Response:
     body = request.get_json()
@@ -1588,6 +1664,7 @@ def remove_track_from_playlist() -> Response:
     return jsonify(
         {"status": "success", "playlist_id": playlist_id, "track_id": track_id}
     )
+
 
 @app.route("/get_track/<id>")
 def get_track(id: int) -> Response:
@@ -1692,7 +1769,9 @@ def get_artist_tracks(artist_id: int) -> Response:
             artist_name = Artists.query.filter_by(id=track["artist_id"]).first().name
             track["artist_name"] = artist_name
         except Exception as e:
-            log_message = f"Error while getting artist name for track {track['id']}: {e}"
+            log_message = (
+                f"Error while getting artist name for track {track['id']}: {e}"
+            )
             log("ERROR", "GET_ARTIST_TRACKS", log_message)
 
     return jsonify(tracks_list)
@@ -1932,14 +2011,17 @@ def edit_movie(id: int, library: str) -> Response:
     genre = movie_info.genres
     for genre_info in genre:
         movie_genre.append(genre_info.name)
-    the_movie.genre  = ",".join(movie_genre)
+    the_movie.genre = ",".join(movie_genre)
 
     casts = movie_info.casts.__dict__["cast"]
 
     the_cast = []
     for cast in casts:
         actor_id = cast.id
-        actor_image = save_image(f"https://www.themoviedb.org/t/p/w600_and_h900_bestv2{cast.profile_path}", f"{IMAGES_PATH}/Actor_{actor_id}")
+        actor_image = save_image(
+            f"https://www.themoviedb.org/t/p/w600_and_h900_bestv2{cast.profile_path}",
+            f"{IMAGES_PATH}/Actor_{actor_id}",
+        )
         if actor_id not in the_cast:
             the_cast.append(actor_id)
         else:
@@ -2053,8 +2135,14 @@ def edit_serie(id: int, library: str):
 
         name = details.name
 
-        cover = save_image(f"https://image.tmdb.org/t/p/original{res.poster_path}", f"{IMAGES_PATH}/{serie_id}_Cover")
-        banner = save_image(f"https://image.tmdb.org/t/p/original{res.backdrop_path}", f"{IMAGES_PATH}/{serie_id}_Banner")
+        cover = save_image(
+            f"https://image.tmdb.org/t/p/original{res.poster_path}",
+            f"{IMAGES_PATH}/{serie_id}_Cover",
+        )
+        banner = save_image(
+            f"https://image.tmdb.org/t/p/original{res.backdrop_path}",
+            f"{IMAGES_PATH}/{serie_id}_Banner",
+        )
 
         description = res["overview"]
         note = res.vote_average
@@ -2092,7 +2180,10 @@ def edit_serie(id: int, library: str):
         cast = list(cast)[:5]
         for actor in cast:
             actor_id = actor.id
-            actor_image = save_image(f"https://image.tmdb.org/t/p/original{actor.profile_path}", f"{IMAGES_PATH}/Actor_{actor_id}")
+            actor_image = save_image(
+                f"https://image.tmdb.org/t/p/original{actor.profile_path}",
+                f"{IMAGES_PATH}/Actor_{actor_id}",
+            )
             actor.profile_path = str(actor_image)
             new_cast.append(str(actor.id))
 
@@ -2244,6 +2335,16 @@ def get_episode_data(episode_id: int) -> Response:
     new_episode_data["previous_episode"] = previous_episode
     new_episode_data["next_episode"] = next_episode
 
+    intro_recap_outro = RecurringContent.query.filter_by(episode_id=episode_id).all()
+    intro_recap_outro_list = []
+    for content in intro_recap_outro:
+        content = content.__dict__
+        if content["start_time"] == 0 and content["end_time"] == 0:
+            continue
+        del content["_sa_instance_state"]
+        intro_recap_outro_list.append(content)
+    new_episode_data["recurring"] = intro_recap_outro_list
+
     return jsonify(new_episode_data)
 
 
@@ -2269,7 +2370,7 @@ def book_url_page(id: int, page: int) -> Response:
         if book_type == "PDF" or book_type == "EPUB":
             pdf_doc = fitz.open(book_slug)
             page = pdf_doc[int(page)]
-            image_stream = io.BytesIO(page.get_pixmap().tobytes("jpg")) # type: ignore
+            image_stream = io.BytesIO(page.get_pixmap().tobytes("jpg"))  # type: ignore
             image_stream.seek(0)
             return send_file(image_stream, mimetype="image/jpeg")
 
@@ -2285,7 +2386,7 @@ def book_url_page(id: int, page: int) -> Response:
         elif book_type == "CBR":
             with rarfile.RarFile(book_slug, "r") as rar:
                 image_file = rar.infolist()[int(page)]
-                if is_image_file(image_file.filename): # type: ignore
+                if is_image_file(image_file.filename):  # type: ignore
                     with rar.open(image_file) as image:
                         image_stream = io.BytesIO(image.read())
                         image_stream.seek(0)
@@ -2417,7 +2518,7 @@ def get_channels(channels: str) -> Response:
     channels = Libraries.query.filter_by(lib_name=channels).first()
     if not channels:
         abort(404, "Library not found")
-    lib_folder = channels.lib_folder # type: ignore
+    lib_folder = channels.lib_folder  # type: ignore
 
     try:
         with open(lib_folder, "r", encoding="utf-8") as f:
@@ -2436,25 +2537,25 @@ def get_channels(channels: str) -> Response:
             m3u.remove(i)
         elif i == "\n":
             m3u.remove(i)
-    for i in range(0, len(m3u) - 1, 2): # type: ignore
+    for i in range(0, len(m3u) - 1, 2):  # type: ignore
         data = {}
         try:
-            data["name"] = m3u[i].split(",")[-1].replace("\n", "") # type: ignore
+            data["name"] = m3u[i].split(",")[-1].replace("\n", "")  # type: ignore
             work = True
         except Exception:
             work = False
         if work:
-            data["url"] = m3u[i + 1].replace("\n", "") # type: ignore
+            data["url"] = m3u[i + 1].replace("\n", "")  # type: ignore
             data["channelID"] = i
             tvg_id_regex = r'tvg-id="(.+?)"'
             tvg_id = None
-            match = re.search(tvg_id_regex, m3u[i]) # type: ignore
+            match = re.search(tvg_id_regex, m3u[i])  # type: ignore
             if match:
                 tvg_id = match.group(1)
                 data["id"] = tvg_id
 
             tvg_logo_regex = r'tvg-logo="(.+?)"'
-            match = re.search(tvg_logo_regex, m3u[i]) # type: ignore
+            match = re.search(tvg_logo_regex, m3u[i])  # type: ignore
             if match and match.group(1) != '" group-title=':
                 tvg_logo = match.group(1)
                 data["logo"] = tvg_logo
@@ -2476,7 +2577,7 @@ def search_tv(library: str, search: str) -> Response:
     library = Libraries.query.filter_by(lib_name=library).first()
     if not library:
         abort(404, "Library not found")
-    lib_folder = library.lib_folder # type: ignore
+    lib_folder = library.lib_folder  # type: ignore
 
     try:
         with open(lib_folder, "r", encoding="utf-8") as f:
@@ -2495,25 +2596,25 @@ def search_tv(library: str, search: str) -> Response:
             m3u.remove(i)
         elif i == "\n":
             m3u.remove(i)
-    for i in range(0, len(m3u) - 1, 2): # type: ignore
+    for i in range(0, len(m3u) - 1, 2):  # type: ignore
         data = {}
         try:
-            data["name"] = m3u[i].split(",")[-1].replace("\n", "") # type: ignore
+            data["name"] = m3u[i].split(",")[-1].replace("\n", "")  # type: ignore
             work = True
         except Exception:
             work = False
         if work:
-            data["url"] = m3u[i + 1].replace("\n", "") # type: ignore
+            data["url"] = m3u[i + 1].replace("\n", "")  # type: ignore
             data["channelID"] = i
             tvg_id_regex = r'tvg-id="(.+?)"'
             tvg_id = None
-            match = re.search(tvg_id_regex, m3u[i]) # type: ignore
+            match = re.search(tvg_id_regex, m3u[i])  # type: ignore
             if match:
                 tvg_id = match.group(1)
                 data["id"] = tvg_id
 
             tvg_logo_regex = r'tvg-logo="(.+?)"'
-            match = re.search(tvg_logo_regex, m3u[i]) # type: ignore
+            match = re.search(tvg_logo_regex, m3u[i])  # type: ignore
             if match and match.group(1) != '" group-title=':
                 tvg_logo = match.group(1)
                 data["logo"] = tvg_logo
@@ -2837,7 +2938,7 @@ def search_movies(library: str, search: str) -> Response:
         if count > 0:
             results[movie] = count
 
-    results = sorted(results.items(), key=lambda x: x[1], reverse=True) # type: ignore
+    results = sorted(results.items(), key=lambda x: x[1], reverse=True)  # type: ignore
 
     movies = [i[0].__dict__ for i in results]
     for i in movies:
@@ -2938,7 +3039,7 @@ def search_books(library: str, search: str) -> Response:
     for book in results:
         del book["_sa_instance_state"]
 
-    #sort results by count
+    # sort results by count
     books = sorted(results, key=lambda x: x["count"], reverse=True)
     return jsonify(books)
 
@@ -3046,9 +3147,9 @@ def whoami() -> Response:
 def main_movie(movie_id: str) -> Response:
     movie_id = movie_id.replace(".m3u8", "")
     movie = Movies.query.filter_by(id=movie_id).first()
-    
+
     token = get_chunk_user_token(request)
-    
+
     if not token:
         abort(401)
 
@@ -3068,9 +3169,9 @@ def main_movie(movie_id: str) -> Response:
             new_width = int(quality)
             new_height = int(float(width) / float(height) * new_width)
             new_height += new_height % 2
-            m3u8_line = f"#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH={new_width*new_height},CODECS=\"avc1.4d4033,mp4a.40.2\",AUDIO=\"audio\",RESOLUTION={new_height}x{new_width}\n/video_movie/{quality}/{movie_id}.m3u8\n"
+            m3u8_line = f'#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH={new_width*new_height},CODECS="avc1.4d4033,mp4a.40.2",AUDIO="audio",RESOLUTION={new_height}x{new_width}\n/video_movie/{quality}/{movie_id}.m3u8\n'
             file.append(m3u8_line)
-    last_line = f"#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH={width*height},CODECS=\"avc1.4d4033,mp4a.40.2\",AUDIO=\"audio\",RESOLUTION={width}x{height}\n/video_movie/{movie_id}.m3u8\n\n\n"
+    last_line = f'#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH={width*height},CODECS="avc1.4d4033,mp4a.40.2",AUDIO="audio",RESOLUTION={width}x{height}\n/video_movie/{movie_id}.m3u8\n\n\n'
     file.append(last_line)
     file_str = "".join(file)
     m3u8_file += file_str
@@ -3181,15 +3282,6 @@ def can_i_play_other_video(video_hash: str) -> Response:
                 return jsonify({"can_I_play": False})
         return jsonify({"can_I_play": True})
 
-@app.route("/plugins_dynamic")
-def plugins_dynamic() -> Response:
-    js_code = inject_html.generate_js()
-
-    js_file = make_response(js_code)
-
-    js_file.headers.set("Content-Type", "application/javascript")
-    return js_file
-
 
 @app.route("/main_serie/<episode_id>")
 def main_serie(episode_id: int) -> Response:
@@ -3201,7 +3293,7 @@ def main_serie(episode_id: int) -> Response:
         abort(401)
 
     events.execute_event(events.EPISODE_PLAY, episode_id, token)
-    
+
     episode_path = episode.slug
 
     video_properties = get_video_properties(episode_path)
@@ -3248,7 +3340,6 @@ def main_other(other_hash: str) -> Response:
 
     events.execute_event(events.OTHER_PLAY, other_hash, token)
 
-    
     video_path = movie.slug
     video_properties = get_video_properties(video_path)
     height = int(video_properties["height"])
@@ -3297,7 +3388,7 @@ def generate_caption_serie(episode_id: int) -> list[dict[str, Any]]:
         slug,
     ]
     caption_pipe = subprocess.Popen(caption_command, stdout=subprocess.PIPE)
-    caption_response = caption_pipe.stdout.read().decode("utf-8") # type: ignore
+    caption_response = caption_pipe.stdout.read().decode("utf-8")  # type: ignore
     caption_response = caption_response.split("\n")
 
     all_captions = []
@@ -3353,7 +3444,7 @@ def generate_caption_movie(movie_id: str | int) -> str:
     ]
 
     caption_pipe = subprocess.Popen(caption_command, stdout=subprocess.PIPE)
-    caption_response = caption_pipe.stdout.read().decode("utf-8") # type: ignore
+    caption_response = caption_pipe.stdout.read().decode("utf-8")  # type: ignore
     caption_response = caption_response.split("\n")
     caption_response.pop()
 
@@ -3398,7 +3489,7 @@ def get_actor_data(actor_id: int) -> Response:
     programs = actor.actor_programs
     programs = programs.split(" ")
 
-    #remove duplicates
+    # remove duplicates
     new_programs = []
 
     for program in programs:
@@ -3407,7 +3498,6 @@ def get_actor_data(actor_id: int) -> Response:
 
     actor.actor_programs = " ".join(programs)
     DB.session.commit()
-
 
     for program in programs:
         in_movies = Movies.query.filter_by(id=program).first() is not None
@@ -3438,11 +3528,18 @@ def get_actor_data(actor_id: int) -> Response:
 @app.route("/get_this_episode_data/<episode_id>", methods=["GET", "POST"])
 def get_this_episode_data(episode_id: int) -> Response:
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
+    if episode is None:
+        abort(404)
+
+    recurringContent = RecurringContent.query.filter_by(episode_id=episode_id).all()
+
     episode_data = {
         "episode_name": episode.episode_name,
-        "intro_start": episode.intro_start,
-        "intro_end": episode.intro_end,
     }
+
+    for content in recurringContent:
+        episode_data[content.type] = (content.start_time, content.end_time)
+
     return jsonify(episode_data, default=lambda o: o.__dict__)
 
 
@@ -3582,8 +3679,12 @@ def playlist_cover(id: int) -> Response:
     if playlist_cover is None or not os.path.exists(playlist_cover):
         abort(404)
 
-    print(playlist_cover)
-    return send_file(playlist_cover, as_attachment=True, mimetype="image/webp", download_name=f"Playlist_{id}.webp")
+    return send_file(
+        playlist_cover,
+        as_attachment=True,
+        mimetype="image/webp",
+        download_name=f"Playlist_{id}.webp",
+    )
 
 
 @app.route("/track_cover/<id>")
@@ -3608,7 +3709,11 @@ def user_image(id: int) -> Response:
 
     return send_file(user_image, as_attachment=True)
 
+
 def start_chocolate() -> None:
+    from chocolate_app.plugins_loader import FrontEndRebuilder
+
+    FrontEndRebuilder.rebuild_frontend()
     events.execute_event(events.BEFORE_START)
     enabled_rpc = config["ChocolateSettings"]["discordrpc"]
     if enabled_rpc == "true":
@@ -3649,7 +3754,7 @@ def start_chocolate() -> None:
 
             for library in libraries:
                 if library["lib_type"] in type_to_call:
-                    type_to_call[library["lib_type"]](library["lib_name"]) # type: ignore
+                    type_to_call[library["lib_type"]](library["lib_name"])  # type: ignore
 
             print()
     print("\033[?25h", end="")
@@ -3676,6 +3781,7 @@ def start_chocolate() -> None:
 
     app.run(host="0.0.0.0", port=8888)
     events.execute_event(events.AFTER_START)
+
 
 if __name__ == "__main__":
     start_chocolate()

@@ -183,8 +183,8 @@ def edit_profil() -> Response:
         user_to_edit.account_type = type
 
     if user_to_edit.password != generate_password_hash(password) and len(password) > 0:
-            user_to_edit.password = generate_password_hash(password)
-    
+        user_to_edit.password = generate_password_hash(password)
+
     if password == "":
         user_to_edit.password = None
     if (
@@ -209,10 +209,12 @@ def edit_profil() -> Response:
 def delete_account() -> Response:
     authorization = request.headers.get("Authorization")
     check_authorization(request, authorization)
-    print(authorization)
     body = request.get_json()
+    if not body:
+        abort(400, "Missing body")
+    if "id" not in body:
+        abort(400, "Missing id")
     id = body["id"]
-    print(id)
 
     user = Users.query.filter_by(id=id).first()
     DB.session.delete(user)
