@@ -1,10 +1,11 @@
-from flask_login import UserMixin # type: ignore
+from flask_login import UserMixin  # type: ignore
 from werkzeug.security import check_password_hash, generate_password_hash
 from time import time
 
 from . import DB
 
-class Users(DB.Model, UserMixin): # type: ignore
+
+class Users(DB.Model, UserMixin):  # type: ignore
     """
     Users model
 
@@ -20,6 +21,7 @@ class Users(DB.Model, UserMixin): # type: ignore
     profil_picture : str
     account_type : str
     """
+
     id = DB.Column(DB.Integer, primary_key=True, autoincrement=True)
     name = DB.Column(DB.String(255), unique=True)
     password = DB.Column(DB.String(255))
@@ -44,7 +46,7 @@ class Users(DB.Model, UserMixin): # type: ignore
         return check_password_hash(self.password, pwd)
 
 
-class Movies(DB.Model): # type: ignore
+class Movies(DB.Model):  # type: ignore
     """
     Movies model
 
@@ -71,6 +73,7 @@ class Movies(DB.Model): # type: ignore
     alternatives_names : str
     file_date : float
     """
+
     id = DB.Column(DB.Integer, primary_key=True)
     title = DB.Column(DB.String(255), primary_key=True)
     real_title = DB.Column(DB.String(255), primary_key=True)
@@ -93,7 +96,7 @@ class Movies(DB.Model): # type: ignore
         return f"<Movies {self.title}>"
 
 
-class Series(DB.Model): # type: ignore
+class Series(DB.Model):  # type: ignore
     """
     Series model
 
@@ -118,6 +121,7 @@ class Series(DB.Model): # type: ignore
     library_name : str
     adult : str
     """
+
     id = DB.Column(DB.Integer, primary_key=True)
     name = DB.Column(DB.String(255), primary_key=True)
     original_name = DB.Column(DB.String(255), primary_key=True)
@@ -138,7 +142,7 @@ class Series(DB.Model): # type: ignore
         return f"<Series {self.name}>"
 
 
-class Seasons(DB.Model): # type: ignore
+class Seasons(DB.Model):  # type: ignore
     """
     Seasons model
 
@@ -158,6 +162,7 @@ class Seasons(DB.Model): # type: ignore
     modified_date : float
     number_of_episode_in_folder : int
     """
+
     serie = DB.Column(DB.Integer, nullable=False)
     season_id = DB.Column(DB.Integer, primary_key=True)
     season_number = DB.Column(DB.Integer, primary_key=True)
@@ -173,7 +178,7 @@ class Seasons(DB.Model): # type: ignore
         return f"<Seasons {self.serie} {self.season_id}>"
 
 
-class Episodes(DB.Model): # type: ignore
+class Episodes(DB.Model):  # type: ignore
     """
     Episodes model
 
@@ -189,8 +194,6 @@ class Episodes(DB.Model): # type: ignore
     episode_cover_path : str
     release_date : str
     slug : str
-    intro_start : float
-    intro_end : float
     """
 
     season_id = DB.Column(DB.Integer, nullable=False)
@@ -201,14 +204,35 @@ class Episodes(DB.Model): # type: ignore
     episode_cover_path = DB.Column(DB.String(255))
     release_date = DB.Column(DB.String(255))
     slug = DB.Column(DB.String(255))
-    intro_start = DB.Column(DB.Float)
-    intro_end = DB.Column(DB.Float)
 
     def __repr__(self) -> str:
         return f"<Episodes {self.season_id} {self.episode_number}>"
 
 
-class Games(DB.Model): # type: ignore
+class RecurringContent(DB.Model):  # type: ignore
+    """
+    RecurringContent model for episodes
+
+    ...
+
+    Attributes
+    ----------
+    episode_id : int
+    type: str
+    start_time: str
+    end_time: str
+    """
+
+    episode_id = DB.Column(DB.Integer, primary_key=True)
+    type = DB.Column(DB.String(255), primary_key=True)
+    start_time = DB.Column(DB.String(255), primary_key=True)
+    end_time = DB.Column(DB.String(255), primary_key=True)
+
+    def __repr__(self) -> str:
+        return f"<RecurringContent {self.episode_id} {self.type}>"
+
+
+class Games(DB.Model):  # type: ignore
     """
     Games model
 
@@ -228,6 +252,7 @@ class Games(DB.Model): # type: ignore
     slug : str
     library_name : str
     """
+
     console = DB.Column(DB.String(255), nullable=False)
     id = DB.Column(DB.Integer, primary_key=True)
     title = DB.Column(DB.String(255), primary_key=True)
@@ -244,7 +269,7 @@ class Games(DB.Model): # type: ignore
         return f"<Games {self.title}>"
 
 
-class OthersVideos(DB.Model): # type: ignore
+class OthersVideos(DB.Model):  # type: ignore
     """
     OthersVideos model
 
@@ -259,6 +284,7 @@ class OthersVideos(DB.Model): # type: ignore
     duration : str
     library_name : str
     """
+
     video_hash = DB.Column(DB.String(255), primary_key=True)
     title = DB.Column(DB.String(255), primary_key=True)
     slug = DB.Column(DB.String(255))
@@ -270,7 +296,7 @@ class OthersVideos(DB.Model): # type: ignore
         return f"<OthersVideos {self.title}>"
 
 
-class Books(DB.Model): # type: ignore
+class Books(DB.Model):  # type: ignore
     """
     Books model
 
@@ -285,6 +311,7 @@ class Books(DB.Model): # type: ignore
     cover : str
     library_name : str
     """
+
     id = DB.Column(DB.Integer, primary_key=True, autoincrement=True)
     title = DB.Column(DB.String(255))
     slug = DB.Column(DB.String(255))
@@ -296,7 +323,7 @@ class Books(DB.Model): # type: ignore
         return f"<Books {self.title}>"
 
 
-class Artists(DB.Model): # type: ignore
+class Artists(DB.Model):  # type: ignore
     """
     Artists model
 
@@ -319,7 +346,7 @@ class Artists(DB.Model): # type: ignore
         return f"<Artists {self.name}>"
 
 
-class Albums(DB.Model): # type: ignore
+class Albums(DB.Model):  # type: ignore
     """
     Albums model
 
@@ -348,7 +375,7 @@ class Albums(DB.Model): # type: ignore
         return f"<Albums {self.name}>"
 
 
-class Tracks(DB.Model): # type: ignore
+class Tracks(DB.Model):  # type: ignore
     """
     Tracks model
 
@@ -379,7 +406,7 @@ class Tracks(DB.Model): # type: ignore
         return f"<Tracks {self.name}>"
 
 
-class Playlists(DB.Model): # type: ignore
+class Playlists(DB.Model):  # type: ignore
     """
     Playlist model
 
@@ -408,7 +435,7 @@ class Playlists(DB.Model): # type: ignore
         return f"<Playlist {self.name}>"
 
 
-class Language(DB.Model): # type: ignore
+class Language(DB.Model):  # type: ignore
     """
     Language model
 
@@ -418,13 +445,14 @@ class Language(DB.Model): # type: ignore
     ----------
     language : str
     """
+
     language = DB.Column(DB.String(255), primary_key=True)
 
     def __repr__(self) -> str:
         return f"<Language {self.language}>"
 
 
-class Actors(DB.Model): # type: ignore
+class Actors(DB.Model):  # type: ignore
     """
     Actors model
 
@@ -440,6 +468,7 @@ class Actors(DB.Model): # type: ignore
     actor_birth_place : str
     actor_programs : str
     """
+
     name = DB.Column(DB.String(255), primary_key=True)
     actor_id = DB.Column(DB.Integer, primary_key=True)
     actor_image = DB.Column(DB.Text)
@@ -452,7 +481,7 @@ class Actors(DB.Model): # type: ignore
         return f"<Actors {self.name}>"
 
 
-class Libraries(DB.Model): # type: ignore
+class Libraries(DB.Model):  # type: ignore
     """
     Libraries model
 
@@ -466,6 +495,7 @@ class Libraries(DB.Model): # type: ignore
     lib_folder : str
     available_for : str
     """
+
     lib_name = DB.Column(DB.Text, primary_key=True)
     lib_image = DB.Column(DB.Text)
     lib_type = DB.Column(DB.Text)
@@ -476,7 +506,7 @@ class Libraries(DB.Model): # type: ignore
         return f"<Libraries {self.lib_name}>"
 
 
-class MusicPlayed(DB.Model): # type: ignore
+class MusicPlayed(DB.Model):  # type: ignore
     """
     MusicPlayed model
 
@@ -488,6 +518,7 @@ class MusicPlayed(DB.Model): # type: ignore
     music_id : int
     play_count : int
     """
+
     user_id = DB.Column(DB.Integer, primary_key=True)
     music_id = DB.Column(DB.Integer, primary_key=True)
     play_count = DB.Column(DB.Integer)
@@ -496,7 +527,7 @@ class MusicPlayed(DB.Model): # type: ignore
         return f"<MusicPlayed {self.user_id}>"
 
 
-class MusicLiked(DB.Model): # type: ignore
+class MusicLiked(DB.Model):  # type: ignore
     """
     MusicLiked model
 
@@ -509,7 +540,7 @@ class MusicLiked(DB.Model): # type: ignore
     liked : int
     liked_at : int
     """
-    
+
     user_id = DB.Column(DB.Integer, primary_key=True)
     music_id = DB.Column(DB.Integer, primary_key=True)
     liked = DB.Column(DB.Integer)
@@ -519,7 +550,7 @@ class MusicLiked(DB.Model): # type: ignore
         return f"<MusicLiked {self.user_id}>"
 
 
-class LatestEpisodeWatched(DB.Model): # type: ignore
+class LatestEpisodeWatched(DB.Model):  # type: ignore
     """
     LatestEpisodeWatched model
 
@@ -531,6 +562,7 @@ class LatestEpisodeWatched(DB.Model): # type: ignore
     serie_id : int
     episode_id : int
     """
+
     user_id = DB.Column(DB.Integer, primary_key=True)
     serie_id = DB.Column(DB.Integer, primary_key=True)
     episode_id = DB.Column(DB.Integer)
@@ -539,7 +571,7 @@ class LatestEpisodeWatched(DB.Model): # type: ignore
         return f"<LatestEpisodeWatched {self.user_id}>"
 
 
-class InviteCodes(DB.Model): # type: ignore
+class InviteCodes(DB.Model):  # type: ignore
     """
     InviteCodes model
 
@@ -556,7 +588,7 @@ class InviteCodes(DB.Model): # type: ignore
         return f"<InviteCode {self.code}>"
 
 
-class LibrariesMerge(DB.Model): # type: ignore
+class LibrariesMerge(DB.Model):  # type: ignore
     """
     LibrariesMerge model
 
@@ -567,7 +599,7 @@ class LibrariesMerge(DB.Model): # type: ignore
     parent_lib : str
     child_lib : str
     """
-    
+
     parent_lib = DB.Column(DB.String(255), primary_key=True)
     child_lib = DB.Column(DB.String(255), primary_key=True)
 
