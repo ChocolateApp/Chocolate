@@ -3,8 +3,6 @@
 import os
 import importlib
 import yaml
-import datetime
-
 
 def handle_default(yaml: dict, key: str, default: str = "Unknown") -> str:
     """Handle the default values for the plugin.yaml file"""
@@ -12,6 +10,8 @@ def handle_default(yaml: dict, key: str, default: str = "Unknown") -> str:
         return default
     else:
         return yaml[key]
+    
+PLUGIN_FRONTENDS: list[str] = []
 
 def load_plugins(plugins_path: str) -> None:
     """Load plugins from the given path"""
@@ -30,7 +30,7 @@ def load_plugins(plugins_path: str) -> None:
 
                     plugin_module = os.path.basename(plugin_file).split('.')[0]
 
-                    plugin_file = f"{path}/{plugin_module}.py"
+                    plugin_file = f"{path}/backend/{plugin_module}.py"
                     from chocolate_app.utils.utils import log
 
                     plugin_module_name = f"plugin_{plugin_name}"
@@ -46,3 +46,5 @@ def load_plugins(plugins_path: str) -> None:
                     from chocolate_app import app
                     with app.app_context():
                         specs.loader.exec_module(new_module)
+
+                    PLUGIN_FRONTENDS.append(f"{path}/frontend")

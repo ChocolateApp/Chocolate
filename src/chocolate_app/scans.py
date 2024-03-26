@@ -196,7 +196,6 @@ def createAlbum(
         f"{Artists.query.filter_by(id=artist_id).first().name} - {name}"
     )
 
-    # pour chaque album trouvé, on vérifie si le nom de est proche du nom de l'album qu'on cherche
     if len(albums) == 0:
         return None
     best_match = albums[0]
@@ -259,10 +258,8 @@ def generateImage(title: str, librairie: str, banner: str) -> None:
     hauteur = 720
     image = Image.new("RGB", (largeur, hauteur), color="#1d1d1d")
 
-    # Ajouter les textes au centre de l'image
     draw = ImageDraw.Draw(image)
 
-    # Charger la police Poppins
     font_path = f"{dir_path}/static/fonts/Poppins-Medium.ttf"
     font_title = ImageFont.truetype(font_path, size=70)
     font_librairie = ImageFont.truetype(font_path, size=50)
@@ -1873,7 +1870,7 @@ def getGames(library_name: str) -> None:
                             gameConsole = console
                             gameSlug = f"{allGamesPath}/{console}/{newFileName}"
                             game = Games.query.filter_by(slug=gameSlug).first()
-
+                            print(game)
                             if not game:
                                 game = Games(
                                     console=gameConsole,
@@ -2251,11 +2248,9 @@ def getPDFCover(path: str, name: str, id: int) -> Tuple[str, str]:
 
 def getEPUBCover(path, name, id):
     pdfDoc = fitz.open(path)
-    # Récupérez la page demandée
     page = pdfDoc[0]
-    # Créez une image à partir de la page
     pix = page.get_pixmap()
-    # Enregistre l'image
+
     img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
 
     if os.path.exists(f"{IMAGES_PATH}/Books_Banner_{id}.webp"):
@@ -2272,11 +2267,8 @@ def getEPUBCover(path, name, id):
 def getCBZCover(path, name, id):
     try:
         with zipfile.ZipFile(path, "r") as zip_ref:
-            # Parcourt tous les fichiers à l'intérieur du CBZ
             for file in zip_ref.filelist:
-                # Vérifie si le fichier est une image
                 if is_image_file(file.filename):
-                    # Ouvre le fichier image
                     with zip_ref.open(file) as image_file:
                         img = Image.open(io.BytesIO(image_file.read()))
                         img.save(f"{IMAGES_PATH}/Books_Banner_{id}.webp", "webp")
@@ -2286,10 +2278,8 @@ def getCBZCover(path, name, id):
                     with zip_ref.open(file) as image_file:
                         for file in zip_ref.filelist:
                             if is_image_file(file.filename):
-                                # Ouvre le fichier image
                                 with zip_ref.open(file) as image_file:
                                     img = Image.open(io.BytesIO(image_file.read()))
-                                    # Enregistre l'image
                                     img.save(
                                         f"{IMAGES_PATH}/Books_Banner_{id}.webp", "webp"
                                     )
@@ -2304,21 +2294,16 @@ def getCBRCover(path, name, id):
     name = name.replace(" ", "_").replace("#", "")
     try:
         with rarfile.RarFile(path, "r") as rar_ref:
-            # Parcourt tous les fichiers à l'intérieur du CBR
             for file in rar_ref.infolist():
-                # Vérifie si le fichier est une image
                 if is_image_file(file.filename):
-                    # Ouvre le fichier image
                     with rar_ref.open(file) as image_file:
                         img = Image.open(io.BytesIO(image_file.read()))
-                        # Enregistre l'image
                         img.save(f"{IMAGES_PATH}/Books_Banner_{id}.webp", "webp")
                         img.close()
                         break
                 elif file.filename.endswith("/"):
                     with rar_ref.open(file) as image_file:
                         img = Image.open(io.BytesIO(image_file.read()))
-                        # Enregistre l'image
                         img.save(f"{IMAGES_PATH}/Books_Banner_{id}.webp", "webp")
                         img.close()
                         break

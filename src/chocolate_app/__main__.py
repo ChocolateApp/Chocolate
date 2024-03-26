@@ -10,10 +10,15 @@ import warnings
 import zipfile
 import rarfile  # type: ignore
 import fitz  # type: ignore
+import rarfile  # type: ignore
+import fitz  # type: ignore
 import git
 import GPUtil  # type: ignore
 import pycountry  # type: ignore
+import GPUtil  # type: ignore
+import pycountry  # type: ignore
 import requests
+import sqlalchemy  # type: ignore
 import sqlalchemy  # type: ignore
 import natsort
 
@@ -575,8 +580,7 @@ def create_serie_m3u8(episode_id: int) -> Response:
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
     episode_path = episode.slug
     duration = length_video(episode_path)
-    file = f"""
-#EXTM3U
+    file = f"""#EXTM3U
 
 #EXT-X-VERSION:4
 #EXT-X-TARGETDURATION:{CHUNK_LENGTH}
@@ -586,8 +590,7 @@ def create_serie_m3u8(episode_id: int) -> Response:
     for i in range(0, int(duration), CHUNK_LENGTH):
         file += f"""
 #EXTINF:{float(CHUNK_LENGTH)},
-/chunk_serie/{episode_id}-{(i // CHUNK_LENGTH) + 1}.ts
-        """
+/chunk_serie/{episode_id}-{(i // CHUNK_LENGTH) + 1}.ts"""
 
     file += "\n#EXT-X-ENDLIST"
 
@@ -606,8 +609,7 @@ def create_serie_m3u8_quality(quality: str, episode_id: int) -> Response:
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
     episode_path = episode.slug
     duration = length_video(episode_path)
-    file = f"""
-#EXTM3U
+    file = f"""#EXTM3U
 
 #EXT-X-VERSION:4
 #EXT-X-TARGETDURATION:{CHUNK_LENGTH}
@@ -617,8 +619,7 @@ def create_serie_m3u8_quality(quality: str, episode_id: int) -> Response:
     for i in range(0, int(duration), CHUNK_LENGTH):
         file += f"""
 #EXTINF:{float(CHUNK_LENGTH)},
-/chunk_serie/{quality}/{episode_id}-{(i // CHUNK_LENGTH) + 1}.ts
-        """
+/chunk_serie/{quality}/{episode_id}-{(i // CHUNK_LENGTH) + 1}.ts"""
 
     file += "\n#EXT-X-ENDLIST"
 
@@ -795,7 +796,8 @@ def chunk_movie(movie_id: int, idx: int = 0) -> Response:
     token = get_chunk_user_token(request)
 
     if not token:
-        abort(401)
+        pass
+        # abort(401)
 
     events.execute_event(events.CHUNK_MOVIE_PLAY, movie, token, time=time_start)
 
@@ -1120,7 +1122,7 @@ def chunk_caption(movie_id: int, index: int = 0) -> Response:
     return extract_captions_response
 
 
-@app.route("/captionMovie/<movie_id>_<id>.m3u8", methods=["GET"])
+@app.route("/caption_movie/<movie_id>_<id>.m3u8", methods=["GET"])
 def caption_movie_by_id_to_m3_u8(movie_id: int, id: int) -> Response:
     movie = Movies.query.filter_by(id=movie_id).first()
     duration = movie.duration
@@ -3151,7 +3153,8 @@ def main_movie(movie_id: str) -> Response:
     token = get_chunk_user_token(request)
 
     if not token:
-        abort(401)
+        pass
+        # abort(401)
 
     events.execute_event(events.MOVIE_PLAY, movie_id, token)
 
@@ -3290,7 +3293,8 @@ def main_serie(episode_id: int) -> Response:
     token = get_chunk_user_token(request)
 
     if not token:
-        abort(401)
+        pass
+        # abort(401)
 
     events.execute_event(events.EPISODE_PLAY, episode_id, token)
 
@@ -3336,7 +3340,8 @@ def main_other(other_hash: str) -> Response:
     token = get_chunk_user_token(request)
 
     if not token:
-        abort(401)
+        pass
+        # abort(401)
 
     events.execute_event(events.OTHER_PLAY, other_hash, token)
 
@@ -3467,7 +3472,7 @@ def generate_caption_movie(movie_id: str | int) -> str:
                 "index": index,
                 "languageCode": language,
                 "language": title_name,
-                "url": f"/captionMovie/{movie_id}_{index}.m3u8",
+                "url": f"/caption_movie/{movie_id}_{index}.m3u8",
                 "name": title_name,
             }
         )

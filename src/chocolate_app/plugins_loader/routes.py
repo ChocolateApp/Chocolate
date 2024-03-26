@@ -26,12 +26,14 @@ def match_rule(rule: str, path: str) -> bool:
 
     return re.match(rule_regex, path) is not None
 
-def new(path: str, **kwargs) -> Callable:
+def new(path: str, methods: list = ["GET"], **kwargs) -> Callable:
     """
     Decorator to create a new route
 
     Args:
         path (str): The path of the route
+        methods (list): The methods of the route (default: ["GET"])
+        kwargs: The keyword arguments of the route
 
     Returns:
         Callable: The decorator

@@ -37,6 +37,15 @@ dependencies = [
     "natsort>=8.4.0",
     "PyMuPdf>=1.22.5",
     "pyyaml>=6.0.1",
+    "jsbeautifier>=1.15.1",
+    "moviepy>=1.0.3",
+    "pydub>=0.25.1",
+    "matplotlib>=3.8.3",
+    "dtw>=1.4.0",
+    "audio-similarity==1.0.0",
+    "faiss-cpu>=1.8.0",
+    "ffmpeg>=1.4",
+    "pandas>=2.2.1",
 ]
 requires-python = ">=3.10"
 readme = "README.md"
