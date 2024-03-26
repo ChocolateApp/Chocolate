@@ -1,3 +1,4 @@
+# Copyright (C) 2024 Impre_visible
 import deezer  # type: ignore
 import requests
 import os
@@ -297,6 +298,10 @@ def is_connected() -> bool:
 
 
 def print_loading(filesList: list, index: int, title: str) -> None:
+    try:
+        os.get_terminal_size().columns
+    except OSError:
+        return
     terminal_size = os.get_terminal_size().columns - 1
     percentage = index * 100 / len(filesList)
 

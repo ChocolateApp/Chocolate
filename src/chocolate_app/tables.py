@@ -1,8 +1,9 @@
+# Copyright (C) 2024 Impre_visible
 from flask_login import UserMixin  # type: ignore
 from werkzeug.security import check_password_hash, generate_password_hash
 from time import time
 
-from . import DB
+from chocolate_app import DB
 
 
 class Users(DB.Model, UserMixin):  # type: ignore

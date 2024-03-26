@@ -1,5 +1,5 @@
+# Copyright (C) 2024 Impre_visible
 import datetime
-from enum import Flag
 import io
 import json
 import os
@@ -34,7 +34,6 @@ from flask import (
     request,
     send_file,
     render_template,
-    Flask,
 )
 from guessit import guessit  # type: ignore
 from PIL import Image

@@ -1,3 +1,4 @@
+# Copyright (C) 2024 Impre_visible
 import os
 import configparser
 import platform
