@@ -1906,7 +1906,7 @@ def getGames(library_name: str) -> None:
                 DB.session.commit()
 
 
-def getOthersVideos(library: str, allVideosPath=str | None) -> None:
+def getOthersVideos(library: str, allVideosPath: str | None) -> None:
     if not allVideosPath:
         allVideosPath = Libraries.query.filter_by(lib_name=library).first().lib_folder
         try:
