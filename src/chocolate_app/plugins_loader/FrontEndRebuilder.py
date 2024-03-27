@@ -44,13 +44,16 @@ def rebuild_frontend():
 
     dir_path = pathlib.Path(__package__).parent.absolute()
     frontend_path = f"{dir_path}/frontend_temp"
-    git_clone_command = (
-        "git clone https://github.com/ChocolateApp/ChocolateReact.git frontend_temp"
-    )
 
     if os.path.exists(frontend_path):
         shutil.rmtree(frontend_path, ignore_errors=True)
         pass
+    else:
+        os.mkdir(frontend_path)
+
+    git_clone_command = (
+        "git clone https://github.com/ChocolateApp/ChocolateReact.git frontend_temp"
+    )
 
     subprocess.run(
         git_clone_command.split(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
@@ -152,7 +155,6 @@ def build_frontend(frontend_path: str, chocolate_path: str, requirements: list):
                 dirs_exist_ok=True,
             )
 
-    # le fichier index.html est copié dans chocolate_path/templates
     shutil.copy(f"{build_folder}/index.html", f"{chocolate_path}/templates/index.html")
 
 
