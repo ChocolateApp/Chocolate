@@ -44,6 +44,14 @@ def rebuild_frontend():
 
     dir_path = pathlib.Path(__package__).parent.absolute()
     frontend_path = f"{dir_path}/frontend_temp"
+    static_path = f"{dir_path}/static"
+    template_path = f"{dir_path}/templates"
+
+    if not os.path.exists(static_path):
+        os.mkdir(static_path)
+
+    if not os.path.exists(template_path):
+        os.mkdir(template_path)
 
     if os.path.exists(frontend_path):
         shutil.rmtree(frontend_path, ignore_errors=True)
