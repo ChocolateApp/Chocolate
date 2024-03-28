@@ -1545,7 +1545,7 @@ def getSeries(library_name: str) -> None:
                         serie_id, season_number, episodeIndex
                     )
                     episode_id = episodeInfo.id
-                else:
+                elif bigSeason is not None:
                     episodeInfo = bigSeason["episodes"][int(episodeIndex) - 1]
                     episode_id = episodeInfo["id"]
                     realEpisodeName = episodeInfo["name"]
@@ -1906,7 +1906,7 @@ def getGames(library_name: str) -> None:
                 DB.session.commit()
 
 
-def getOthersVideos(library: str, allVideosPath: str | None) -> None:
+def getOthersVideos(library: str, allVideosPath: str | None = None) -> None:
     if not allVideosPath:
         allVideosPath = Libraries.query.filter_by(lib_name=library).first().lib_folder
         try:
