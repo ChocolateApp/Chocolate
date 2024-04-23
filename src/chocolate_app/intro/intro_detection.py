@@ -41,7 +41,6 @@ class IntroDetector:
                 break
         if allEpisodesScanned:
             return
-        print(f"Scanning season {season.season_id}")
         episodes_paths = [episode.slug for episode in episodes]
         data = rcd.detect(episodes_paths)
         for key, value in data.items():
@@ -62,12 +61,6 @@ class IntroDetector:
 
             if len(recap) > 2 and recap[0] == outro[0] and recap[1] == outro[1]:
                 recap = ()
-
-            print(f"Pour l'épisode {key}:")
-            print(f"- Intro: {intro}")
-            if recap:
-                print(f"- Recap: {recap}")
-            print(f"- Outro: {outro}")
 
             if len(intro) > 0:
                 self.save_recurring_content(intro, "intro", episode_id)

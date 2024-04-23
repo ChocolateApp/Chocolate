@@ -115,7 +115,6 @@ def query_episodes_with_faiss(videos, vectors_dir):
 
     # concatenate all the vectors into a single list multidimensional array
     for f in vector_files:
-        print(f"{ARTEFACTS_PATH}/{f}")
         episode_vectors = np.array(
             pickle.load(open(f"{ARTEFACTS_PATH}/{f}", "rb")), np.float32
         )

@@ -142,6 +142,18 @@ def check_authorization(request, token, library=None):
             generate_log(request, "ERROR")
             abort(404)
 
+def check_admin(request, token):
+    if token not in all_auth_tokens:
+        generate_log(request, "UNAUTHORIZED")
+        abort(401)
+
+    username = all_auth_tokens[token]["user"]
+
+    user = Users.query.filter_by(name=username).first()
+
+    if user is None or not user.account_type == "Admin":
+        generate_log(request, "UNAUTHORIZED")
+        abort(401)
 
 def user_in_lib(user_id, lib):
     user = Users.query.filter_by(id=user_id).first()

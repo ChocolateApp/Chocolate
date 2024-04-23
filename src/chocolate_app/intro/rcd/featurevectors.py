@@ -107,8 +107,6 @@ def construct_feature_vectors(video_fn, result_dir_name, vector_function, framej
     os.makedirs(os.path.dirname(vectors_fn), exist_ok=True)
     import time
 
-    start_time = time.time()
-    # check if histograms exist, else create them and save to pickle
     if not os.path.isfile(vectors_fn):
 
         # construct the histograms from frames at the start of scenes
@@ -127,4 +125,3 @@ def construct_feature_vectors(video_fn, result_dir_name, vector_function, framej
         with open(vectors_fn, "wb") as handle:
             pickle.dump(feature_vectors, handle, protocol=2)
 
-    print(f"Time taken to construct feature vectors: {time.time() - start_time}")

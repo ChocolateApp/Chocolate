@@ -17,7 +17,7 @@ from chocolate_app.tables import (
     OthersVideos,
 )
 import chocolate_app.scans as scans
-from chocolate_app.utils.utils import generate_log
+from chocolate_app.utils.utils import generate_log, check_authorization, check_admin
 from chocolate_app.plugins_loader import events
 
 libraries_bp = Blueprint("libraries", __name__)
@@ -249,16 +249,8 @@ def delete_lib():
 def start_intro_detection():
     from multiprocessing import Process
     from chocolate_app.intro import intro_detection
-    
-    token = request.headers.get("Authorization")
-    if token not in all_auth_tokens:
-        abort(401)
-
-    user = all_auth_tokens[token]["user"]
-    user = Users.query.filter_by(name=user).first()
-
-    if user.account_type != "Admin":
-        abort(401)
+    check_authorization(request, request.headers.get("Authorization"))
+    check_admin(request, request.headers.get("Authorization"))
 
     process = Process(target=intro_detection.start)
     process.start()
