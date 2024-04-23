@@ -22,7 +22,8 @@ def load_plugins(plugins_path: str) -> None:
             if os.path.exists(yaml_file_path):
                 with open(yaml_file_path, "r") as yaml_file:
                     plugin = yaml.safe_load(yaml_file)
-
+                    if not plugin:
+                        continue
                     plugin_name = handle_default(plugin, "name")
                     plugin_version = handle_default(plugin, "version", "1")
                     plugin_author = handle_default(plugin, "author")
