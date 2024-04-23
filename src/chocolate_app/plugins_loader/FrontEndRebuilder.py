@@ -41,7 +41,6 @@ def rebuild_frontend():
 
     new_plugin_hashs = ",".join(new_plugin_hashs)
     config["PLUGINS"]["plugin_hashs"] = new_plugin_hashs
-
     dir_path = pathlib.Path(__package__).parent.absolute()
     frontend_path = f"{dir_path}/frontend_temp"
     static_path = f"{dir_path}/static"
@@ -55,7 +54,6 @@ def rebuild_frontend():
 
     if os.path.exists(frontend_path):
         shutil.rmtree(frontend_path, ignore_errors=True)
-        pass
     else:
         os.mkdir(frontend_path)
 
@@ -179,7 +177,7 @@ def handle_frontend(plugin_frontend: str, frontend_path: str, plugin_hash: str) 
         requirements (list): The list of required libraries
     """
 
-    frontend_dirs = ["New", "Append", "Replace"]
+    frontend_dirs = ["New"]
     requirements = []
     for frontend_dir in frontend_dirs:
         if os.path.exists(f"{plugin_frontend}/{frontend_dir}"):
@@ -204,7 +202,6 @@ def handle_new(new_folder: str, frontend_path: str, plugin_hash: str):
         list: The list of required libraries
     """
     required_libs: list[str] = []
-
     for files in os.listdir(new_folder):
         file_path = f"{new_folder}/{files}"
         if os.path.isfile(file_path):
@@ -295,6 +292,142 @@ def handle_new(new_folder: str, frontend_path: str, plugin_hash: str):
 
     return required_libs
 
+def handle_append(append_folder: str, frontend_path: str, plugin_hash: str):
+    """
+    Handle the append folder (WIP - Not implemented yet)
+
+    Parameters:
+        append_folder (str): The path of the append folder
+        frontend_path (str): The path of the frontend
+        plugin_hash (str): The hash of the plugin frontend
+
+    Returns:
+
+    """
+    required_libs: list[str] = []
+    for files in os.listdir(append_folder):
+        file_path = f"{append_folder}/{files}"
+        if os.path.isfile(file_path):
+            with open(file_path, "r") as f:
+                contenu = f.read()
+
+            description_match = re.search(r"/\*(.*?)\*/", contenu, re.DOTALL)
+            description = (
+                description_match.group(1).strip() if description_match else None
+            )
+
+            if not description:
+                raise ChocolateException("Description not found in the file")
+            
+            description_lines = description.split("\n")
+            description_lines = description_lines[1:]
+            while description_lines[-1] == "":
+                description_lines.pop()
+            while description_lines[0] == "":
+                description_lines.pop(0)
+
+            for line in description_lines:
+                clean_line = line.strip().rstrip().lower()
+                if clean_line.startswith("folder"):
+                    folder = line.split(":")[1].strip()
+                    folder = folder.replace(" ", "")
+                elif clean_line.startswith("file"):
+                    file = line.split(":")[1].strip()
+                elif clean_line.startswith("parent"):
+                    parent = clean_line.split(":")[1].strip()
+                elif clean_line.startswith("requirements"):
+                    required_libs.extend(clean_line.split(":")[1].strip().split(","))
+                    
+            if not folder:
+                raise ChocolateException("Folder not found in the Append file")
+
+            if not file:
+                raise ChocolateException("File not found in the Append file")
+            
+            if not parent:
+                raise ChocolateException("Parent not found in the Append file")
+            
+            if not parent.startswith(".") and not parent.startswith("#"):
+                raise ChocolateException("Parent should start with a dot or a hash (class or id)")
+            
+            import_start_index = 0
+            import_end_index = 0
+            functions_start_index = 0
+            functions_end_index = 0
+            component_start_index = 0
+            content = contenu.split("\n")
+            line = content[functions_start_index]
+
+            if "/* Imports */" not in content:
+                raise ChocolateException("Imports section not found in the file")
+            
+            if "/* Functions */" not in content:
+                raise ChocolateException("Functions section not found in the file")
+            
+            if "/* Component */" not in content:
+                raise ChocolateException("Component section not found in the file")
+
+            while line != "/* Imports */":
+                import_start_index += 1
+                line = content[import_start_index]
+
+            import_end_index = import_start_index
+            line = content[import_end_index]
+
+            while line != "/* Functions */":
+                import_end_index += 1
+                line = content[import_end_index]
+
+            functions_start_index = import_end_index
+            functions_end_index = functions_start_index
+
+            line = content[functions_end_index]
+            while line != "/* Component */":
+                functions_end_index += 1
+                line = content[functions_end_index]
+
+            component_start_index = functions_end_index
+            component_end_index = len(content)
+
+            import_string = "\n".join(content[import_start_index + 1: import_end_index])
+            functions_string = "\n".join(content[functions_start_index + 1: functions_end_index])
+            component_string = "\n".join(content[component_start_index + 1: component_end_index])
+
+            with open(f"{frontend_path}/src/{folder}/{file}", "r") as f:
+                contenu = f.read()
+
+            new_file_code = contenu
+            new_file_code = import_string + new_file_code
+
+            #only the last return statement is replaced
+            new_file_code = re.sub(
+                r"return (.*?)\(.*?\);",
+                f"return \\1_{plugin_hash}();",
+                new_file_code,
+                count=1
+            )
+
+            # the component is added based on the parent query
+            lines = new_file_code.split("\n")
+
+            for i in range(len(lines)):
+                if parent.startswith("."):
+                    if parent[1:] in lines[i] and "className" in lines[i]:
+                        while ">" not in lines[i]:
+                            i += 1
+                        lines.insert(i + 1, component_string)
+                        break
+                elif parent.startswith("#"):
+                    if parent[1:] in lines[i] and "id" in lines[i]:
+                        while ">" not in lines[i]:
+                            i += 1
+                        lines.insert(i + 1, component_string)
+                        break
+
+            new_file_code = "\n".join(lines)
+
+            rewrite_jsx_file(f"{frontend_path}/src/{folder}/{file}", new_file_code)
+
 
 def create_jsx_file(path: str, content: str) -> None:
     """
@@ -309,3 +442,17 @@ def create_jsx_file(path: str, content: str) -> None:
     """
     with open(path, "w") as file:
         file.write(content)
+
+def rewrite_jsx_file(path: str, content: str) -> None:
+    """
+    Rewrite a JSX file
+
+    Parameters:
+        path (str): The path of the JSX file
+        content (str): The content of the JSX file
+
+    Returns:
+        None
+    """
+    os.remove(path)
+    create_jsx_file(path, content)
