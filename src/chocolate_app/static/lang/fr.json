@@ -61,5 +61,7 @@
     "radarr_address": "Adresse Radarr",
     "sonarr_address": "Adresse Sonarr",
     "readarr_address": "Adresse Readarr",
-    "lidarr_address": "Adresse Lidarr"
+    "lidarr_address": "Adresse Lidarr",
+    "intro_detection": "Détection d'intro",
+    "start_intro_detection": "Démarrer la détection d'intro"
 }

@@ -1916,7 +1916,7 @@ def getOthersVideos(library: str, allVideosPath: str | None = None) -> None:
             log("ERROR", "OTHER SCAN", log_message)
             return
     else:
-        allVideos = os.listdir(f"{allVideosPath}")
+        allVideos = os.listdir(allVideosPath)
 
     allDirectories = [
         video for video in allVideos if os.path.isdir(f"{allVideosPath}/{video}")
@@ -1978,8 +1978,8 @@ def getOthersVideos(library: str, allVideosPath: str | None = None) -> None:
             DB.session.add(video)
             DB.session.commit()
 
-    for video in OthersVideos.query.filter_by(library_name=library).all():
-        path = video.slug
+    for videoObj in OthersVideos.query.filter_by(library_name=library).all():
+        path = videoObj.slug
         if not os.path.exists(path):
             DB.session.delete(video)
             DB.session.commit()

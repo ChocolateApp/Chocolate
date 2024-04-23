@@ -74,5 +74,7 @@
     "artists": "Artists",
     "singles": "Singles",
     "playlists": "Playlists",
-    "invite": "Invite a new user"
+    "invite": "Invite a new user",
+    "intro_detection": "Intro Detection",
+    "start_intro_detection": "Start Intro Detection"
 }

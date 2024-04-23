@@ -245,6 +245,25 @@ def delete_lib():
 
     return jsonify({"error": "worked"})
 
+@libraries_bp.route("/start_intro_detection", methods=["POST"])
+def start_intro_detection():
+    from multiprocessing import Process
+    from chocolate_app.intro import intro_detection
+    
+    token = request.headers.get("Authorization")
+    if token not in all_auth_tokens:
+        abort(401)
+
+    user = all_auth_tokens[token]["user"]
+    user = Users.query.filter_by(name=user).first()
+
+    if user.account_type != "Admin":
+        abort(401)
+
+    process = Process(target=intro_detection.start)
+    process.start()
+    
+    return jsonify(True)
 
 @libraries_bp.route("/rescan_all", methods=["POST"])
 def rescan_all():

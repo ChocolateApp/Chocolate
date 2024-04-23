@@ -94,11 +94,13 @@ class IntroDetector:
         except Exception:
             DB.session.rollback()
 
-
-if __name__ == "__main__":
+def start():
     detector = IntroDetector()
     app = create_app()
     with app.app_context():
         liraries = Libraries.query.filter_by(lib_type="series").all()
         for library in liraries:
             detector.start_library_detection(library)
+
+if __name__ == "__main__":
+    start()
