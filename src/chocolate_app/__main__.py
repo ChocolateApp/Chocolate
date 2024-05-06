@@ -464,13 +464,15 @@ def create_m3u8(movie_id: int) -> Response:
     video_path = movie.slug
     duration = length_video(video_path)
 
-    file = f"""#EXTM3U
-#EXT-X-VERSION:4
-#EXT-X-TARGETDURATION:{CHUNK_LENGTH}
-#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n"""
+    file = f"""#EXTM3U\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:{CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n"""
 
-    for i in range(0, int(duration), CHUNK_LENGTH):
-        file += f"#EXTINF:{int(CHUNK_LENGTH)},\n/chunk_movie/{movie_id}-{(i // CHUNK_LENGTH) + 1}.ts\n"  # noqa
+    for i in range(0, int(duration), int(CHUNK_LENGTH)):
+        extinf = float(CHUNK_LENGTH)
+        remaining_movie_duration = duration - i
+        if remaining_movie_duration < CHUNK_LENGTH:
+            extinf = remaining_movie_duration
+
+        file += f"#EXTINF:{extinf},\n/chunk_movie/{movie_id}-{(i // CHUNK_LENGTH) + 1}.ts\n"  # noqa
 
     file += "#EXT-X-ENDLIST"
 
@@ -491,13 +493,15 @@ def create_m3u8_quality(quality: str, movie_id: int) -> Response:
     movie = Movies.query.filter_by(id=movie_id).first()
     video_path = movie.slug
     duration = length_video(video_path)
-    file = f"""#EXTM3U
-#EXT-X-VERSION:4
-#EXT-X-TARGETDURATION:{CHUNK_LENGTH}
-#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n"""
+    file = f"#EXTM3U\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:{CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n"
+    
+    for i in range(0, int(duration), int(CHUNK_LENGTH)):
+        extinf = float(CHUNK_LENGTH)
 
-    for i in range(0, int(duration), CHUNK_LENGTH):
-        file += f"#EXTINF:{int(CHUNK_LENGTH)},\n/chunk_movie/{quality}/{movie_id}-{(i // CHUNK_LENGTH) + 1}.ts\n"
+        if (duration - i) < CHUNK_LENGTH:
+            extinf = duration - i
+
+        file += f"#EXTINF:{extinf},\n/chunk_movie/{quality}/{movie_id}-{(i // CHUNK_LENGTH) + 1}.ts\n"
 
     file += "#EXT-X-ENDLIST"
 
@@ -518,12 +522,9 @@ def create_other_m3u8(hash: str) -> Response:
     other = OthersVideos.query.filter_by(video_hash=hash).first()
     video_path = other.slug
     duration = length_video(video_path)
-    file = f"""#EXTM3U
-#EXT-X-VERSION:4
-#EXT-X-TARGETDURATION:{CHUNK_LENGTH}
-#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n"""
+    file = f"""#EXTM3U\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:{CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n"""
 
-    for i in range(0, int(duration), CHUNK_LENGTH):
+    for i in range(0, int(duration), int(CHUNK_LENGTH)):
         file += f"""
 #EXTINF:{float(CHUNK_LENGTH)},
 /chunk_other/{hash}-{(i // CHUNK_LENGTH) + 1}.ts
@@ -546,12 +547,9 @@ def create_other_m3u8_quality(quality: str, hash: str) -> Response:
     other = OthersVideos.query.filter_by(video_hash=hash).first()
     video_path = other.slug
     duration = length_video(video_path)
-    file = f"""#EXTM3U
-#EXT-X-VERSION:4
-#EXT-X-TARGETDURATION:{CHUNK_LENGTH}
-#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n"""
+    file = f"""#EXTM3U\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:{CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n"""
 
-    for i in range(0, int(duration), CHUNK_LENGTH):
+    for i in range(0, int(duration), int(CHUNK_LENGTH)):
         file += f"""
 #EXTINF:{float(CHUNK_LENGTH)},
 /chunk_other/{quality}/{hash}-{(i // CHUNK_LENGTH) + 1}.ts
@@ -570,16 +568,16 @@ def create_other_m3u8_quality(quality: str, hash: str) -> Response:
 
 
 @app.route("/video_serie/<episode_id>", methods=["GET"])
-def create_serie_m3u8(episode_id: int) -> Response:
+def create_serie_m3u8(episode_id: str) -> Response:
+    if ".m3u8" in episode_id:
+        episode_id = episode_id.replace(".m3u8", "")
+        
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
     episode_path = episode.slug
     duration = length_video(episode_path)
-    file = f"""#EXTM3U
-#EXT-X-VERSION:4
-#EXT-X-TARGETDURATION:{CHUNK_LENGTH}
-#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n"""
+    file = f"""#EXTM3U\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:{CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n"""
 
-    for i in range(0, int(duration), CHUNK_LENGTH):
+    for i in range(0, int(duration), int(CHUNK_LENGTH)):
         file += f"""
 #EXTINF:{float(CHUNK_LENGTH)},
 /chunk_serie/{episode_id}-{(i // CHUNK_LENGTH) + 1}.ts"""
@@ -597,17 +595,19 @@ def create_serie_m3u8(episode_id: int) -> Response:
 
 
 @app.route("/video_serie/<quality>/<episode_id>", methods=["GET"])
-def create_serie_m3u8_quality(quality: str, episode_id: int) -> Response:
+def create_serie_m3u8_quality(quality: str, episode_id: str) -> Response:
+    if ".m3u8" in episode_id:
+        episode_id = episode_id.replace(".m3u8", "")
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
     episode_path = episode.slug
     duration = length_video(episode_path)
     file = f"""#EXTM3U
 #EXT-X-TARGETDURATION:{CHUNK_LENGTH}
-#EXT-X-VERSION:4
+#EXT-X-VERSION:7
 #EXT-X-MEDIA-SEQUENCE:0
 #EXT-X-PLAYLIST-TYPE:VOD\n"""
 
-    for i in range(0, int(duration), CHUNK_LENGTH):
+    for i in range(0, int(duration), int(CHUNK_LENGTH)):
         file += f"""
 #EXTINF:{float(CHUNK_LENGTH)},
 /chunk_serie/{quality}/{episode_id}-{(i // CHUNK_LENGTH) + 1}.ts"""
@@ -635,14 +635,14 @@ def get_chunk_serie(episode_id: int, idx: int = 0) -> Response:
 
     token = get_chunk_user_token(request)
 
-    if not token:
-        abort(401)
+    #if not token:
+    #    abort(401)
 
     events.execute_event(events.CHUNK_EPISODE_PLAY, episode, token, time=time_start)
 
     command = [
         "ffmpeg",
-        FFMPEG_ARGS,
+        *FFMPEG_ARGS,
         "-hide_banner",
         "-loglevel",
         LOG_LEVEL,
@@ -650,23 +650,19 @@ def get_chunk_serie(episode_id: int, idx: int = 0) -> Response:
         time_start,
         "-to",
         time_end,
+        "-fflags",
+        "+genpts",
         "-i",
         episode_path,
-        "-output_ts_offset",
-        time_start,
         "-c:v",
         VIDEO_CODEC,
         "-an",
         "-f",
         "mpegts",
-        "pipe:1",
+        "-",
     ]
 
-    command = [
-        item
-        for sublist in command
-        for item in (sublist if isinstance(sublist, list) else [sublist])
-    ]
+    print(" ".join(command))
 
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
 
@@ -695,8 +691,8 @@ def get_chunk_serie_quality(quality: str, episode_id: int, idx: int = 0):
 
     token = get_chunk_user_token(request)
 
-    if not token:
-        abort(401)
+    #if not token:
+    #    abort(401)
 
     events.execute_event(events.CHUNK_EPISODE_PLAY, episode, token, time=time_start)
 
@@ -710,7 +706,7 @@ def get_chunk_serie_quality(quality: str, episode_id: int, idx: int = 0):
 
     command = [
         "ffmpeg",
-        FFMPEG_ARGS,
+        *FFMPEG_ARGS,
         "-hide_banner",
         "-loglevel",
         LOG_LEVEL,
@@ -718,10 +714,10 @@ def get_chunk_serie_quality(quality: str, episode_id: int, idx: int = 0):
         time_start,
         "-to",
         time_end,
+        "-fflags",
+        "+genpts",
         "-i",
         episode_path,
-        "-output_ts_offset",
-        time_start,
         "-c:v",
         VIDEO_CODEC,
         "-vf",
@@ -729,13 +725,11 @@ def get_chunk_serie_quality(quality: str, episode_id: int, idx: int = 0):
         "-an",
         "-f",
         "mpegts",
-        "pipe:1",
+        "-",
     ]
-    command = [
-        item
-        for sublist in command
-        for item in (sublist if isinstance(sublist, list) else [sublist])
-    ]
+
+    print(" ".join(command))
+
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
 
     if not pipe or not pipe.stdout:
@@ -766,14 +760,14 @@ def chunk_movie(movie_id: int, idx: int = 0) -> Response:
 
     token = get_chunk_user_token(request)
 
-    if not token:
-        abort(401)
+    #if not token:
+        #abort(401)
 
     events.execute_event(events.CHUNK_MOVIE_PLAY, movie, token, time=time_start)
 
     command = [
         "ffmpeg",
-        FFMPEG_ARGS,
+        *FFMPEG_ARGS,
         "-hide_banner",
         "-loglevel",
         LOG_LEVEL,
@@ -783,20 +777,14 @@ def chunk_movie(movie_id: int, idx: int = 0) -> Response:
         time_end,
         "-i",
         video_path,
-        "-output_ts_offset",
-        time_start,
         "-c:v",
         VIDEO_CODEC,
         "-an",
         "-f",
         "mpegts",
-        "pipe:1",
+        "-",
     ]
-    command = [
-        item
-        for sublist in command
-        for item in (sublist if isinstance(sublist, list) else [sublist])
-    ]
+
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
 
     if not pipe or not pipe.stdout:
@@ -826,8 +814,8 @@ def get_chunk_quality(quality: str, movie_id: int, idx: int = 0) -> Response:
 
     token = get_chunk_user_token(request)
 
-    if not token:
-        abort(401)
+    #if not token:
+        #abort(401)
 
     events.execute_event(events.CHUNK_MOVIE_PLAY, movie, token, time=time_start)
 
@@ -863,7 +851,7 @@ def get_chunk_quality(quality: str, movie_id: int, idx: int = 0) -> Response:
 
     command = [
         "ffmpeg",
-        FFMPEG_ARGS,
+        *FFMPEG_ARGS,
         "-hide_banner",
         "-loglevel",
         LOG_LEVEL,
@@ -873,8 +861,6 @@ def get_chunk_quality(quality: str, movie_id: int, idx: int = 0) -> Response:
         time_end,
         "-i",
         video_path,
-        "-output_ts_offset",
-        time_start,
         "-c:v",
         VIDEO_CODEC,
         "-vf",
@@ -882,13 +868,9 @@ def get_chunk_quality(quality: str, movie_id: int, idx: int = 0) -> Response:
         "-an",
         "-f",
         "mpegts",
-        "pipe:1",
+        "-",
     ]
-    command = [
-        item
-        for sublist in command
-        for item in (sublist if isinstance(sublist, list) else [sublist])
-    ]
+
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
 
     if not pipe or not pipe.stdout:
@@ -924,7 +906,7 @@ def get_chunk_other(hash: str, idx: int = 0) -> Response:
 
     command = [
         "ffmpeg",
-        FFMPEG_ARGS,
+        *FFMPEG_ARGS,
         "-hide_banner",
         "-loglevel",
         LOG_LEVEL,
@@ -946,13 +928,9 @@ def get_chunk_other(hash: str, idx: int = 0) -> Response:
         "2",
         "-f",
         "mpegts",
-        "pipe:1",
+        "-",
     ]
-    command = [
-        item
-        for sublist in command
-        for item in (sublist if isinstance(sublist, list) else [sublist])
-    ]
+
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
 
     if not pipe or not pipe.stdout:
@@ -1005,7 +983,7 @@ def get_chunk_other_quality(quality: str, hash: str, idx=0) -> Response:
 
     command = [
         "ffmpeg",
-        FFMPEG_ARGS,
+        *FFMPEG_ARGS,
         "-hide_banner",
         "-loglevel",
         LOG_LEVEL,
@@ -1029,13 +1007,9 @@ def get_chunk_other_quality(quality: str, hash: str, idx=0) -> Response:
         "2",
         "-f",
         "mpegts",
-        "pipe:1",
+        "-",
     ]
-    command = [
-        item
-        for sublist in command
-        for item in (sublist if isinstance(sublist, list) else [sublist])
-    ]
+
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
 
     if not pipe or not pipe.stdout:
@@ -1068,7 +1042,7 @@ def chunk_caption(movie_id: int, index: int = 0) -> Response:
         f"0:{index}",
         "-f",
         "webvtt",
-        "pipe:1",
+        "-",
     ]
 
     extract_captions = subprocess.run(extract_captions_command, stdout=subprocess.PIPE)
@@ -1109,9 +1083,9 @@ def vtt_time_convert_reverse(time: float) -> str:
 def caption_movie_by_id_to_m3_u8(movie_id: int, id: int) -> Response:
     movie = Movies.query.filter_by(id=movie_id).first()
     video_path = movie.slug
-    movie_duration = length_video(video_path)
+    movie_duration = length_video(video_path) + 1
     
-    m3u8_content = f"#EXTM3U\n#EXT-X-TARGETDURATION:{movie_duration}\n#EXT-X-VERSION:4\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXTINF:{movie_duration},\n/chunk_caption/{movie_id}_{id}.vtt\n#EXT-X-ENDLIST"
+    m3u8_content = f"#EXTM3U\n#EXT-X-TARGETDURATION:{movie_duration}\n#EXT-X-VERSION:7\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXTINF:{movie_duration},\n/chunk_caption/{movie_id}_{id}.vtt\n#EXT-X-ENDLIST"
 
     response = make_response(m3u8_content)
     response.headers.set("Content-Type", "application/x-mpegURL")
@@ -1137,12 +1111,15 @@ def chunk_caption_by_id(movie_id: int, id: int) -> Response:
         f"0:{id}",
         "-f",
         "webvtt",
-        "pipe:1",
+        "-",
     ]
 
     extract_captions = subprocess.run(extract_captions_command, stdout=subprocess.PIPE)
 
     extract_captions_response = make_response(extract_captions.stdout)
+
+    extract_captions_response.data = b"WEBVTT\nX-TIMESTAMP-MAP=MPEGTS:900000,LOCAL:00:00:00.000\n" + extract_captions_response.data
+    
     extract_captions_response.headers.set("Content-Type", "text/VTT")
     extract_captions_response.headers.set(
         "Content-Disposition", "attachment", filename=f"{movie_id}_{id}.vtt"
@@ -1154,9 +1131,9 @@ def chunk_caption_by_id(movie_id: int, id: int) -> Response:
 def caption_serie_by_id_to_m3_u8(episode_id: int, id: int) -> Response:
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
     video_path = episode.slug
-    episode_duration = length_video(video_path)
+    episode_duration = (length_video(video_path) // CHUNK_LENGTH) * CHUNK_LENGTH + 1
     
-    m3u8_content = f"#EXTM3U\n#EXT-X-TARGETDURATION:{episode_duration}\n#EXT-X-VERSION:4\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXTINF:{episode_duration},\n/chunk_caption_serie/{episode_id}_{id}.vtt\n#EXT-X-ENDLIST"
+    m3u8_content = f"#EXTM3U\n#EXT-X-TARGETDURATION:{episode_duration}\n#EXT-X-VERSION:7\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXTINF:{episode_duration},\n/chunk_caption_serie/{episode_id}_{id}.vtt\n#EXT-X-ENDLIST"
 
     response = make_response(m3u8_content)
     response.headers.set("Content-Type", "application/x-mpegURL")
@@ -1182,7 +1159,7 @@ def chunk_caption_serie_by_id(episode_id: int, id: int) -> Response:
         f"0:{id}",
         "-f",
         "webvtt",
-        "pipe:1",
+        "-",
     ]
 
     extract_captions = subprocess.run(extract_captions_command, stdout=subprocess.PIPE)
@@ -3330,8 +3307,8 @@ def main_movie(movie_id: str | int) -> Response:
 
     token = get_chunk_user_token(request)
 
-    if not token:
-        abort(401)
+    #if not token:
+    #    abort(401)
 
     events.execute_event(events.MOVIE_PLAY, movie_id, token)
 
@@ -3339,7 +3316,7 @@ def main_movie(movie_id: str | int) -> Response:
     video_properties = get_video_properties(video_path)
     height = int(video_properties["height"])
     width = int(video_properties["width"])
-    m3u8_file = "#EXTM3U\n#EXT-X-VERSION:4\n"
+    m3u8_file = "#EXTM3U\n#EXT-X-VERSION:7\n"
 
     m3u8_file += generate_caption_movie(movie_id) + "\n"
     audio = "\n"
@@ -3347,6 +3324,14 @@ def main_movie(movie_id: str | int) -> Response:
     audio += "\n"
     m3u8_file += audio
     qualities = [144, 240, 360, 480, 720, 1080]
+    quality_to_codec = {
+        144: "avc1.6e000c",
+        240: "avc1.6e0015",
+        360: "avc1.6e001e",
+        480: "avc1.6e001f",
+        720: "avc1.6e0020",
+        1080: "avc1.6e0032"
+    }
     file = []
     for quality in qualities:
         if quality < height:
@@ -3358,14 +3343,19 @@ def main_movie(movie_id: str | int) -> Response:
             if audio != "":
                 m3u8_line += 'AUDIO="audio",'
 
-            m3u8_line += f'CODECS="avc1.4d4033,mp4a.40.2",RESOLUTION={new_height}x{new_width}\n/video_movie/{quality}/{movie_id}.m3u8\n'
+            m3u8_line += f'CODECS="{quality_to_codec[int(quality)]}",RESOLUTION={new_height}x{new_width}\n/video_movie/{quality}/{movie_id}.m3u8\n'
             file.append(m3u8_line)
     last_line = f'#EXT-X-STREAM-INF:BANDWIDTH={width*height},'
 
     if audio != "":
         last_line += 'AUDIO="audio",'
     
-    last_line += f'CODECS="avc1.4d4033,mp4a.40.2",RESOLUTION={width}x{height}\n/video_movie/{movie_id}.m3u8'
+    codec = "avc1.6e0033"
+
+    if height in quality_to_codec:
+        codec = quality_to_codec[height]
+
+    last_line += f'CODECS="{codec}",RESOLUTION={width}x{height}\n/video_movie/{movie_id}.m3u8'
     file.append(last_line)
     file_str = "".join(file)
     m3u8_file += file_str
@@ -3478,13 +3468,15 @@ def can_i_play_other_video(video_hash: str) -> Response:
 
 
 @app.route("/main_serie/<episode_id>")
-def main_serie(episode_id: int) -> Response:
+def main_serie(episode_id: int | str) -> Response:
+    if episode_id.endswith(".m3u8"):
+        episode_id = episode_id[:-5]
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
 
     token = get_chunk_user_token(request)
 
-    if not token:
-        abort(401)
+    #if not token:
+    #    abort(401)
 
     events.execute_event(events.EPISODE_PLAY, episode_id, token)
 
@@ -3493,7 +3485,7 @@ def main_serie(episode_id: int) -> Response:
     video_properties = get_video_properties(episode_path)
     height = int(video_properties["height"])
     width = int(video_properties["width"])
-    m3u8_file = "#EXTM3U\n#EXT-X-VERSION:4\n\n"
+    m3u8_file = "#EXTM3U\n#EXT-X-VERSION:7\n\n"
     m3u8_file += generate_caption_serie(episode_id)
     m3u8_file += "\n"
     audio = ""
@@ -3512,14 +3504,14 @@ def main_serie(episode_id: int) -> Response:
             if audio != "":
                 m3u8_line += ',AUDIO="audio"'
             
-            m3u8_line += f",RESOLUTION={new_height}x{new_width}\n/video_serie/{quality}/{episode_id}\n"
+            m3u8_line += f",RESOLUTION={new_height}x{new_width}\n/video_serie/{quality}/{episode_id}.m3u8\n"
             file.append(m3u8_line)
     last_line = f"#EXT-X-STREAM-INF:BANDWIDTH={width*height}"
 
     if audio != "":
         last_line += ',AUDIO="audio"'
     
-    last_line += f",RESOLUTION={width}x{height}\n/video_serie/{episode_id}"
+    last_line += f",RESOLUTION={width}x{height}\n/video_serie/{episode_id}.m3u8"
     file.append(last_line)
     file_str = "".join(file)
     m3u8_file += file_str
@@ -3819,12 +3811,9 @@ def audio_movie(movie_id: int, audio_id: int, channels_count: int) -> Response:
     video_path = movie.slug
     duration = length_video(video_path)
 
-    file = f"""#EXTM3U
-#EXT-X-VERSION:4
-#EXT-X-TARGETDURATION:{CHUNK_LENGTH}
-#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n"""
+    file = f"""#EXTM3U\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:{CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n"""
 
-    for i in range(0, int(duration), CHUNK_LENGTH):
+    for i in range(0, int(duration), int(CHUNK_LENGTH)):
         file += f"#EXTINF:{int(CHUNK_LENGTH)},\n/chunk_movie_audio/{movie_id}-{audio_id}-{(i // CHUNK_LENGTH) + 1}-{channels_count}.aac\n"  # noqa
 
     file += "#EXT-X-ENDLIST"
@@ -3851,30 +3840,36 @@ def chunk_movie_audio(
     if not movie:
         abort(404)
     video_path = movie.slug
-
+    
     seconds = (chunk - 1) * CHUNK_LENGTH
+    
+    time_start = datetime.timedelta(seconds=seconds)
+    time_end = datetime.timedelta(seconds=seconds + CHUNK_LENGTH)
 
-    time_start = str(datetime.timedelta(seconds=seconds))
-    time_end = str(datetime.timedelta(seconds=seconds + CHUNK_LENGTH))
+    time_start = str(time_start)
+    time_end = str(time_end)
+    
+    token = get_chunk_user_token(request)
 
+    #if not token:
+        #abort(401)
+
+    
     command = [
         "ffmpeg",
-        "-i",
-        video_path,
-        "-vn",
-        "-c:a",
-        AUDIO_CODEC,
-        "-map",
-        f"0:a:{audio_id}",
-        "-ac",
-        f"{channel_count}",
-        "-ss",
-        time_start,
-        "-to",
-        time_end,
-        "-f",
-        "adts",
-        "-",
+        *FFMPEG_ARGS,
+        "-hide_banner",
+        "-loglevel",
+        LOG_LEVEL,
+        "-ss", str(time_start),       # Start time of the segment
+        "-to", str(time_end),         # End time of the segment
+        "-i", video_path,
+        "-c:a", AUDIO_CODEC,          # Use AAC codec for output
+        "-map", f"0:a:{audio_id}",    # Select the specified audio stream
+        "-ac", str(channel_count),    # Number of audio channels
+        "-vn",                        # Disable video
+        "-f", "adts",                 # Output format for HLS
+        "-"                      # Send the result to stdout
     ]
 
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -3884,14 +3879,14 @@ def chunk_movie_audio(
 
     data = pipe.stdout.read()
     response = make_response(data)
-    response.headers.set("Content-Type", "video/MP2T")
+    response.headers.set("Content-Type", "audio/aac")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
     response.headers.set("Access-Control-Allow-Origin", "*")
     response.headers.set(
         "Content-Disposition",
         "attachment",
-        filename=f"{movie_id}-{audio_id}-{chunk}.aac",
+        filename=f"{movie_id}-{audio_id}-{chunk}-{channel_count}.aac",
     )
 
     return response
@@ -3904,13 +3899,9 @@ def audio_serie(episode_id: int, audio_id: int, channels_count: int) -> Response
     video_path = episode.slug
     duration = length_video(video_path)
 
-    file = f"""#EXTM3U
-#EXT-X-VERSION:4
-#EXT-X-TARGETDURATION:{CHUNK_LENGTH}
-
-#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n"""
+    file = f"#EXTM3U\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:{CHUNK_LENGTH}\n\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n"
     
-    for i in range(0, int(duration), CHUNK_LENGTH):
+    for i in range(0, int(duration), int(CHUNK_LENGTH)):
         file += f"#EXTINF:{int(CHUNK_LENGTH)},\n/chunk_serie_audio/{episode_id}-{audio_id}-{(i // CHUNK_LENGTH) + 1}-{channels_count}.aac\n"
 
     file += "#EXT-X-ENDLIST"
@@ -3935,28 +3926,31 @@ def chunk_serie_audio(episode_id: int, audio_id: int, chunk: int, channel_count:
 
     seconds = (chunk - 1) * CHUNK_LENGTH
 
-    time_start = str(datetime.timedelta(seconds=seconds))
-    time_end = str(datetime.timedelta(seconds=seconds + CHUNK_LENGTH))
+    time_start = datetime.timedelta(seconds=seconds)
+    time_end = datetime.timedelta(seconds=seconds + CHUNK_LENGTH)
+
+    time_start = str(time_start)
+    time_end = str(time_end)
 
     command = [
         "ffmpeg",
-        "-i",
-        video_path,
-        "-vn",
-        "-c:a",
-        AUDIO_CODEC,
-        "-map",
-        f"0:a:{audio_id}",
-        "-ac",
-        f"{channel_count}",
-        "-ss",
-        time_start,
-        "-to",
-        time_end,
-        "-f",
-        "adts",
-        "-",
+        *FFMPEG_ARGS,
+        "-hide_banner",
+        "-loglevel",
+        LOG_LEVEL,
+        "-ss", str(time_start),       # Start time of the segment
+        "-to", str(time_end),         # End time of the segment
+        "-i", video_path,             # Set output offset
+        "-c:a", AUDIO_CODEC,          # Use AAC codec for output
+        "-map", f"0:a:{audio_id}",    # Select the specified audio stream
+        "-ac", str(channel_count),    # Number of audio channels
+        "-vn",                        # Disable video
+        "-f", "adts",                 # Output format for HLS
+        "-"                      # Send the result to stdout
     ]
+
+
+    print(" ".join(command))
 
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 

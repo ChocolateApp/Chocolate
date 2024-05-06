@@ -2,7 +2,10 @@
 name = "chocolate_app"
 version = "7.1.9"
 description = ""
-authors = [{ name = "Imprevisible", email = "impr.visible@gmail.com" }]
+authors = [
+    { name = "Imprevisible", email = "impr.visible@gmail.com" },
+    { name = "Impre-visible", email = "impr.visible@gmail.com" },
+]
 dependencies = [
     "colorama==0.4.5",
     "deep-translator==1.10.1",
@@ -45,7 +48,7 @@ dependencies = [
     "ffmpeg>=1.4",
     "pandas>=2.2.1",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 readme = "README.md"
 license = { text = "GPL-3.0" }
 

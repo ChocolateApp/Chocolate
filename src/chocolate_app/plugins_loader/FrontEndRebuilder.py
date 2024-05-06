@@ -11,6 +11,7 @@ from chocolate_app import ChocolateException
 
 
 def rebuild_frontend():
+    return
     """
     Rebuild the frontend
 
