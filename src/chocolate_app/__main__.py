@@ -41,6 +41,7 @@ from operator import itemgetter
 
 from chocolate_app import (
     app,
+    SERVER_PORT,
     get_dir_path,
     DB,
     LOGIN_MANAGER,
@@ -662,8 +663,6 @@ def get_chunk_serie(episode_id: int, idx: int = 0) -> Response:
         "-",
     ]
 
-    print(" ".join(command))
-
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
 
     if not pipe or not pipe.stdout:
@@ -727,8 +726,6 @@ def get_chunk_serie_quality(quality: str, episode_id: int, idx: int = 0):
         "mpegts",
         "-",
     ]
-
-    print(" ".join(command))
 
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
 
@@ -4275,7 +4272,7 @@ def start_chocolate() -> None:
             log_message = f"Error while updating Discord RPC: {e}"
             log("ERROR", "Discord RPC", log_message)
 
-    app.run(host="0.0.0.0", port=8888)
+    app.run(host="0.0.0.0", port=SERVER_PORT)
     events.execute_event(events.AFTER_START)
 
 

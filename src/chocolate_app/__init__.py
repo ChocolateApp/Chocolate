@@ -45,6 +45,7 @@ parser.add_argument("--images", help="Path to the images folder (a folder)")
 parser.add_argument("--plugins", help="Path to the plugins folder (a folder)")
 parser.add_argument("--logs", help="Path to the logs file (a .log file)")
 parser.add_argument("--no-scans", help="Disable startup scans", action="store_true")
+parser.add_argument("--port", help="Port to run the server on", type=int)
 
 ARGUMENTS = parser.parse_args()
 
@@ -111,6 +112,8 @@ ARTEFACTS_PATH: str = ARGUMENTS.artefacts or paths[OPERATING_SYSTEM]["artefacts"
 ARTEFACTS_PATH = ARTEFACTS_PATH.replace("\\", "/")
 if ARTEFACTS_PATH.endswith("/"):
     ARTEFACTS_PATH = ARTEFACTS_PATH[:-1]
+
+SERVER_PORT: int = ARGUMENTS.port or 8888
 
 
 def replace_path(path: str) -> str:
