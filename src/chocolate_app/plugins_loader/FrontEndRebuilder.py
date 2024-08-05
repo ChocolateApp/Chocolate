@@ -11,7 +11,6 @@ from chocolate_app import ChocolateException
 
 
 def rebuild_frontend():
-    return
     """
     Rebuild the frontend
 
@@ -76,7 +75,7 @@ def rebuild_frontend():
 
     remove_build_files(dir_path)
     build_frontend(frontend_path, dir_path, requirements)
-    # delete_frontend_temp(frontend_path)
+    delete_frontend_temp(frontend_path)
     write_config(config)
 
 
@@ -114,6 +113,15 @@ def delete_frontend_temp(frontend_path: str):
 
 
 def remove_build_files(chocolate_path: str):
+    """
+    Delete the build files
+
+    Parameters:
+        chocolate_path (str): The path of the chocolate app
+
+    Returns:
+        None
+    """
     template_path = f"{chocolate_path}/templates"
     static_path = f"{chocolate_path}/static"
     folders_to_remove = ["js", "css", "media"]
@@ -127,6 +135,17 @@ def remove_build_files(chocolate_path: str):
 
 
 def build_frontend(frontend_path: str, chocolate_path: str, requirements: list):
+    """
+    Build the frontend
+
+    Parameters:
+        frontend_path (str): The path of the frontend
+        chocolate_path (str): The path of the chocolate app
+        requirements (list): The list of required libraries
+
+    Returns:
+        None
+    """
     npm_install_command = "npm install"
     npm_build_command = "npm run build"
 
