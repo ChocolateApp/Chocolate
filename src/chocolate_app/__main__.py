@@ -3811,7 +3811,7 @@ def audio_movie(movie_id: int, audio_id: int, channels_count: int) -> Response:
     file = f"""#EXTM3U\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:{CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n"""
 
     for i in range(0, int(duration), int(CHUNK_LENGTH)):
-        file += f"#EXTINF:{int(CHUNK_LENGTH)},\n/chunk_movie_audio/{movie_id}-{audio_id}-{(i // CHUNK_LENGTH) + 1}-{channels_count}.aac\n"  # noqa
+        file += f"#EXTINF:{int(CHUNK_LENGTH)},\n/chunk_movie_audio/{movie_id}-{audio_id}-{(i // CHUNK_LENGTH) + 1}-{channels_count}.ts\n"  # noqa
 
     file += "#EXT-X-ENDLIST"
 
@@ -3828,7 +3828,7 @@ def audio_movie(movie_id: int, audio_id: int, channels_count: int) -> Response:
 
 
 @app.route(
-    "/chunk_movie_audio/<int:movie_id>-<int:audio_id>-<int:chunk>-<int:channel_count>.aac"
+    "/chunk_movie_audio/<int:movie_id>-<int:audio_id>-<int:chunk>-<int:channel_count>.ts"
 )
 def chunk_movie_audio(
     movie_id: int, audio_id: int, chunk: int, channel_count: int
@@ -3851,7 +3851,6 @@ def chunk_movie_audio(
     #if not token:
         #abort(401)
 
-    
     command = [
         "ffmpeg",
         *FFMPEG_ARGS,
@@ -3859,13 +3858,12 @@ def chunk_movie_audio(
         "-loglevel",
         LOG_LEVEL,
         "-ss", str(time_start),       # Start time of the segment
-        "-to", str(time_end),         # End time of the segment
-        "-i", video_path,
-        "-c:a", AUDIO_CODEC,          # Use AAC codec for output
+        "-t", str(CHUNK_LENGTH),         # End time of the segment
+        "-i", video_path,             # Set output offset
         "-map", f"0:a:{audio_id}",    # Select the specified audio stream
-        "-ac", str(channel_count),    # Number of audio channels
+        "-ac", "2",    # Number of audio channels
         "-vn",                        # Disable video
-        "-f", "adts",                 # Output format for HLS
+        "-f", "mp2",                 # Output format for HLS
         "-"                      # Send the result to stdout
     ]
 
@@ -3876,14 +3874,14 @@ def chunk_movie_audio(
 
     data = pipe.stdout.read()
     response = make_response(data)
-    response.headers.set("Content-Type", "audio/aac")
+    response.headers.set("Content-Type", "audio/MP2T")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
     response.headers.set("Access-Control-Allow-Origin", "*")
     response.headers.set(
         "Content-Disposition",
         "attachment",
-        filename=f"{movie_id}-{audio_id}-{chunk}-{channel_count}.aac",
+        filename=f"{movie_id}-{audio_id}-{chunk}-{channel_count}.ts",
     )
 
     return response
@@ -3899,7 +3897,7 @@ def audio_serie(episode_id: int, audio_id: int, channels_count: int) -> Response
     file = f"#EXTM3U\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:{CHUNK_LENGTH}\n\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n"
     
     for i in range(0, int(duration), int(CHUNK_LENGTH)):
-        file += f"#EXTINF:{int(CHUNK_LENGTH)},\n/chunk_serie_audio/{episode_id}-{audio_id}-{(i // CHUNK_LENGTH) + 1}-{channels_count}.aac\n"
+        file += f"#EXTINF:{int(CHUNK_LENGTH)},\n/chunk_serie_audio/{episode_id}-{audio_id}-{(i // CHUNK_LENGTH) + 1}-{channels_count}.ts\n"
 
     file += "#EXT-X-ENDLIST"
 
@@ -3914,7 +3912,7 @@ def audio_serie(episode_id: int, audio_id: int, channels_count: int) -> Response
 
     return response
 
-@app.route("/chunk_serie_audio/<int:episode_id>-<int:audio_id>-<int:chunk>-<int:channel_count>.aac")
+@app.route("/chunk_serie_audio/<int:episode_id>-<int:audio_id>-<int:chunk>-<int:channel_count>.ts")
 def chunk_serie_audio(episode_id: int, audio_id: int, chunk: int, channel_count: int) -> Response:
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
     if not episode:
@@ -3936,13 +3934,12 @@ def chunk_serie_audio(episode_id: int, audio_id: int, chunk: int, channel_count:
         "-loglevel",
         LOG_LEVEL,
         "-ss", str(time_start),       # Start time of the segment
-        "-to", str(time_end),         # End time of the segment
+        "-t", str(CHUNK_LENGTH),         # End time of the segment
         "-i", video_path,             # Set output offset
-        "-c:a", AUDIO_CODEC,          # Use AAC codec for output
         "-map", f"0:a:{audio_id}",    # Select the specified audio stream
-        "-ac", str(channel_count),    # Number of audio channels
+        "-ac", "2",    # Number of audio channels
         "-vn",                        # Disable video
-        "-f", "adts",                 # Output format for HLS
+        "-f", "mp2",                 # Output format for HLS
         "-"                      # Send the result to stdout
     ]
 
@@ -3963,7 +3960,7 @@ def chunk_serie_audio(episode_id: int, audio_id: int, chunk: int, channel_count:
     response.headers.set(
         "Content-Disposition",
         "attachment",
-        filename=f"{episode_id}-{audio_id}-{chunk}.aac",
+        filename=f"{episode_id}-{audio_id}-{chunk}.ts",
     )
 
     return response
