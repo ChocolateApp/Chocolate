@@ -38,14 +38,14 @@ class TemplateNotFound(ChocolateException):
 
 
 parser: argparse.ArgumentParser = argparse.ArgumentParser("Chocolate")
-parser.add_argument("--config", help="Path to the config file (a .ini file)")
+parser.add_argument("-c", "--config", help="Path to the config file (a .ini file)")
 parser.add_argument("--artefacts", help="Path to the artefacts folder (a folder)")
-parser.add_argument("--db", help="Path to the database file (a .db file)")
-parser.add_argument("--images", help="Path to the images folder (a folder)")
-parser.add_argument("--plugins", help="Path to the plugins folder (a folder)")
-parser.add_argument("--logs", help="Path to the logs file (a .log file)")
-parser.add_argument("--no-scans", help="Disable startup scans", action="store_true")
-parser.add_argument("--port", help="Port to run the server on", type=int)
+parser.add_argument("-d", "--db", help="Path to the database file (a .db file)")
+parser.add_argument("-i", "--images", help="Path to the images folder (a folder)")
+parser.add_argument("-pl", "--plugins", help="Path to the plugins folder (a folder)")
+parser.add_argument("-l","--logs", help="Path to the logs file (a .log file)")
+parser.add_argument("-ns","--no-scans", help="Disable startup scans", action="store_true")
+parser.add_argument("-p", "--port", help="Port to run the server on", type=int)
 
 ARGUMENTS = parser.parse_args()
 
@@ -131,7 +131,7 @@ except PermissionError:
     LOG_PATH = replace_path(LOG_PATH)
     IMAGES_PATH = replace_path(IMAGES_PATH)
 
-CHUNK_LENGTH: int = 5
+CHUNK_LENGTH: int = 9
 
 if os.getenv("NO_SCANS") == "true":
     ARGUMENTS.no_scans = True
@@ -193,6 +193,15 @@ def check_dependencies() -> None:
             "ffmpeg is not installed. Chocolate will not be able to play videos."
         )
 
+    if not shutil.which("npm"):
+        logging.warning(
+            "npm is not installed. Chocolate will not be able to install plugins."
+        )
+
+    if not shutil.which("git"):
+        logging.warning(
+            "git is not installed. Chocolate will not be able to install plugins."
+        )
 
 def get_dir_path() -> str:
     """
