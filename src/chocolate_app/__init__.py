@@ -131,7 +131,7 @@ except PermissionError:
     LOG_PATH = replace_path(LOG_PATH)
     IMAGES_PATH = replace_path(IMAGES_PATH)
 
-CHUNK_LENGTH: int = 9
+CHUNK_LENGTH: int = 3
 
 if os.getenv("NO_SCANS") == "true":
     ARGUMENTS.no_scans = True
