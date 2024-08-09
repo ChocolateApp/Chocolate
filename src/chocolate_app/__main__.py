@@ -465,20 +465,21 @@ def create_m3u8(movie_id: int) -> Response:
     video_path = movie.slug
     duration = length_video(video_path)
 
-    file = f"""#EXTM3U\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:{CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n"""
+    file = f"#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:{CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-DISCONTINUITY-SEQUENCE: 0\n"
 
     for i in range(0, int(duration), int(CHUNK_LENGTH)):
         extinf = float(CHUNK_LENGTH)
         remaining_movie_duration = duration - i
         if remaining_movie_duration < CHUNK_LENGTH:
             extinf = remaining_movie_duration
-
+        
+        file += f"#EXT-X-DISCONTINUITY\n"
         file += f"#EXTINF:{extinf},\n/chunk_movie/{movie_id}-{(i // CHUNK_LENGTH) + 1}.ts\n"  # noqa
 
     file += "#EXT-X-ENDLIST"
 
     response = make_response(file)
-    response.headers.set("Content-Type", "application/x-mpegURL")
+    response.headers.set("Content-Type", "vnd.apple.mpegURL")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
     response.headers.set("Access-Control-Allow-Origin", "*")
@@ -494,7 +495,7 @@ def create_m3u8_quality(quality: str, movie_id: int) -> Response:
     movie = Movies.query.filter_by(id=movie_id).first()
     video_path = movie.slug
     duration = length_video(video_path)
-    file = f"#EXTM3U\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:{CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n"
+    file = f"#EXTM3U\n#EXT-X-VERSION:3\n\n#EXT-X-TARGETDURATION:{CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-DISCONTINUITY-SEQUENCE: 0\n"
     
     for i in range(0, int(duration), int(CHUNK_LENGTH)):
         extinf = float(CHUNK_LENGTH)
@@ -502,12 +503,13 @@ def create_m3u8_quality(quality: str, movie_id: int) -> Response:
         if (duration - i) < CHUNK_LENGTH:
             extinf = duration - i
 
+        file += f"#EXT-X-DISCONTINUITY\n"
         file += f"#EXTINF:{extinf},\n/chunk_movie/{quality}/{movie_id}-{(i // CHUNK_LENGTH) + 1}.ts\n"
 
     file += "#EXT-X-ENDLIST"
 
     response = make_response(file)
-    response.headers.set("Content-Type", "application/x-mpegURL")
+    response.headers.set("Content-Type", "vnd.apple.mpegURL")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
     response.headers.set("Access-Control-Allow-Origin", "*")
@@ -523,7 +525,7 @@ def create_other_m3u8(hash: str) -> Response:
     other = OthersVideos.query.filter_by(video_hash=hash).first()
     video_path = other.slug
     duration = length_video(video_path)
-    file = f"""#EXTM3U\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:{CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n"""
+    file = f"""#EXTM3U\n#EXT-X-VERSION:3\n\n#EXT-X-TARGETDURATION:{CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n"""
 
     for i in range(0, int(duration), int(CHUNK_LENGTH)):
         file += f"""
@@ -534,7 +536,7 @@ def create_other_m3u8(hash: str) -> Response:
     file += "\n#EXT-X-ENDLIST"
 
     response = make_response(file)
-    response.headers.set("Content-Type", "application/x-mpegURL")
+    response.headers.set("Content-Type", "vnd.apple.mpegURL")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
     response.headers.set("Access-Control-Allow-Origin", "*")
@@ -548,7 +550,7 @@ def create_other_m3u8_quality(quality: str, hash: str) -> Response:
     other = OthersVideos.query.filter_by(video_hash=hash).first()
     video_path = other.slug
     duration = length_video(video_path)
-    file = f"""#EXTM3U\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:{CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n"""
+    file = f"""#EXTM3U\n#EXT-X-VERSION:3\n\n#EXT-X-TARGETDURATION:{CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n"""
 
     for i in range(0, int(duration), int(CHUNK_LENGTH)):
         file += f"""
@@ -559,7 +561,7 @@ def create_other_m3u8_quality(quality: str, hash: str) -> Response:
     file += "\n#EXT-X-ENDLIST"
 
     response = make_response(file)
-    response.headers.set("Content-Type", "application/x-mpegURL")
+    response.headers.set("Content-Type", "vnd.apple.mpegURL")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
     response.headers.set("Access-Control-Allow-Origin", "*")
@@ -576,17 +578,18 @@ def create_serie_m3u8(episode_id: str) -> Response:
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
     episode_path = episode.slug
     duration = length_video(episode_path)
-    file = f"""#EXTM3U\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:{CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n"""
+    file = f"#EXTM3U\n#EXT-X-VERSION:3\n\n#EXT-X-TARGETDURATION:{CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-DISCONTINUITY-SEQUENCE: 0\n"
 
     for i in range(0, int(duration), int(CHUNK_LENGTH)):
         file += f"""
+#EXT-X-DISCONTINUITY\n
 #EXTINF:{float(CHUNK_LENGTH)},
 /chunk_serie/{episode_id}-{(i // CHUNK_LENGTH) + 1}.ts"""
 
     file += "\n#EXT-X-ENDLIST"
 
     response = make_response(file)
-    response.headers.set("Content-Type", "application/x-mpegURL")
+    response.headers.set("Content-Type", "vnd.apple.mpegURL")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
     response.headers.set("Access-Control-Allow-Origin", "*")
@@ -604,19 +607,21 @@ def create_serie_m3u8_quality(quality: str, episode_id: str) -> Response:
     duration = length_video(episode_path)
     file = f"""#EXTM3U
 #EXT-X-TARGETDURATION:{CHUNK_LENGTH}
-#EXT-X-VERSION:7
+#EXT-X-VERSION:3\n
 #EXT-X-MEDIA-SEQUENCE:0
-#EXT-X-PLAYLIST-TYPE:VOD\n"""
+#EXT-X-PLAYLIST-TYPE:VOD\n
+#EXT-X-DISCONTINUITY-SEQUENCE: 0\n"""
 
     for i in range(0, int(duration), int(CHUNK_LENGTH)):
         file += f"""
+#EXT-X-DISCONTINUITY\n
 #EXTINF:{float(CHUNK_LENGTH)},
 /chunk_serie/{quality}/{episode_id}-{(i // CHUNK_LENGTH) + 1}.ts"""
 
     file += "\n#EXT-X-ENDLIST"
 
     response = make_response(file)
-    response.headers.set("Content-Type", "application/x-mpegURL")
+    response.headers.set("Content-Type", "vnd.apple.mpegURL")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
     response.headers.set("Access-Control-Allow-Origin", "*")
@@ -641,6 +646,7 @@ def get_chunk_serie(episode_id: int, idx: int = 0) -> Response:
 
     events.execute_event(events.CHUNK_EPISODE_PLAY, episode, token, time=time_start)
 
+    
     command = [
         "ffmpeg",
         *FFMPEG_ARGS,
@@ -651,8 +657,6 @@ def get_chunk_serie(episode_id: int, idx: int = 0) -> Response:
         time_start,
         "-to",
         time_end,
-        "-fflags",
-        "+genpts",
         "-i",
         episode_path,
         "-c:v",
@@ -703,6 +707,8 @@ def get_chunk_serie_quality(quality: str, episode_id: int, idx: int = 0):
     if (new_height % 2) != 0:
         new_height += 1
 
+    
+    
     command = [
         "ffmpeg",
         *FFMPEG_ARGS,
@@ -713,15 +719,13 @@ def get_chunk_serie_quality(quality: str, episode_id: int, idx: int = 0):
         time_start,
         "-to",
         time_end,
-        "-fflags",
-        "+genpts",
         "-i",
         episode_path,
         "-c:v",
         VIDEO_CODEC,
+        "-an",
         "-vf",
         f"scale={new_height}:{new_width}",
-        "-an",
         "-f",
         "mpegts",
         "-",
@@ -758,7 +762,7 @@ def chunk_movie(movie_id: int, idx: int = 0) -> Response:
     token = get_chunk_user_token(request)
 
     #if not token:
-        #abort(401)
+    #    abort(401)
 
     events.execute_event(events.CHUNK_MOVIE_PLAY, movie, token, time=time_start)
 
@@ -798,7 +802,6 @@ def chunk_movie(movie_id: int, idx: int = 0) -> Response:
 
     return response
 
-
 @app.route("/chunk_movie/<quality>/<movie_id>-<int:idx>.ts", methods=["GET"])
 def get_chunk_quality(quality: str, movie_id: int, idx: int = 0) -> Response:
     seconds = (idx - 1) * CHUNK_LENGTH
@@ -812,7 +815,7 @@ def get_chunk_quality(quality: str, movie_id: int, idx: int = 0) -> Response:
     token = get_chunk_user_token(request)
 
     #if not token:
-        #abort(401)
+    #    abort(401)
 
     events.execute_event(events.CHUNK_MOVIE_PLAY, movie, token, time=time_start)
 
@@ -821,30 +824,8 @@ def get_chunk_quality(quality: str, movie_id: int, idx: int = 0) -> Response:
     height = video_properties["height"]
     new_width = int(float(quality))
     new_height = round(float(width) / float(height) * new_width)
-    while (new_height % 8) != 0:
+    if (new_height % 2) != 0:
         new_height += 1
-
-    while (new_width % 8) != 0:
-        new_width += 1
-
-    a_bitrate = {
-        "1080": "192k",
-        "720": "192k",
-        "480": "128k",
-        "360": "128k",
-        "240": "96k",
-        "144": "64k",
-    }
-
-    if int(quality) > 1080:
-        audio_bitrate = a_bitrate["1080"]
-    else:
-        audio_bitrate = a_bitrate[quality]
-
-    v_bitrate = ((int(quality) - 144) / (1080 - 144)) * (5000 - 1500) + 1500
-
-    if v_bitrate < 1500:
-        v_bitrate = 1500
 
     command = [
         "ffmpeg",
@@ -861,7 +842,7 @@ def get_chunk_quality(quality: str, movie_id: int, idx: int = 0) -> Response:
         "-c:v",
         VIDEO_CODEC,
         "-vf",
-        f"scale={new_height}:{new_width}",
+        f"scale={new_height}:{new_width},setpts=PTS-STARTPTS",
         "-an",
         "-f",
         "mpegts",
@@ -1082,10 +1063,10 @@ def caption_movie_by_id_to_m3_u8(movie_id: int, id: int) -> Response:
     video_path = movie.slug
     movie_duration = length_video(video_path) + 1
     
-    m3u8_content = f"#EXTM3U\n#EXT-X-TARGETDURATION:{movie_duration}\n#EXT-X-VERSION:7\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXTINF:{movie_duration},\n/chunk_caption/{movie_id}_{id}.vtt\n#EXT-X-ENDLIST"
+    m3u8_content = f"#EXTM3U\n#EXT-X-TARGETDURATION:{movie_duration}\n#EXT-X-VERSION:3\n\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXTINF:{movie_duration},\n/chunk_caption/{movie_id}_{id}.vtt\n#EXT-X-ENDLIST"
 
     response = make_response(m3u8_content)
-    response.headers.set("Content-Type", "application/x-mpegURL")
+    response.headers.set("Content-Type", "vnd.apple.mpegURL")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
     response.headers.set("Access-Control-Allow-Origin", "*")
@@ -1130,10 +1111,10 @@ def caption_serie_by_id_to_m3_u8(episode_id: int, id: int) -> Response:
     video_path = episode.slug
     episode_duration = (length_video(video_path) // CHUNK_LENGTH) * CHUNK_LENGTH + 1
     
-    m3u8_content = f"#EXTM3U\n#EXT-X-TARGETDURATION:{episode_duration}\n#EXT-X-VERSION:7\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXTINF:{episode_duration},\n/chunk_caption_serie/{episode_id}_{id}.vtt\n#EXT-X-ENDLIST"
+    m3u8_content = f"#EXTM3U\n#EXT-X-TARGETDURATION:{episode_duration}\n#EXT-X-VERSION:3\n\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXTINF:{episode_duration},\n/chunk_caption_serie/{episode_id}_{id}.vtt\n#EXT-X-ENDLIST"
 
     response = make_response(m3u8_content)
-    response.headers.set("Content-Type", "application/x-mpegURL")
+    response.headers.set("Content-Type", "vnd.apple.mpegURL")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
     response.headers.set("Access-Control-Allow-Origin", "*")
@@ -1830,17 +1811,16 @@ def get_all_series(library: str) -> Response:
     if overrides.have_override(overrides.GET_ALL_SERIES):
         return overrides.execute_override(overrides.GET_ALL_SERIES, request, library)
 
-    token = request.headers.get("Authorization")
-    if token not in all_auth_tokens:
+    token = get_chunk_user_token(request)
+
+    if not token:
         abort(401)
 
     generate_log(request, "SUCCESS")
-
-    username = all_auth_tokens[token]["user"]
-
+    
     series = Series.query.filter_by(library_name=library).all()
     the_lib = Libraries.query.filter_by(lib_name=library).first()
-    user = Users.query.filter_by(name=username).first()
+    user = Users.query.filter_by(id=token).first()
     user_id = user.id
     user_in_the_lib = user_in_lib(user_id, the_lib)
 
@@ -2329,13 +2309,12 @@ def get_episodes(season_id: int) -> Response:
     if overrides.have_override(overrides.GET_EPISODES):
         return overrides.execute_override(overrides.GET_EPISODES, request, season_id)
 
-    token = request.headers.get("Authorization")
-    if token not in all_auth_tokens:
+    token = get_chunk_user_token(request)
+
+    if not token:
         abort(401)
 
-    username = all_auth_tokens[token]["user"]
-
-    user = Users.query.filter_by(name=username).first()
+    user = Users.query.filter_by(id=token).first()
     season = Seasons.query.filter_by(season_id=season_id).first()
     serie = Series.query.filter_by(id=season.serie).first()
     library = serie.library_name
@@ -2506,8 +2485,9 @@ def get_all_others(library: str) -> Response:
     if overrides.have_override(overrides.GET_ALL_OTHERS):
         return overrides.execute_override(overrides.GET_ALL_OTHERS, request, library)
 
-    token = request.headers.get("Authorization")
-    if token not in all_auth_tokens:
+    token = get_chunk_user_token(request)
+
+    if not token:
         abort(401)
 
     username = all_auth_tokens[token]["user"]
@@ -3020,8 +3000,6 @@ def search_movies(library: str, search: str) -> Response:
     
     if overrides.have_override(overrides.SEARCH_MOVIES):
         data = overrides.execute_override(overrides.SEARCH_MOVIES, request, library, search)
-        print(data)
-        print(type(data))
         return data
 
     token = request.headers.get("Authorization")
@@ -3293,13 +3271,11 @@ def whoami() -> Response:
     return jsonify({"id": user_id, "user": user.name})
 
 
-@app.route("/main_movie/<movie_id>")
-def main_movie(movie_id: str | int) -> Response:
-    if isinstance(movie_id, str):
-        if ".m3u8" in movie_id:
-            movie_id = movie_id.split(".")[0]
-        movie_id = int(movie_id)
+@app.route("/main_movie/<int:movie_id>")
+def main_movie(movie_id: int) -> Response:
 
+    print(movie_id)
+    audio_format = "mp2"
     movie = Movies.query.filter_by(id=movie_id).first()
 
     token = get_chunk_user_token(request)
@@ -3313,11 +3289,11 @@ def main_movie(movie_id: str | int) -> Response:
     video_properties = get_video_properties(video_path)
     height = int(video_properties["height"])
     width = int(video_properties["width"])
-    m3u8_file = "#EXTM3U\n#EXT-X-VERSION:7\n"
+    m3u8_file = "#EXTM3U\n#EXT-X-VERSION:3\n"
 
     m3u8_file += generate_caption_movie(movie_id) + "\n"
     audio = "\n"
-    audio = generate_audio_streams_movie(movie_id)
+    audio = generate_audio_streams_movie(movie_id, audio_format)
     audio += "\n"
     m3u8_file += audio
     qualities = [144, 240, 360, 480, 720, 1080]
@@ -3329,36 +3305,31 @@ def main_movie(movie_id: str | int) -> Response:
         720: "avc1.6e0020",
         1080: "avc1.6e0032"
     }
+    #qualities = []
     file = []
     for quality in qualities:
         if quality < height:
             new_width = int(quality)
             new_height = int(float(width) / float(height) * new_width)
             new_height += new_height % 2
-            m3u8_line = f"#EXT-X-STREAM-INF:BANDWIDTH={new_width*new_height},"
+            m3u8_line = f"#EXT-X-STREAM-INF:BANDWIDTH={int(new_width*new_height*4)},"
 
-            if audio != "":
-                m3u8_line += 'AUDIO="audio",'
-
-            m3u8_line += f'CODECS="{quality_to_codec[int(quality)]}",RESOLUTION={new_height}x{new_width}\n/video_movie/{quality}/{movie_id}.m3u8\n'
+            m3u8_line += f'CODECS="{quality_to_codec[int(quality)]}",RESOLUTION={new_height}x{new_width},SUBTITLES="subs",AUDIO="audio"\n/video_movie/{quality}/{movie_id}.m3u8\n'
             file.append(m3u8_line)
-    last_line = f'#EXT-X-STREAM-INF:BANDWIDTH={width*height},'
-
-    if audio != "":
-        last_line += 'AUDIO="audio",'
+    last_line = f'#EXT-X-STREAM-INF:BANDWIDTH={int(width*height*2.75)},'
     
     codec = "avc1.6e0033"
 
     if height in quality_to_codec:
         codec = quality_to_codec[height]
 
-    last_line += f'CODECS="{codec}",RESOLUTION={width}x{height}\n/video_movie/{movie_id}.m3u8'
+    last_line += f'CODECS="{codec}",RESOLUTION={width}x{height},SUBTITLES="subs",AUDIO="audio"\n/video_movie/{movie_id}.m3u8'
     file.append(last_line)
     file_str = "".join(file)
     m3u8_file += file_str
     response = make_response(m3u8_file)
 
-    response.headers.set("Content-Type", "application/x-mpegURL")
+    response.headers.set("Content-Type", "vnd.apple.mpegURL")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
     response.headers.set("Access-Control-Allow-Origin", "*")
@@ -3482,7 +3453,7 @@ def main_serie(episode_id: int | str) -> Response:
     video_properties = get_video_properties(episode_path)
     height = int(video_properties["height"])
     width = int(video_properties["width"])
-    m3u8_file = "#EXTM3U\n#EXT-X-VERSION:7\n\n"
+    m3u8_file = "#EXTM3U\n#EXT-X-VERSION:3\n\n\n"
     m3u8_file += generate_caption_serie(episode_id)
     m3u8_file += "\n"
     audio = ""
@@ -3514,7 +3485,7 @@ def main_serie(episode_id: int | str) -> Response:
     m3u8_file += file_str
     response = make_response(m3u8_file)
 
-    response.headers.set("Content-Type", "application/x-mpegURL")
+    response.headers.set("Content-Type", "vnd.apple.mpegURL")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
     response.headers.set("Access-Control-Allow-Origin", "*")
@@ -3557,7 +3528,7 @@ def main_other(other_hash: str) -> Response:
     m3u8_file += file_str
     response = make_response(m3u8_file)
 
-    response.headers.set("Content-Type", "application/x-mpegURL")
+    response.headers.set("Content-Type", "vnd.apple.mpegURL")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
     response.headers.set("Access-Control-Allow-Origin", "*")
@@ -3682,7 +3653,7 @@ def generate_caption_movie(movie_id: int) -> str:
     return string
 
 
-def generate_audio_streams_movie(movie_id: int) -> str:
+def generate_audio_streams_movie(movie_id: int, format: str) -> str:
     movie_path = Movies.query.filter_by(id=movie_id).first()
     slug = movie_path.slug
 
@@ -3733,9 +3704,10 @@ def generate_audio_streams_movie(movie_id: int) -> str:
         audio_stream_language = audio_stream["language"]
         audio_stream_codec = audio_stream["codec"]
         audio_stream_type = audio_stream["type"]
-        audio_stream_channels = audio_stream["channels"]
+        #audio_stream_channels = audio_stream["channels"]
+        audio_stream_channels = 2
         audio_stream_url = (
-            f"/audio_movie/{movie_id}_{audio_stream_id}_{audio_stream_channels}.m3u8"
+            f"/audio_movie/{movie_id}_{audio_stream_id}_{audio_stream_channels}_{format}.m3u8"
         )
         audio_stream_string += f'#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="audio",CHANNELS="{audio_stream_channels}",NAME="{audio_stream_language} ({audio_stream_type})",DEFAULT=NO,AUTOSELECT=YES,URI="{audio_stream_url}",LANGUAGE="{audio_stream_language}",CODECS="{audio_stream_codec}"\n'
 
@@ -3800,23 +3772,24 @@ def generate_audio_streams_serie(episode_id: int) -> str:
 
     return audio_stream_string
 
-@app.route("/audio_movie/<int:movie_id>_<int:audio_id>_<int:channels_count>.m3u8")
-def audio_movie(movie_id: int, audio_id: int, channels_count: int) -> Response:
+@app.route("/audio_movie/<int:movie_id>_<int:audio_id>_<int:channels_count>_<format>.m3u8")
+def audio_movie(movie_id: int, audio_id: int, channels_count: int, format: str) -> Response:
     movie = Movies.query.filter_by(id=movie_id).first()
     if not movie:
         abort(404)
     video_path = movie.slug
     duration = length_video(video_path)
 
-    file = f"""#EXTM3U\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:{CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n"""
+    file = f"#EXTM3U\n#EXT-X-VERSION:3\n\n#EXT-X-TARGETDURATION:{CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-DISCONTINUITY-SEQUENCE: 0\n"
 
     for i in range(0, int(duration), int(CHUNK_LENGTH)):
-        file += f"#EXTINF:{int(CHUNK_LENGTH)},\n/chunk_movie_audio/{movie_id}-{audio_id}-{(i // CHUNK_LENGTH) + 1}-{channels_count}.ts\n"  # noqa
+        file += f"#EXT-X-DISCONTINUITY\n"
+        file += f"#EXTINF:{int(CHUNK_LENGTH)},\n/chunk_movie_audio/{movie_id}-{audio_id}-{(i // CHUNK_LENGTH) + 1}-{channels_count}-{format}.ts\n"  # noqa
 
     file += "#EXT-X-ENDLIST"
 
     response = make_response(file)
-    response.headers.set("Content-Type", "application/x-mpegURL")
+    response.headers.set("Content-Type", "vnd.apple.mpegURL")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
     response.headers.set("Access-Control-Allow-Origin", "*")
@@ -3828,11 +3801,13 @@ def audio_movie(movie_id: int, audio_id: int, channels_count: int) -> Response:
 
 
 @app.route(
-    "/chunk_movie_audio/<int:movie_id>-<int:audio_id>-<int:chunk>-<int:channel_count>.ts"
+    "/chunk_movie_audio/<int:movie_id>-<int:audio_id>-<int:chunk>-<int:channel_count>-<format>"
 )
 def chunk_movie_audio(
-    movie_id: int, audio_id: int, chunk: int, channel_count: int
+    movie_id: int, audio_id: int, chunk: int, channel_count: int, format: str
 ) -> Response:
+    if format.endswith(".ts"):
+        format = format[:-3]
     movie = Movies.query.filter_by(id=movie_id).first()
     if not movie:
         abort(404)
@@ -3849,7 +3824,7 @@ def chunk_movie_audio(
     token = get_chunk_user_token(request)
 
     #if not token:
-        #abort(401)
+    #    abort(401)
 
     command = [
         "ffmpeg",
@@ -3863,7 +3838,7 @@ def chunk_movie_audio(
         "-map", f"0:a:{audio_id}",    # Select the specified audio stream
         "-ac", "2",    # Number of audio channels
         "-vn",                        # Disable video
-        "-f", "mp2",                 # Output format for HLS
+        "-f", format,                 # Output format for HLS
         "-"                      # Send the result to stdout
     ]
 
@@ -3874,7 +3849,8 @@ def chunk_movie_audio(
 
     data = pipe.stdout.read()
     response = make_response(data)
-    response.headers.set("Content-Type", "audio/MP2T")
+    #set adts header
+    response.headers.set("Content-Type", "video/mp2t")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
     response.headers.set("Access-Control-Allow-Origin", "*")
@@ -3894,15 +3870,16 @@ def audio_serie(episode_id: int, audio_id: int, channels_count: int) -> Response
     video_path = episode.slug
     duration = length_video(video_path)
 
-    file = f"#EXTM3U\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:{CHUNK_LENGTH}\n\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n"
+    file = f"#EXTM3U\n#EXT-X-VERSION:3\n\n#EXT-X-TARGETDURATION:{CHUNK_LENGTH}\n\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-DISCONTINUITY-SEQUENCE: 0\n"
     
     for i in range(0, int(duration), int(CHUNK_LENGTH)):
+        file += f"#EXT-X-DISCONTINUITY\n"
         file += f"#EXTINF:{int(CHUNK_LENGTH)},\n/chunk_serie_audio/{episode_id}-{audio_id}-{(i // CHUNK_LENGTH) + 1}-{channels_count}.ts\n"
 
     file += "#EXT-X-ENDLIST"
 
     response = make_response(file)
-    response.headers.set("Content-Type", "application/x-mpegURL")
+    response.headers.set("Content-Type", "vnd.apple.mpegURL")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
     response.headers.set("Access-Control-Allow-Origin", "*")
@@ -3943,9 +3920,6 @@ def chunk_serie_audio(episode_id: int, audio_id: int, chunk: int, channel_count:
         "-"                      # Send the result to stdout
     ]
 
-
-    print(" ".join(command))
-
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     if pipe is None:
@@ -3973,6 +3947,7 @@ def get_actor_data(actor_id: int) -> Response:
 
     if actor_id == "undefined":
         abort(404)
+        
     movies_data = []
     series_data = []
     actor = Actors.query.filter_by(actor_id=actor_id).first()
