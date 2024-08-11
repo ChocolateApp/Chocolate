@@ -16,6 +16,7 @@ import pycountry  # type: ignore
 import requests
 import sqlalchemy  # type: ignore
 import natsort
+import hashlib
 
 from time import localtime, mktime, time
 from typing import Any, Dict, List
@@ -50,9 +51,11 @@ from chocolate_app import (
     all_auth_tokens,
     ARGUMENTS,
     IMAGES_PATH,
+    ARTEFACTS_PATH,
     write_config,
     scans,
-    CHUNK_LENGTH,
+    VIDEO_CHUNK_LENGTH,
+    AUDIO_CHUNK_LENGTH,
 )
 from chocolate_app.tables import (
     Language,
@@ -186,6 +189,17 @@ websites_trailers = {
     "Dailymotion": "https://www.dailymotion.com/video_movie/",
     "Vimeo": "https://vimeo.com/",
 }
+
+def hashString(string: str) -> str:
+    return hashlib.md5(string.encode()).hexdigest()
+
+class PreviousLagInfo:
+    def __init__(self, lag: int, lag_id: int):
+        self.lag = lag
+        self.lag_id = lag_id
+
+VIDEO_PREVIOUS_LAG: Dict[str, PreviousLagInfo] = {}
+AUDIO_PREVIOUS_LAG: Dict[str, PreviousLagInfo] = {}
 
 
 @app.after_request
@@ -465,16 +479,16 @@ def create_m3u8(movie_id: int) -> Response:
     video_path = movie.slug
     duration = length_video(video_path)
 
-    file = f"#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:{CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-DISCONTINUITY-SEQUENCE: 0\n"
+    file = f"#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:{VIDEO_CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-DISCONTINUITY-SEQUENCE: 0\n"
 
-    for i in range(0, int(duration), int(CHUNK_LENGTH)):
-        extinf = float(CHUNK_LENGTH)
+    for i in range(0, int(duration), int(VIDEO_CHUNK_LENGTH)):
+        extinf = float(VIDEO_CHUNK_LENGTH)
         remaining_movie_duration = duration - i
-        if remaining_movie_duration < CHUNK_LENGTH:
+        if remaining_movie_duration < VIDEO_CHUNK_LENGTH:
             extinf = remaining_movie_duration
         
         file += f"#EXT-X-DISCONTINUITY\n"
-        file += f"#EXTINF:{extinf},\n/chunk_movie/{movie_id}-{(i // CHUNK_LENGTH) + 1}.ts\n"  # noqa
+        file += f"#EXTINF:{extinf},\n/chunk_movie/{movie_id}-{(i // VIDEO_CHUNK_LENGTH) + 1}.ts\n"  # noqa
 
     file += "#EXT-X-ENDLIST"
 
@@ -495,16 +509,16 @@ def create_m3u8_quality(quality: str, movie_id: int) -> Response:
     movie = Movies.query.filter_by(id=movie_id).first()
     video_path = movie.slug
     duration = length_video(video_path)
-    file = f"#EXTM3U\n#EXT-X-VERSION:3\n\n#EXT-X-TARGETDURATION:{CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-DISCONTINUITY-SEQUENCE: 0\n"
+    file = f"#EXTM3U\n#EXT-X-VERSION:3\n\n#EXT-X-TARGETDURATION:{VIDEO_CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-DISCONTINUITY-SEQUENCE: 0\n"
     
-    for i in range(0, int(duration), int(CHUNK_LENGTH)):
-        extinf = float(CHUNK_LENGTH)
+    for i in range(0, int(duration), int(VIDEO_CHUNK_LENGTH)):
+        extinf = float(VIDEO_CHUNK_LENGTH)
 
-        if (duration - i) < CHUNK_LENGTH:
+        if (duration - i) < VIDEO_CHUNK_LENGTH:
             extinf = duration - i
 
         file += f"#EXT-X-DISCONTINUITY\n"
-        file += f"#EXTINF:{extinf},\n/chunk_movie/{quality}/{movie_id}-{(i // CHUNK_LENGTH) + 1}.ts\n"
+        file += f"#EXTINF:{extinf},\n/chunk_movie/{quality}/{movie_id}-{(i // VIDEO_CHUNK_LENGTH) + 1}.ts\n"
 
     file += "#EXT-X-ENDLIST"
 
@@ -525,12 +539,12 @@ def create_other_m3u8(hash: str) -> Response:
     other = OthersVideos.query.filter_by(video_hash=hash).first()
     video_path = other.slug
     duration = length_video(video_path)
-    file = f"""#EXTM3U\n#EXT-X-VERSION:3\n\n#EXT-X-TARGETDURATION:{CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n"""
+    file = f"""#EXTM3U\n#EXT-X-VERSION:3\n\n#EXT-X-TARGETDURATION:{VIDEO_CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n"""
 
-    for i in range(0, int(duration), int(CHUNK_LENGTH)):
+    for i in range(0, int(duration), int(VIDEO_CHUNK_LENGTH)):
         file += f"""
-#EXTINF:{float(CHUNK_LENGTH)},
-/chunk_other/{hash}-{(i // CHUNK_LENGTH) + 1}.ts
+#EXTINF:{float(VIDEO_CHUNK_LENGTH)},
+/chunk_other/{hash}-{(i // VIDEO_CHUNK_LENGTH) + 1}.ts
         """
 
     file += "\n#EXT-X-ENDLIST"
@@ -550,12 +564,12 @@ def create_other_m3u8_quality(quality: str, hash: str) -> Response:
     other = OthersVideos.query.filter_by(video_hash=hash).first()
     video_path = other.slug
     duration = length_video(video_path)
-    file = f"""#EXTM3U\n#EXT-X-VERSION:3\n\n#EXT-X-TARGETDURATION:{CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n"""
+    file = f"""#EXTM3U\n#EXT-X-VERSION:3\n\n#EXT-X-TARGETDURATION:{VIDEO_CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n"""
 
-    for i in range(0, int(duration), int(CHUNK_LENGTH)):
+    for i in range(0, int(duration), int(VIDEO_CHUNK_LENGTH)):
         file += f"""
-#EXTINF:{float(CHUNK_LENGTH)},
-/chunk_other/{quality}/{hash}-{(i // CHUNK_LENGTH) + 1}.ts
+#EXTINF:{float(VIDEO_CHUNK_LENGTH)},
+/chunk_other/{quality}/{hash}-{(i // VIDEO_CHUNK_LENGTH) + 1}.ts
         """
 
     file += "\n#EXT-X-ENDLIST"
@@ -578,13 +592,13 @@ def create_serie_m3u8(episode_id: str) -> Response:
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
     episode_path = episode.slug
     duration = length_video(episode_path)
-    file = f"#EXTM3U\n#EXT-X-VERSION:3\n\n#EXT-X-TARGETDURATION:{CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-DISCONTINUITY-SEQUENCE: 0\n"
+    file = f"#EXTM3U\n#EXT-X-VERSION:3\n\n#EXT-X-TARGETDURATION:{VIDEO_CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-DISCONTINUITY-SEQUENCE: 0\n"
 
-    for i in range(0, int(duration), int(CHUNK_LENGTH)):
+    for i in range(0, int(duration), int(VIDEO_CHUNK_LENGTH)):
         file += f"""
 #EXT-X-DISCONTINUITY\n
-#EXTINF:{float(CHUNK_LENGTH)},
-/chunk_serie/{episode_id}-{(i // CHUNK_LENGTH) + 1}.ts"""
+#EXTINF:{float(VIDEO_CHUNK_LENGTH)},
+/chunk_serie/{episode_id}-{(i // VIDEO_CHUNK_LENGTH) + 1}.ts"""
 
     file += "\n#EXT-X-ENDLIST"
 
@@ -606,17 +620,17 @@ def create_serie_m3u8_quality(quality: str, episode_id: str) -> Response:
     episode_path = episode.slug
     duration = length_video(episode_path)
     file = f"""#EXTM3U
-#EXT-X-TARGETDURATION:{CHUNK_LENGTH}
+#EXT-X-TARGETDURATION:{VIDEO_CHUNK_LENGTH}
 #EXT-X-VERSION:3\n
 #EXT-X-MEDIA-SEQUENCE:0
 #EXT-X-PLAYLIST-TYPE:VOD\n
 #EXT-X-DISCONTINUITY-SEQUENCE: 0\n"""
 
-    for i in range(0, int(duration), int(CHUNK_LENGTH)):
+    for i in range(0, int(duration), int(VIDEO_CHUNK_LENGTH)):
         file += f"""
 #EXT-X-DISCONTINUITY\n
-#EXTINF:{float(CHUNK_LENGTH)},
-/chunk_serie/{quality}/{episode_id}-{(i // CHUNK_LENGTH) + 1}.ts"""
+#EXTINF:{float(VIDEO_CHUNK_LENGTH)},
+/chunk_serie/{quality}/{episode_id}-{(i // VIDEO_CHUNK_LENGTH) + 1}.ts"""
 
     file += "\n#EXT-X-ENDLIST"
 
@@ -632,21 +646,28 @@ def create_serie_m3u8_quality(quality: str, episode_id: str) -> Response:
 
 @app.route("/chunk_serie/<episode_id>-<int:idx>.ts", methods=["GET"])
 def get_chunk_serie(episode_id: int, idx: int = 0) -> Response:
-    seconds = (idx - 1) * CHUNK_LENGTH
+    seconds = (idx - 1) * VIDEO_CHUNK_LENGTH
+
+    token = get_chunk_user_token(request)
+    ip = request.remote_addr
+    user_agent = request.headers.get("User-Agent")
+
+    key = hashString(f"{token}-{ip}-{user_agent}-{episode_id}")
+
+    if VIDEO_PREVIOUS_LAG.get(key) is None:
+        VIDEO_PREVIOUS_LAG[key] = PreviousLagInfo(0, 0)
+
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
     episode_path = episode.slug
 
     time_start = str(datetime.timedelta(seconds=seconds))
-    time_end = str(datetime.timedelta(seconds=seconds + CHUNK_LENGTH))
-
-    token = get_chunk_user_token(request)
+    time_end = str(datetime.timedelta(seconds=seconds + VIDEO_CHUNK_LENGTH))
 
     #if not token:
     #    abort(401)
 
     events.execute_event(events.CHUNK_EPISODE_PLAY, episode, token, time=time_start)
 
-    
     command = [
         "ffmpeg",
         *FFMPEG_ARGS,
@@ -672,7 +693,27 @@ def get_chunk_serie(episode_id: int, idx: int = 0) -> Response:
     if not pipe or not pipe.stdout:
         abort(404)
 
-    response = make_response(pipe.stdout.read())
+    data = pipe.stdout.read()
+
+    temp_path = f"{ARTEFACTS_PATH}/{episode_id}-{idx}.ts"
+
+    with open(temp_path, "wb") as file:
+        file.write(data)
+
+    duration = length_video(temp_path)
+
+    if os.path.exists(temp_path):
+        os.remove(temp_path)
+
+    VIDEO_PREVIOUS_LAG[key].lag = duration - (VIDEO_CHUNK_LENGTH - VIDEO_PREVIOUS_LAG[key].lag)
+    if VIDEO_PREVIOUS_LAG[key].lag_id == idx - 1:
+        VIDEO_PREVIOUS_LAG[key].lag = (duration) - (VIDEO_CHUNK_LENGTH - VIDEO_PREVIOUS_LAG[key].lag)
+    else:
+        VIDEO_PREVIOUS_LAG[key].lag = 0
+
+    VIDEO_PREVIOUS_LAG[key].lag_id = idx
+
+    response = make_response(data)
     response.headers.set("Content-Type", "video/MP2T")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
@@ -686,13 +727,20 @@ def get_chunk_serie(episode_id: int, idx: int = 0) -> Response:
 
 @app.route("/chunk_serie/<quality>/<episode_id>-<int:idx>.ts", methods=["GET"])
 def get_chunk_serie_quality(quality: str, episode_id: int, idx: int = 0):
-    seconds = (idx - 1) * CHUNK_LENGTH
+    token = get_chunk_user_token(request)
+    ip = request.remote_addr
+    user_agent = request.headers.get("User-Agent")
+
+    key = hashString(f"{token}-{ip}-{user_agent}-{episode_id}")
+
+    if VIDEO_PREVIOUS_LAG.get(key) is None:
+        VIDEO_PREVIOUS_LAG[key] = PreviousLagInfo(0, 0)
+
+    seconds = (idx - 1) * VIDEO_CHUNK_LENGTH
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
     episode_path = episode.slug
     time_start = str(datetime.timedelta(seconds=seconds))
-    time_end = str(datetime.timedelta(seconds=seconds + CHUNK_LENGTH))
-
-    token = get_chunk_user_token(request)
+    time_end = str(datetime.timedelta(seconds=seconds + VIDEO_CHUNK_LENGTH))
 
     #if not token:
     #    abort(401)
@@ -736,7 +784,27 @@ def get_chunk_serie_quality(quality: str, episode_id: int, idx: int = 0):
     if not pipe or not pipe.stdout:
         abort(404)
 
-    response = make_response(pipe.stdout.read())
+    data = pipe.stdout.read()
+
+    temp_path = f"{ARTEFACTS_PATH}/{episode_id}-{idx}.ts"
+
+    with open(temp_path, "wb") as file:
+        file.write(data)
+
+    duration = length_video(temp_path)
+
+    if os.path.exists(temp_path):
+        os.remove(temp_path)
+
+    VIDEO_PREVIOUS_LAG[key].lag = duration - (VIDEO_CHUNK_LENGTH - VIDEO_PREVIOUS_LAG[key].lag)
+    if VIDEO_PREVIOUS_LAG[key].lag_id == idx - 1:
+        VIDEO_PREVIOUS_LAG[key].lag = (duration) - (VIDEO_CHUNK_LENGTH - VIDEO_PREVIOUS_LAG[key].lag)
+    else:
+        VIDEO_PREVIOUS_LAG[key].lag = 0
+
+    VIDEO_PREVIOUS_LAG[key].lag_id = idx
+
+    response = make_response(data)
     response.headers.set("Content-Type", "video/MP2T")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
@@ -750,16 +818,23 @@ def get_chunk_serie_quality(quality: str, episode_id: int, idx: int = 0):
 
 @app.route("/chunk_movie/<movie_id>-<int:idx>.ts", methods=["GET"])
 def chunk_movie(movie_id: int, idx: int = 0) -> Response:
-
-    seconds = (idx - 1) * CHUNK_LENGTH
+    seconds = (idx - 1) * VIDEO_CHUNK_LENGTH
 
     movie = Movies.query.filter_by(id=movie_id).first()
+
+    token = get_chunk_user_token(request)
+    ip = request.remote_addr
+    user_agent = request.headers.get("User-Agent")
+
+    key = hashString(f"{token}-{ip}-{user_agent}-{movie_id}")
+
+    if VIDEO_PREVIOUS_LAG.get(key) is None:
+        VIDEO_PREVIOUS_LAG[key] = PreviousLagInfo(0, 0)
+
     video_path = movie.slug
 
     time_start = str(datetime.timedelta(seconds=seconds))
-    time_end = str(datetime.timedelta(seconds=seconds + CHUNK_LENGTH))
-
-    token = get_chunk_user_token(request)
+    time_end = str(datetime.timedelta(seconds=seconds + VIDEO_CHUNK_LENGTH))
 
     #if not token:
     #    abort(401)
@@ -791,7 +866,27 @@ def chunk_movie(movie_id: int, idx: int = 0) -> Response:
     if not pipe or not pipe.stdout:
         abort(404)
 
-    response = make_response(pipe.stdout.read())
+    data = pipe.stdout.read()
+
+    temp_path = f"{ARTEFACTS_PATH}/{movie_id}-{idx}.ts"
+
+    with open(temp_path, "wb") as file:
+        file.write(data)
+
+    duration = length_video(temp_path)
+
+    if os.path.exists(temp_path):
+        os.remove(temp_path)
+
+    VIDEO_PREVIOUS_LAG[key].lag = duration - (VIDEO_CHUNK_LENGTH - VIDEO_PREVIOUS_LAG[key].lag)
+    if VIDEO_PREVIOUS_LAG[key].lag_id == idx - 1:
+        VIDEO_PREVIOUS_LAG[key].lag = (duration) - (VIDEO_CHUNK_LENGTH - VIDEO_PREVIOUS_LAG[key].lag)
+    else:
+        VIDEO_PREVIOUS_LAG[key].lag = 0
+
+    VIDEO_PREVIOUS_LAG[key].lag_id = idx
+
+    response = make_response(data)
     response.headers.set("Content-Type", "video/MP2T")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
@@ -804,15 +899,22 @@ def chunk_movie(movie_id: int, idx: int = 0) -> Response:
 
 @app.route("/chunk_movie/<quality>/<movie_id>-<int:idx>.ts", methods=["GET"])
 def get_chunk_quality(quality: str, movie_id: int, idx: int = 0) -> Response:
-    seconds = (idx - 1) * CHUNK_LENGTH
+    seconds = (idx - 1) * VIDEO_CHUNK_LENGTH
+
+    token = get_chunk_user_token(request)
+    ip = request.remote_addr
+    user_agent = request.headers.get("User-Agent")
+
+    key = hashString(f"{token}-{ip}-{user_agent}-{movie_id}")
+
+    if VIDEO_PREVIOUS_LAG.get(key) is None:
+        VIDEO_PREVIOUS_LAG[key] = PreviousLagInfo(0, 0)
 
     movie = Movies.query.filter_by(id=movie_id).first()
     video_path = movie.slug
 
     time_start = str(datetime.timedelta(seconds=seconds))
-    time_end = str(datetime.timedelta(seconds=seconds + CHUNK_LENGTH))
-
-    token = get_chunk_user_token(request)
+    time_end = str(datetime.timedelta(seconds=seconds + VIDEO_CHUNK_LENGTH))
 
     #if not token:
     #    abort(401)
@@ -854,7 +956,27 @@ def get_chunk_quality(quality: str, movie_id: int, idx: int = 0) -> Response:
     if not pipe or not pipe.stdout:
         abort(404)
 
-    response = make_response(pipe.stdout.read())
+    data = pipe.stdout.read()
+
+    temp_path = f"{ARTEFACTS_PATH}/{movie_id}-{idx}.ts"
+
+    with open(temp_path, "wb") as file:
+        file.write(data)
+
+    duration = length_video(temp_path)
+
+    if os.path.exists(temp_path):
+        os.remove(temp_path)
+
+    VIDEO_PREVIOUS_LAG[key].lag = duration - (VIDEO_CHUNK_LENGTH - VIDEO_PREVIOUS_LAG[key].lag)
+    if VIDEO_PREVIOUS_LAG[key].lag_id == idx - 1:
+        VIDEO_PREVIOUS_LAG[key].lag = (duration) - (VIDEO_CHUNK_LENGTH - VIDEO_PREVIOUS_LAG[key].lag)
+    else:
+        VIDEO_PREVIOUS_LAG[key].lag = 0
+
+    VIDEO_PREVIOUS_LAG[key].lag_id = idx
+
+    response = make_response(data)
     response.headers.set("Content-Type", "video/MP2T")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
@@ -868,12 +990,12 @@ def get_chunk_quality(quality: str, movie_id: int, idx: int = 0) -> Response:
 
 @app.route("/chunk_other/<hash>-<int:idx>.ts", methods=["GET"])
 def get_chunk_other(hash: str, idx: int = 0) -> Response:
-    seconds = (idx - 1) * CHUNK_LENGTH
+    seconds = (idx - 1) * VIDEO_CHUNK_LENGTH
     movie = OthersVideos.query.filter_by(video_hash=hash).first()
     video_path = movie.slug
 
     time_start = str(datetime.timedelta(seconds=seconds))
-    time_end = str(datetime.timedelta(seconds=seconds + CHUNK_LENGTH))
+    time_end = str(datetime.timedelta(seconds=seconds + VIDEO_CHUNK_LENGTH))
 
     token = get_chunk_user_token(request)
 
@@ -928,12 +1050,12 @@ def get_chunk_other(hash: str, idx: int = 0) -> Response:
 
 @app.route("/chunk_other/<quality>/<hash>-<int:idx>.ts", methods=["GET"])
 def get_chunk_other_quality(quality: str, hash: str, idx=0) -> Response:
-    seconds = (idx - 1) * CHUNK_LENGTH
+    seconds = (idx - 1) * VIDEO_CHUNK_LENGTH
     movie = OthersVideos.query.filter_by(video_hash=hash).first()
     video_path = movie.slug
 
     time_start = str(datetime.timedelta(seconds=seconds))
-    time_end = str(datetime.timedelta(seconds=seconds + CHUNK_LENGTH))
+    time_end = str(datetime.timedelta(seconds=seconds + VIDEO_CHUNK_LENGTH))
 
     token = get_chunk_user_token(request)
 
@@ -1109,7 +1231,7 @@ def chunk_caption_by_id(movie_id: int, id: int) -> Response:
 def caption_serie_by_id_to_m3_u8(episode_id: int, id: int) -> Response:
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
     video_path = episode.slug
-    episode_duration = (length_video(video_path) // CHUNK_LENGTH) * CHUNK_LENGTH + 1
+    episode_duration = (length_video(video_path) // VIDEO_CHUNK_LENGTH) * VIDEO_CHUNK_LENGTH + 1
     
     m3u8_content = f"#EXTM3U\n#EXT-X-TARGETDURATION:{episode_duration}\n#EXT-X-VERSION:3\n\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXTINF:{episode_duration},\n/chunk_caption_serie/{episode_id}_{id}.vtt\n#EXT-X-ENDLIST"
 
@@ -2534,8 +2656,6 @@ def get_tv(tv_name: str, id: str) -> Response:
             with open(lib_folder, "r", encoding="utf-8") as f:
                 m3u = f.readlines()
 
-        logo_url = broken_path
-
         m3u.pop(0)
         for ligne in m3u:
             if not ligne.startswith(("#EXTINF", "http")):
@@ -3273,8 +3393,6 @@ def whoami() -> Response:
 
 @app.route("/main_movie/<int:movie_id>")
 def main_movie(movie_id: int) -> Response:
-
-    print(movie_id)
     audio_format = "mp2"
     movie = Movies.query.filter_by(id=movie_id).first()
 
@@ -3780,11 +3898,11 @@ def audio_movie(movie_id: int, audio_id: int, channels_count: int, format: str) 
     video_path = movie.slug
     duration = length_video(video_path)
 
-    file = f"#EXTM3U\n#EXT-X-VERSION:3\n\n#EXT-X-TARGETDURATION:{CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-DISCONTINUITY-SEQUENCE: 0\n"
+    file = f"#EXTM3U\n#EXT-X-VERSION:3\n\n#EXT-X-TARGETDURATION:{AUDIO_CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-DISCONTINUITY-SEQUENCE: 0\n"
 
-    for i in range(0, int(duration), int(CHUNK_LENGTH)):
+    for i in range(0, int(duration), int(AUDIO_CHUNK_LENGTH)):
         file += f"#EXT-X-DISCONTINUITY\n"
-        file += f"#EXTINF:{int(CHUNK_LENGTH)},\n/chunk_movie_audio/{movie_id}-{audio_id}-{(i // CHUNK_LENGTH) + 1}-{channels_count}-{format}.ts\n"  # noqa
+        file += f"#EXTINF:{int(AUDIO_CHUNK_LENGTH)},\n/chunk_movie_audio/{movie_id}-{audio_id}-{(i // AUDIO_CHUNK_LENGTH) + 1}-{channels_count}-{format}.ts\n"  # noqa
 
     file += "#EXT-X-ENDLIST"
 
@@ -3806,23 +3924,32 @@ def audio_movie(movie_id: int, audio_id: int, channels_count: int, format: str) 
 def chunk_movie_audio(
     movie_id: int, audio_id: int, chunk: int, channel_count: int, format: str
 ) -> Response:
+    global AUDIO_PREVIOUS_LAG
     if format.endswith(".ts"):
         format = format[:-3]
+
+    token = get_chunk_user_token(request)
+    ip = request.remote_addr
+    user_agent = request.headers.get("User-Agent")
+
+    key = hashString(f"{token}-{ip}-{user_agent}-{movie_id}")
+
+    if AUDIO_PREVIOUS_LAG.get(key) is None:
+        AUDIO_PREVIOUS_LAG[key] = PreviousLagInfo(0, 0)
+
     movie = Movies.query.filter_by(id=movie_id).first()
     if not movie:
         abort(404)
     video_path = movie.slug
     
-    seconds = (chunk - 1) * CHUNK_LENGTH
+    seconds = (chunk - 1) * AUDIO_CHUNK_LENGTH
     
-    time_start = datetime.timedelta(seconds=seconds)
-    time_end = datetime.timedelta(seconds=seconds + CHUNK_LENGTH)
+    time_start = datetime.timedelta(seconds=seconds + AUDIO_PREVIOUS_LAG[key].lag)
+    time_end = datetime.timedelta(seconds=seconds + AUDIO_CHUNK_LENGTH)
 
     time_start = str(time_start)
     time_end = str(time_end)
     
-    token = get_chunk_user_token(request)
-
     #if not token:
     #    abort(401)
 
@@ -3833,7 +3960,7 @@ def chunk_movie_audio(
         "-loglevel",
         LOG_LEVEL,
         "-ss", str(time_start),       # Start time of the segment
-        "-t", str(CHUNK_LENGTH),         # End time of the segment
+        "-t", str(AUDIO_CHUNK_LENGTH),         # End time of the segment
         "-i", video_path,             # Set output offset
         "-map", f"0:a:{audio_id}",    # Select the specified audio stream
         "-ac", "2",    # Number of audio channels
@@ -3848,8 +3975,25 @@ def chunk_movie_audio(
         abort(404)
 
     data = pipe.stdout.read()
+
+    temp_path = f"{ARTEFACTS_PATH}/{movie_id}-{chunk}.ts"
+
+    with open(temp_path, "wb") as f:
+        f.write(data)
+
+    duration = length_video(temp_path)
+
+    if os.path.exists(temp_path):
+        os.remove(temp_path)
+
+    if AUDIO_PREVIOUS_LAG[key].lag < 0:
+        AUDIO_PREVIOUS_LAG[key].lag = (duration) - (VIDEO_CHUNK_LENGTH - AUDIO_PREVIOUS_LAG[key].lag)
+    else:
+        AUDIO_PREVIOUS_LAG[key].lag = 0
+
+    AUDIO_PREVIOUS_LAG[key].lag_id = chunk
+
     response = make_response(data)
-    #set adts header
     response.headers.set("Content-Type", "video/mp2t")
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
@@ -3870,11 +4014,11 @@ def audio_serie(episode_id: int, audio_id: int, channels_count: int) -> Response
     video_path = episode.slug
     duration = length_video(video_path)
 
-    file = f"#EXTM3U\n#EXT-X-VERSION:3\n\n#EXT-X-TARGETDURATION:{CHUNK_LENGTH}\n\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-DISCONTINUITY-SEQUENCE: 0\n"
+    file = f"#EXTM3U\n#EXT-X-VERSION:3\n\n#EXT-X-TARGETDURATION:{AUDIO_CHUNK_LENGTH}\n\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-DISCONTINUITY-SEQUENCE: 0\n"
     
-    for i in range(0, int(duration), int(CHUNK_LENGTH)):
+    for i in range(0, int(duration), int(AUDIO_CHUNK_LENGTH)):
         file += f"#EXT-X-DISCONTINUITY\n"
-        file += f"#EXTINF:{int(CHUNK_LENGTH)},\n/chunk_serie_audio/{episode_id}-{audio_id}-{(i // CHUNK_LENGTH) + 1}-{channels_count}.ts\n"
+        file += f"#EXTINF:{int(AUDIO_CHUNK_LENGTH)},\n/chunk_serie_audio/{episode_id}-{audio_id}-{(i // AUDIO_CHUNK_LENGTH) + 1}-{channels_count}.ts\n"
 
     file += "#EXT-X-ENDLIST"
 
@@ -3891,15 +4035,27 @@ def audio_serie(episode_id: int, audio_id: int, channels_count: int) -> Response
 
 @app.route("/chunk_serie_audio/<int:episode_id>-<int:audio_id>-<int:chunk>-<int:channel_count>.ts")
 def chunk_serie_audio(episode_id: int, audio_id: int, chunk: int, channel_count: int) -> Response:
+    
+    global AUDIO_PREVIOUS_LAG
+
+    token = get_chunk_user_token(request)
+    ip = request.remote_addr
+    user_agent = request.headers.get("User-Agent")
+
+    key = hashString(f"{token}-{ip}-{user_agent}-{episode_id}")
+
+    if AUDIO_PREVIOUS_LAG.get(key) is None:
+        AUDIO_PREVIOUS_LAG[key] = PreviousLagInfo(0, 0)
+
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
     if not episode:
         abort(404)
     video_path = episode.slug
 
-    seconds = (chunk - 1) * CHUNK_LENGTH
+    seconds = (chunk - 1) * AUDIO_CHUNK_LENGTH
 
-    time_start = datetime.timedelta(seconds=seconds)
-    time_end = datetime.timedelta(seconds=seconds + CHUNK_LENGTH)
+    time_start = datetime.timedelta(seconds=seconds + AUDIO_PREVIOUS_LAG[key].lag)
+    time_end = datetime.timedelta(seconds=seconds + AUDIO_CHUNK_LENGTH)
 
     time_start = str(time_start)
     time_end = str(time_end)
@@ -3911,7 +4067,7 @@ def chunk_serie_audio(episode_id: int, audio_id: int, chunk: int, channel_count:
         "-loglevel",
         LOG_LEVEL,
         "-ss", str(time_start),       # Start time of the segment
-        "-t", str(CHUNK_LENGTH),         # End time of the segment
+        "-t", str(AUDIO_CHUNK_LENGTH),         # End time of the segment
         "-i", video_path,             # Set output offset
         "-map", f"0:a:{audio_id}",    # Select the specified audio stream
         "-ac", "2",    # Number of audio channels
@@ -3926,6 +4082,24 @@ def chunk_serie_audio(episode_id: int, audio_id: int, chunk: int, channel_count:
         abort(404)
 
     data = pipe.stdout.read()
+
+    temp_path = f"{ARTEFACTS_PATH}/{episode_id}-{chunk}.ts"
+
+    with open(temp_path, "wb") as f:
+        f.write(data)
+
+    duration = length_video(temp_path)
+
+    if os.path.exists(temp_path):
+        os.remove(temp_path)
+
+    if AUDIO_PREVIOUS_LAG[key].lag < 0:
+        AUDIO_PREVIOUS_LAG[key].lag = (duration) - (VIDEO_CHUNK_LENGTH - AUDIO_PREVIOUS_LAG[key].lag)
+    else:
+        AUDIO_PREVIOUS_LAG[key].lag = 0
+
+    AUDIO_PREVIOUS_LAG[key].lag_id = chunk
+
     response = make_response(data)
     response.headers.set("Content-Type", "video/MP2T")
     response.headers.set("Range", "bytes=0-4095")
