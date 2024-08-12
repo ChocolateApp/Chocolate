@@ -56,6 +56,9 @@ from chocolate_app import (
     scans,
     VIDEO_CHUNK_LENGTH,
     AUDIO_CHUNK_LENGTH,
+    VIDEO_CODEC,
+    AUDIO_CODEC,
+    FFMPEG_ARGS
 )
 from chocolate_app.tables import (
     Language,
@@ -126,19 +129,6 @@ try:
     last_commit_hash = repo.head.object.hexsha[:7]
 except Exception:
     last_commit_hash = "xxxxxxx"
-
-VIDEO_CODEC: str = os.getenv("VIDEO_CODEC", "libx264")
-if VIDEO_CODEC == "":
-    VIDEO_CODEC = "libx264"
-
-AUDIO_CODEC: str = os.getenv("AUDIO_CODEC", "aac")
-if AUDIO_CODEC == "":
-    AUDIO_CODEC = "aac"
-
-FFMPEG_ARGS_STR: str = os.getenv("FFMPEG_ARGS", "")
-FFMPEG_ARGS: list = []
-if FFMPEG_ARGS_STR != "":
-    FFMPEG_ARGS = FFMPEG_ARGS_STR.split(" ")
 
 
 def translate(string: str) -> str:
@@ -688,6 +678,8 @@ def get_chunk_serie(episode_id: int, idx: int = 0) -> Response:
         "-",
     ]
 
+    print(" ".join(command))
+
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
 
     if not pipe or not pipe.stdout:
@@ -776,6 +768,8 @@ def get_chunk_serie_quality(quality: str, episode_id: int, idx: int = 0):
         "mpegts",
         "-",
     ]
+
+    print(" ".join(command))
 
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
 

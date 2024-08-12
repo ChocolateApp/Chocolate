@@ -18,6 +18,7 @@ from typing import Dict, Any
 from tmdbv3api import TMDb  # type: ignore
 
 from chocolate_app.plugins_loader import loader
+from test import FFMPEG_ARGS
 
 DB: SQLAlchemy = SQLAlchemy()
 MIGRATE: Migrate = Migrate()
@@ -46,6 +47,11 @@ parser.add_argument("-pl", "--plugins", help="Path to the plugins folder (a fold
 parser.add_argument("-l","--logs", help="Path to the logs file (a .log file)")
 parser.add_argument("-ns","--no-scans", help="Disable startup scans", action="store_true")
 parser.add_argument("-p", "--port", help="Port to run the server on", type=int)
+parser.add_argument("-c:v", "--video-codec", help="Video codec to use")
+parser.add_argument("-c:a", "--audio-codec", help="Audio codec to use")
+#-f / --ffmpeg-args is a string that will be split by spaces to create a list
+parser.add_argument("-f", "--ffmpeg-args", help="FFmpeg arguments to use", nargs="*")
+
 
 ARGUMENTS = parser.parse_args()
 
@@ -115,6 +121,12 @@ if ARTEFACTS_PATH.endswith("/"):
 
 SERVER_PORT: int = ARGUMENTS.port or 8888
 
+
+VIDEO_CODEC: str = ARGUMENTS.video_codec
+
+AUDIO_CODEC: str = ARGUMENTS.audio_codec
+
+FFMPEG_ARGS: list = ARGUMENTS.ffmpeg_args or []
 
 def replace_path(path: str) -> str:
     return path.replace(
