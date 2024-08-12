@@ -660,7 +660,7 @@ def get_chunk_serie(episode_id: int, idx: int = 0) -> Response:
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
     episode_path = episode.slug
 
-    time_start = str(datetime.timedelta(seconds=seconds))
+    time_start = str(datetime.timedelta(seconds=seconds + VIDEO_PREVIOUS_LAG[key].lag))
     time_end = str(datetime.timedelta(seconds=seconds + VIDEO_CHUNK_LENGTH))
 
     #if not token:
@@ -739,7 +739,7 @@ def get_chunk_serie_quality(quality: str, episode_id: int, idx: int = 0):
     seconds = (idx - 1) * VIDEO_CHUNK_LENGTH
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
     episode_path = episode.slug
-    time_start = str(datetime.timedelta(seconds=seconds))
+    time_start = str(datetime.timedelta(seconds=seconds + VIDEO_PREVIOUS_LAG[key].lag))
     time_end = str(datetime.timedelta(seconds=seconds + VIDEO_CHUNK_LENGTH))
 
     #if not token:
@@ -754,8 +754,6 @@ def get_chunk_serie_quality(quality: str, episode_id: int, idx: int = 0):
     new_height = round(float(width) / float(height) * new_width)
     if (new_height % 2) != 0:
         new_height += 1
-
-    
     
     command = [
         "ffmpeg",
@@ -833,7 +831,7 @@ def chunk_movie(movie_id: int, idx: int = 0) -> Response:
 
     video_path = movie.slug
 
-    time_start = str(datetime.timedelta(seconds=seconds))
+    time_start = str(datetime.timedelta(seconds=seconds + VIDEO_PREVIOUS_LAG[key].lag))
     time_end = str(datetime.timedelta(seconds=seconds + VIDEO_CHUNK_LENGTH))
 
     #if not token:
@@ -913,7 +911,7 @@ def get_chunk_quality(quality: str, movie_id: int, idx: int = 0) -> Response:
     movie = Movies.query.filter_by(id=movie_id).first()
     video_path = movie.slug
 
-    time_start = str(datetime.timedelta(seconds=seconds))
+    time_start = str(datetime.timedelta(seconds=seconds + VIDEO_PREVIOUS_LAG[key].lag))
     time_end = str(datetime.timedelta(seconds=seconds + VIDEO_CHUNK_LENGTH))
 
     #if not token:
@@ -4035,7 +4033,6 @@ def audio_serie(episode_id: int, audio_id: int, channels_count: int) -> Response
 
 @app.route("/chunk_serie_audio/<int:episode_id>-<int:audio_id>-<int:chunk>-<int:channel_count>.ts")
 def chunk_serie_audio(episode_id: int, audio_id: int, chunk: int, channel_count: int) -> Response:
-    
     global AUDIO_PREVIOUS_LAG
 
     token = get_chunk_user_token(request)
