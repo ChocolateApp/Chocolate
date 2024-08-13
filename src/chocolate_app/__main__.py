@@ -769,8 +769,6 @@ def get_chunk_serie_quality(quality: str, episode_id: int, idx: int = 0):
         "-",
     ]
 
-    print(" ".join(command))
-
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
 
     if not pipe or not pipe.stdout:
