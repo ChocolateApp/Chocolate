@@ -18,7 +18,6 @@ from typing import Dict, Any
 from tmdbv3api import TMDb  # type: ignore
 
 from chocolate_app.plugins_loader import loader
-from test import FFMPEG_ARGS
 
 DB: SQLAlchemy = SQLAlchemy()
 MIGRATE: Migrate = Migrate()
