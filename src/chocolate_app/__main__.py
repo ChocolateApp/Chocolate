@@ -382,7 +382,10 @@ def length_video(path: str) -> float:
         stdout=subprocess.PIPE,
         text=True,
     )
-    return float(seconds.stdout) or 0
+    try:
+        return float(seconds.stdout)
+    except ValueError:
+        return 0.0
 
 
 def get_gpu_info() -> str:
