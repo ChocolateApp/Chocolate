@@ -1,8 +1,8 @@
 from flask import Blueprint, jsonify, request
 
-from chocolate_app import config, write_config, tmdb
-from chocolate_app.tables import Users, Libraries
 from chocolate_app.plugins_loader import events
+from chocolate_app.tables import Users, Libraries
+from chocolate_app import config, write_config, tmdb
 
 settings_bp = Blueprint("settings", __name__)
 

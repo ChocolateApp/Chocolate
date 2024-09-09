@@ -13,7 +13,7 @@ class IntroDetector:
         """
         Start the detection for a library
         """
-        series = Series.query.filter_by(library_name=library.lib_name).all()
+        series = Series.query.filter_by(library_name=library.name).all()
         for serie in series:
             self.start_series_detection(serie)
 
@@ -91,7 +91,7 @@ def start():
     detector = IntroDetector()
     app = create_app()
     with app.app_context():
-        liraries = Libraries.query.filter_by(lib_type="series").all()
+        liraries = Libraries.query.filter_by(type="series").all()
         for library in liraries:
             detector.start_library_detection(library)
 

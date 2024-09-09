@@ -1,27 +1,38 @@
 # Copyright (C) 2024 Impre_visible
-import datetime
-import io
-import json
-import os
-import platform
 import re
-import subprocess
-import warnings
-import zipfile
-import rarfile  # type: ignore
-import fitz  # type: ignore
+import io
+import os
 import git
-import GPUtil  # type: ignore
-import pycountry  # type: ignore
-import requests
-import sqlalchemy  # type: ignore
-import natsort
+import json
+import fitz
+import GPUtil
+import zipfile
+import rarfile
 import hashlib
+import natsort
+import datetime
+import platform
+import warnings
+import requests
+import pycountry
+import subprocess
+import sqlalchemy
 
-from time import localtime, mktime, time
-from typing import Any, Dict, List
+from PIL import Image
 from uuid import uuid4
-from deep_translator import GoogleTranslator  # type: ignore
+from guessit import guessit
+from sqlalchemy import inspect
+from pypresence import Presence
+from unidecode import unidecode
+from operator import itemgetter
+from sqlalchemy.sql import text
+from tmdbv3api.as_obj import AsObj
+from typing import Any, Dict, List
+from time import localtime, mktime, time
+from videoprops import get_video_properties
+from deep_translator import GoogleTranslator
+from tmdbv3api import TV, Movie, Person, TMDb, Search
+
 from flask import (
     abort,
     jsonify,
@@ -31,14 +42,6 @@ from flask import (
     send_file,
     render_template,
 )
-from guessit import guessit  # type: ignore
-from PIL import Image
-from pypresence import Presence  # type: ignore
-from tmdbv3api import TV, Movie, Person, TMDb, Search  # type: ignore
-from tmdbv3api.as_obj import AsObj  # type: ignore
-from unidecode import unidecode
-from videoprops import get_video_properties  # type: ignore
-from operator import itemgetter
 
 from chocolate_app import (
     app,
@@ -58,7 +61,8 @@ from chocolate_app import (
     AUDIO_CHUNK_LENGTH,
     VIDEO_CODEC,
     AUDIO_CODEC,
-    FFMPEG_ARGS
+    FFMPEG_ARGS,
+    get_language_file
 )
 from chocolate_app.tables import (
     Language,
@@ -157,6 +161,7 @@ if enabled_rpc:
         write_config(config)
 
 config_language: str = config["ChocolateSettings"]["language"]
+
 with app.app_context():
     language_db: Language = Language.query.first()
     exists = language_db is not None
@@ -172,7 +177,6 @@ with app.app_context():
         DB.session.query(Episodes).delete()
         language_db.language = config_language
         DB.session.commit()
-
 
 websites_trailers = {
     "YouTube": "https://www.youtube.com/embed/",
@@ -394,7 +398,7 @@ def get_gpu_info() -> str:
     elif platform.system() == "Darwin":
         return subprocess.check_output(
             ["/usr/sbin/sysctl", "-n", "machdep.cpu.brand_string"]
-        ).strip()  # type: ignore
+        ).strip()
     elif platform.system() == "Linux":
         return subprocess.check_output(["lshw", "-C", "display", "-short"]).decode(
             "utf-8"
@@ -435,33 +439,8 @@ def get_gpu_brand() -> str:
 
 
 @app.route("/language_file")
-def language_file() -> Response:
-    language = config["ChocolateSettings"]["language"]
-
-    if (
-        not os.path.isfile(f"{dir_path}/static/lang/{language.lower()}.json")
-        or "{}"
-        in open(
-            f"{dir_path}/static/lang/{language.lower()}.json", "r", encoding="utf-8"
-        ).read()
-    ):
-        language = "EN"
-
-    with open(
-        f"{dir_path}/static/lang/{language.lower()}.json", "r", encoding="utf-8"
-    ) as f:
-        language = json.load(f)
-
-    with open(f"{dir_path}/static/lang/en.json", "r", encoding="utf-8") as f:
-        en = json.load(f)
-
-    language_dict = {}
-
-    for key in en:
-        if key not in language_dict:
-            language_dict[key] = en[key]
-
-    return jsonify(language_dict)
+def route_language_file() -> Response:
+    return jsonify(get_language_file())
 
 
 @app.route("/video_movie/<movie_id>.m3u8", methods=["GET"])
@@ -1318,7 +1297,7 @@ def get_all_movies(library: str) -> Response:
             if key not in used_keys:
                 del movie[key]
 
-    movies_list = natsort.natsorted(movies_list, key=itemgetter(*["real_title"]))
+    movies_list = natsort.natsorted(movies_list, key=itemgetter(*["title"]))
     return jsonify(movies_list)
 
 
@@ -1934,7 +1913,7 @@ def get_all_series(library: str) -> Response:
     generate_log(request, "SUCCESS")
     
     series = Series.query.filter_by(library_name=library).all()
-    the_lib = Libraries.query.filter_by(lib_name=library).first()
+    the_lib = Libraries.query.filter_by(name=library).first()
     user = Users.query.filter_by(id=token).first()
     user_id = user.id
     user_in_the_lib = user_in_lib(user_id, the_lib)
@@ -1955,7 +1934,13 @@ def get_all_series(library: str) -> Response:
                 series_list.remove(serie)
 
     merged_lib = LibrariesMerge.query.filter_by(parent_lib=library).all()
-    merged_lib = [child.child_lib for child in merged_lib]
+    merged_lib_bis = []
+
+    for child in merged_lib:
+        if child:
+            merged_lib_bis.append(child.child_lib)
+
+    merged_lib = merged_lib_bis
 
     for lib in merged_lib:
         series = Series.query.filter_by(library_name=lib).all()
@@ -1967,13 +1952,13 @@ def get_all_series(library: str) -> Response:
     for serie in series_list:
         serie["seasons"] = get_seasons(serie["id"])
 
-    series_list = natsort.natsorted(series_list, key=itemgetter(*["original_name"]))
+    series_list = natsort.natsorted(series_list, key=itemgetter(*["title"]))
 
     return jsonify(series_list)
 
 
 def get_seasons(id: int) -> List[Dict]:
-    seasons = Seasons.query.filter_by(serie=id).all()
+    seasons = Seasons.query.filter_by(serie_id=id).all()
     seasons_list = [season.__dict__ for season in seasons]
     for season in seasons_list:
         del season["_sa_instance_state"]
@@ -2120,7 +2105,7 @@ def edit_movie(id: int, library: str) -> Response:
 
     bande_annonce = movie_info.videos.results
 
-    bande_annonce_url = ""
+    trailer_url = ""
     if len(bande_annonce) > 0:
         for video in bande_annonce:
             bande_annonce_type = video.type
@@ -2128,16 +2113,16 @@ def edit_movie(id: int, library: str) -> Response:
             bande_annonce_key = video.key
             if bande_annonce_type == "Trailer":
                 try:
-                    bande_annonce_url = (
+                    trailer_url = (
                         websites_trailers[bande_annonce_host] + bande_annonce_key
                     )
                     break
                 except KeyError as e:
                     log_message = f"Error while getting the trailer of the movie {the_movie.real_title} : {e}"
                     log("ERROR", "SERVER", log_message)
-                    bande_annonce_url = "Unknown"
+                    trailer_url = "Unknown"
 
-    the_movie.bande_annonce_url = bande_annonce_url
+    the_movie.trailer_url = trailer_url
     the_movie.adult = str(movie_info.adult)
 
     alternatives_names = []
@@ -2215,6 +2200,23 @@ def edit_movie(id: int, library: str) -> Response:
     cover = save_image(cover, f"{IMAGES_PATH}/{new_movie_id}_Cover")
     banner = save_image(banner, f"{IMAGES_PATH}/{new_movie_id}_Banner")
 
+    logo_download_url = None
+    logo_url = None
+
+    all_images = movie.images(new_movie_id)
+
+    if len(all_images["logos"]) > 0:
+        logo_download_url = f"https://image.tmdb.org/t/p/original{all_images['logos'][0]['file_path']}"
+        logo_url = f"{IMAGES_PATH}/{new_movie_id}_Movie_Logo"
+    else:
+        all_images = movie.images(new_movie_id, include_image_language="en")
+        if len(all_images["logos"]) > 0:
+            logo_download_url = f"https://image.tmdb.org/t/p/original{all_images['logos'][0]['file_path']}"
+            logo_url = f"{IMAGES_PATH}/{new_movie_id}_Movie_Logo"
+
+    if logo_download_url is not None:
+        save_image(logo_download_url, logo_url)
+
     if str(id) in cover:
         cover = cover.replace(str(id), str(new_movie_id))
     if str(id) in banner:
@@ -2235,14 +2237,14 @@ def edit_serie(id: int, library: str):
                
         serie = serie.__dict__
         del serie["_sa_instance_state"]
-        serie_name = serie["original_name"]
+        serie_name = serie["title"]
         tmdb = TMDb()
         tmdb.language = config["ChocolateSettings"]["language"].lower()
         serie_info = Search().tv_shows(serie_name)
         if serie_info.results == {}:
             data = {
                 "series": [],
-                "folder_title": serie["original_name"],
+                "folder_title": serie["title"],
             }
             return jsonify(data, default=transform, indent=4)
 
@@ -2259,7 +2261,7 @@ def edit_serie(id: int, library: str):
 
         data = {
             "series": real_series,
-            "folder_title": serie["original_name"],
+            "folder_title": serie["title"],
         }
 
         return jsonify(data)
@@ -2277,7 +2279,7 @@ def edit_serie(id: int, library: str):
             try:
                 os.remove(cover)
             except FileNotFoundError as e:
-                log_message = f"Error while deleting the cover of the season {season.season_number} of the serie {the_serie.original_name} : {e}"
+                log_message = f"Error while deleting the cover of the season {season.season_number} of the serie {the_serie.title} : {e}"
                 log("ERROR", "SERIE EDIT", log_message)
             episodes = Episodes.query.filter_by(season_id=season.season_number).all()
             for episode in episodes:
@@ -2317,7 +2319,7 @@ def edit_serie(id: int, library: str):
                 duration += f"{str(run_time[i])}"
         serie_genre = details.genres
         bande_annonce = details.videos.results
-        bande_annonce_url = ""
+        trailer_url = ""
         if len(bande_annonce) > 0:
             for video in bande_annonce:
                 bande_annonce_type = video.type
@@ -2325,14 +2327,14 @@ def edit_serie(id: int, library: str):
                 bande_annonce_key = video.key
                 if bande_annonce_type == "Trailer" or len(bande_annonce) == 1:
                     try:
-                        bande_annonce_url = (
+                        trailer_url = (
                             websites_trailers[bande_annonce_host] + bande_annonce_key
                         )
                         break
                     except KeyError as e:
-                        log_message = f"Error while getting the trailer of the serie {the_serie.original_name} : {e}"
+                        log_message = f"Error while getting the trailer of the serie {the_serie.title} : {e}"
                         log("ERROR", "SERIE EDIT", log_message)
-                        bande_annonce_url = "Unknown"
+                        trailer_url = "Unknown"
         genre_list = []
         for genre in serie_genre:
             genre_list.append(str(genre.name))
@@ -2367,9 +2369,9 @@ def edit_serie(id: int, library: str):
                 actor.actor_programs = f"{actor.actor_programs} {serie_id}"
                 DB.session.commit()
 
-        all_series_path = Libraries.query.filter_by(lib_name=library).first().lib_folder
+        all_series_path = Libraries.query.filter_by(name=library).first().folder
         serie_modified_time = os.path.getmtime(
-            f"{all_series_path}/{the_serie.original_name}"
+            f"{all_series_path}/{the_serie.title}"
         )
 
         the_serie.cast = ",".join(new_cast[:5])
@@ -2379,7 +2381,7 @@ def edit_serie(id: int, library: str):
         the_serie.name = name
         the_serie.duration = duration
         the_serie.description = description
-        the_serie.bande_annonce_url = bande_annonce_url
+        the_serie.trailer_url = trailer_url
         the_serie.cover = cover
         the_serie.banner = banner
         the_serie.note = note
@@ -2433,7 +2435,7 @@ def get_episodes(season_id: int) -> Response:
     season = Seasons.query.filter_by(season_id=season_id).first()
     serie = Series.query.filter_by(id=season.serie).first()
     library = serie.library_name
-    library = Libraries.query.filter_by(lib_name=library).first()
+    library = Libraries.query.filter_by(name=library).first()
 
     if user is None:
         abort(404)
@@ -2465,7 +2467,7 @@ def get_episodes(season_id: int) -> Response:
 
     data = {
         "episodes": episodes_list,
-        "library": library.lib_name,
+        "library": library.name,
     }
 
     return jsonify(data)
@@ -2541,7 +2543,7 @@ def book_url_page(id: int, page: int) -> Response:
         if book_type == "PDF" or book_type == "EPUB":
             pdf_doc = fitz.open(book_slug)
             page = pdf_doc[int(page)]
-            image_stream = io.BytesIO(page.get_pixmap().tobytes("jpg"))  # type: ignore
+            image_stream = io.BytesIO(page.get_pixmap().tobytes("jpg"))
             image_stream.seek(0)
             return send_file(image_stream, mimetype="image/jpeg")
 
@@ -2557,7 +2559,7 @@ def book_url_page(id: int, page: int) -> Response:
         elif book_type == "CBR":
             with rarfile.RarFile(book_slug, "r") as rar:
                 image_file = rar.infolist()[int(page)]
-                if is_image_file(image_file.filename):  # type: ignore
+                if is_image_file(image_file.filename):
                     with rar.open(image_file) as image:
                         image_stream = io.BytesIO(image.read())
                         image_stream.seek(0)
@@ -2607,7 +2609,7 @@ def get_all_others(library: str) -> Response:
 
     username = all_auth_tokens[token]["user"]
 
-    the_lib = Libraries.query.filter_by(lib_name=library).first()
+    the_lib = Libraries.query.filter_by(name=library).first()
 
     if not the_lib:
         abort(404)
@@ -2617,7 +2619,7 @@ def get_all_others(library: str) -> Response:
     if not user_in_the_lib:
         return jsonify([])
 
-    other = OthersVideos.query.filter_by(library_name=the_lib.lib_name).all()
+    other = OthersVideos.query.filter_by(library_name=the_lib.name).all()
     other_list = [video.__dict__ for video in other]
 
     merged_lib = LibrariesMerge.query.filter_by(parent_lib=library).all()
@@ -2635,18 +2637,18 @@ def get_all_others(library: str) -> Response:
 
 @app.route("/get_tv/<tv_name>/<id>")
 def get_tv(tv_name: str, id: str) -> Response:
-
+    #FIXME: This function don't work, should be in /api/medias
     if overrides.have_override(overrides.GET_TV):
         return overrides.execute_override(overrides.GET_TV, request, tv_name, id)
 
     if id != "undefined":
-        tv = Libraries.query.filter_by(lib_name=tv_name).first()
-        lib_folder = tv.lib_folder
+        tv = Libraries.query.filter_by(name=tv_name).first()
+        lib_folder = tv.folder
 
-        if is_valid_url(lib_folder):
-            m3u = requests.get(lib_folder).text.split("\n")
+        if is_valid_url(folder):
+            m3u = requests.get(folder).text.split("\n")
         else:
-            with open(lib_folder, "r", encoding="utf-8") as f:
+            with open(folder, "r", encoding="utf-8") as f:
                 m3u = f.readlines()
 
         m3u.pop(0)
@@ -2655,7 +2657,7 @@ def get_tv(tv_name: str, id: str) -> Response:
                 m3u.remove(ligne)
             tvg_logo_regex = r'tvg-logo="(.+?)"'
                 
-            match = re.search(tvg_logo_regex, m3u[i])  # type: ignore
+            match = re.search(tvg_logo_regex, m3u[i])
             if match and match.group(1) != '" group-title=':
                 tvg_logo = match.group(1)
                 logo_url = tvg_logo
@@ -2709,17 +2711,17 @@ def get_channels(channels: str) -> Response:
     token = request.headers.get("Authorization")
     check_authorization(request, token, channels)
 
-    channels = Libraries.query.filter_by(lib_name=channels).first()
+    channels = Libraries.query.filter_by(name=channels).first()
     if not channels:
         abort(404, "Library not found")
-    lib_folder = channels.lib_folder  # type: ignore
+    lib_folder = channels.folder
 
     try:
-        with open(lib_folder, "r", encoding="utf-8") as f:
+        with open(folder, "r", encoding="utf-8") as f:
             m3u = f.readlines()
     except OSError:
         lib_folder = lib_folder.replace("\\", "/")
-        m3u = requests.get(lib_folder).text.split("\n")
+        m3u = requests.get(folder).text.split("\n")
 
     m3u.pop(0)
     while m3u[0] == "\n":
@@ -2731,25 +2733,25 @@ def get_channels(channels: str) -> Response:
             m3u.remove(i)
         elif i == "\n":
             m3u.remove(i)
-    for i in range(0, len(m3u) - 1, 2):  # type: ignore
+    for i in range(0, len(m3u) - 1, 2):
         data = {}
         try:
-            data["name"] = m3u[i].split(",")[-1].replace("\n", "")  # type: ignore
+            data["name"] = m3u[i].split(",")[-1].replace("\n", "")
             work = True
         except Exception:
             work = False
         if work:
-            data["url"] = m3u[i + 1].replace("\n", "")  # type: ignore
+            data["url"] = m3u[i + 1].replace("\n", "")
             data["channelID"] = i
             tvg_id_regex = r'tvg-id="(.+?)"'
             tvg_id = None
-            match = re.search(tvg_id_regex, m3u[i])  # type: ignore
+            match = re.search(tvg_id_regex, m3u[i])
             if match:
                 tvg_id = match.group(1)
                 data["id"] = tvg_id
 
             tvg_logo_regex = r'tvg-logo="(.+?)"'
-            match = re.search(tvg_logo_regex, m3u[i])  # type: ignore
+            match = re.search(tvg_logo_regex, m3u[i])
             if match and match.group(1) != '" group-title=':
                 tvg_logo = match.group(1)
                 data["logo"] = tvg_logo
@@ -2772,17 +2774,17 @@ def search_tv(library: str, search: str) -> Response:
     token = request.headers.get("Authorization")
     check_authorization(request, token, library)
 
-    library = Libraries.query.filter_by(lib_name=library).first()
+    library = Libraries.query.filter_by(name=library).first()
     if not library:
         abort(404, "Library not found")
-    lib_folder = library.lib_folder  # type: ignore
+    lib_folder = library.folder
 
     try:
-        with open(lib_folder, "r", encoding="utf-8") as f:
+        with open(folder, "r", encoding="utf-8") as f:
             m3u = f.readlines()
     except OSError:
         lib_folder = lib_folder.replace("\\", "/")
-        m3u = requests.get(lib_folder).text.split("\n")
+        m3u = requests.get(folder).text.split("\n")
 
     m3u.pop(0)
     while m3u[0] == "\n":
@@ -2794,25 +2796,25 @@ def search_tv(library: str, search: str) -> Response:
             m3u.remove(i)
         elif i == "\n":
             m3u.remove(i)
-    for i in range(0, len(m3u) - 1, 2):  # type: ignore
+    for i in range(0, len(m3u) - 1, 2):
         data = {}
         try:
-            data["name"] = m3u[i].split(",")[-1].replace("\n", "")  # type: ignore
+            data["name"] = m3u[i].split(",")[-1].replace("\n", "")
             work = True
         except Exception:
             work = False
         if work:
-            data["url"] = m3u[i + 1].replace("\n", "")  # type: ignore
+            data["url"] = m3u[i + 1].replace("\n", "")
             data["channelID"] = i
             tvg_id_regex = r'tvg-id="(.+?)"'
             tvg_id = None
-            match = re.search(tvg_id_regex, m3u[i])  # type: ignore
+            match = re.search(tvg_id_regex, m3u[i])
             if match:
                 tvg_id = match.group(1)
                 data["id"] = tvg_id
 
             tvg_logo_regex = r'tvg-logo="(.+?)"'
-            match = re.search(tvg_logo_regex, m3u[i])  # type: ignore
+            match = re.search(tvg_logo_regex, m3u[i])
             if match and match.group(1) != '" group-title=':
                 tvg_logo = match.group(1)
                 data["logo"] = tvg_logo
@@ -3110,13 +3112,12 @@ def bios(console: str) -> Response:
 
 @app.route("/search_movies/<library>/<search>")
 def search_movies(library: str, search: str) -> Response:
+    token = request.headers.get("Authorization")
+    check_authorization(request, token, library)
     
     if overrides.have_override(overrides.SEARCH_MOVIES):
         data = overrides.execute_override(overrides.SEARCH_MOVIES, request, library, search)
         return data
-
-    token = request.headers.get("Authorization")
-    check_authorization(request, token, library)
 
     username = all_auth_tokens[token]["user"]
     user_type = Users.query.filter_by(name=username).first()
@@ -3165,7 +3166,7 @@ def search_movies(library: str, search: str) -> Response:
         if count > 0:
             results[movie] = count
 
-    results = sorted(results.items(), key=lambda x: x[1], reverse=True)  # type: ignore
+    results = sorted(results.items(), key=lambda x: x[1], reverse=True)
 
     movies = [i[0].__dict__ for i in results]
     for i in movies:
@@ -3193,7 +3194,7 @@ def search_series(library: str, search: str) -> Response:
 
     series = Series.query.filter_by(library_name=library).all()
     user = Users.query.filter_by(name=username).first()
-    library = Libraries.query.filter_by(lib_name=library).first()
+    library = Libraries.query.filter_by(name=library).first()
 
     search = unidecode(search.replace("%20", " ").lower())
     search_terms = search.split()
@@ -3203,13 +3204,13 @@ def search_series(library: str, search: str) -> Response:
     for serie_dict in series:
         count = 0
         name = unidecode(serie_dict.name.lower())
-        original_name = unidecode(serie_dict.original_name.lower())
+        title = unidecode(serie_dict.title.lower())
         description = unidecode(serie_dict.description.lower())
         cast = unidecode(serie_dict.cast.lower())
         date = unidecode(str(serie_dict.date).lower())
         genre = unidecode(serie_dict.genre.lower())
 
-        value_used = [name, original_name, description, cast, date, genre]
+        value_used = [name, title, description, cast, date, genre]
 
         for term in search_terms:
             for value in value_used:
@@ -3246,7 +3247,7 @@ def search_books(library: str, search: str) -> Response:
     check_authorization(request, token, library)
 
     books = Books.query.filter_by(library_name=library).all()
-    library = Libraries.query.filter_by(lib_name=library).first()
+    library = Libraries.query.filter_by(name=library).first()
 
     search = unidecode(search.replace("%20", " ").lower())
     search_terms = search.split()
@@ -3462,7 +3463,7 @@ def can_i_play_movie(movie_id: int) -> Response:
             abort(404)
 
         lib = movie.library_name
-        the_lib = Libraries.query.filter_by(lib_name=lib).first()
+        the_lib = Libraries.query.filter_by(name=lib).first()
 
         if the_lib is None:
             abort(404)
@@ -3511,7 +3512,7 @@ def can_i_play_episode(episode_id: int) -> Response:
             abort(404)
 
         lib = serie.library_name
-        the_lib = Libraries.query.filter_by(lib_name=lib).first()
+        the_lib = Libraries.query.filter_by(name=lib).first()
 
         if the_lib is None:
             abort(404)
@@ -3534,7 +3535,7 @@ def can_i_play_other_video(video_hash: str) -> Response:
             return jsonify({"can_I_play": False})
 
         lib = video.library_name
-        the_lib = Libraries.query.filter_by(lib_name=lib).first()
+        the_lib = Libraries.query.filter_by(name=lib).first()
 
         if the_lib is None:
             return jsonify({"can_I_play": False})
@@ -3665,7 +3666,7 @@ def generate_caption_serie(episode_id: int) -> list[dict[str, Any]]:
         slug,
     ]
     caption_pipe = subprocess.Popen(caption_command, stdout=subprocess.PIPE)
-    caption_response = caption_pipe.stdout.read().decode("utf-8")  # type: ignore
+    caption_response = caption_pipe.stdout.read().decode("utf-8")
     caption_response = caption_response.split("\n")
 
     all_captions = []
@@ -3729,7 +3730,7 @@ def generate_caption_movie(movie_id: int) -> str:
     ]
 
     caption_pipe = subprocess.Popen(caption_command, stdout=subprocess.PIPE)
-    caption_response = caption_pipe.stdout.read().decode("utf-8")  # type: ignore
+    caption_response = caption_pipe.stdout.read().decode("utf-8")
     caption_response = caption_response.split("\n")
     caption_response.pop()
 
@@ -3783,7 +3784,7 @@ def generate_audio_streams_movie(movie_id: int, format: str) -> str:
     ]
 
     audio_stream_pipe = subprocess.Popen(caption_command, stdout=subprocess.PIPE)
-    audio_stream_response = audio_stream_pipe.stdout.read().decode("utf-8")  # type: ignore
+    audio_stream_response = audio_stream_pipe.stdout.read().decode("utf-8")
     audio_stream_response = audio_stream_response.split("\n")
     audio_stream_response.pop()
     
@@ -3843,7 +3844,7 @@ def generate_audio_streams_serie(episode_id: int) -> str:
     ]
 
     audio_stream_pipe = subprocess.Popen(caption_command, stdout=subprocess.PIPE)
-    audio_stream_response = audio_stream_pipe.stdout.read().decode("utf-8")  # type: ignore
+    audio_stream_response = audio_stream_pipe.stdout.read().decode("utf-8")
     audio_stream_response = audio_stream_response.split("\n")
     audio_stream_response.pop()
 
@@ -4217,6 +4218,13 @@ def movie_banner(id: int) -> Response:
         abort(404)
     return send_file(movie_banner, as_attachment=True)
 
+@app.route("/movie_logo/<id>")
+def movie_logo(id: int) -> Response:
+    movie = Movies.query.filter_by(id=id).first()
+    movie_logo = movie.logo
+    if not os.path.exists(movie_logo):
+        abort(404)
+    return send_file(movie_logo, as_attachment=True)
 
 @app.route("/serie_cover/<id>")
 def serie_cover(id: int) -> Response:
@@ -4235,6 +4243,13 @@ def serie_banner(id: int) -> Response:
         abort(404)
     return send_file(serie_banner, as_attachment=True)
 
+@app.route("/serie_logo/<id>")
+def serie_logo(id: int) -> Response:
+    serie = Series.query.filter_by(id=id).first()
+    serie_logo = serie.logo
+    if not os.path.exists(serie_logo):
+        abort(404)
+    return send_file(serie_logo, as_attachment=True)
 
 @app.route("/season_cover/<id>")
 def season_cover(id: int) -> Response:
@@ -4330,7 +4345,7 @@ def track_cover(id: int) -> Response:
 @app.route("/user_image/<id>")
 def user_image(id: int) -> Response:
     user = Users.query.filter_by(id=id).first()
-    user_image = user.profil_picture
+    user_image = user.profile_picture
 
     if not user or not os.path.exists(user_image):
         return send_file(
@@ -4367,12 +4382,13 @@ def start_chocolate() -> None:
             log("ERROR", "Discord RPC", log_message)
 
     with app.app_context():
+        update_db_columns(DB.engine, DB)
         if not ARGUMENTS.no_scans and config["APIKeys"]["TMDB"] != "Empty":
             libraries = Libraries.query.all()
             libraries = [library.__dict__ for library in libraries]
 
-            libraries = natsort.natsorted(libraries, key=itemgetter(*["lib_name"]))
-            libraries = natsort.natsorted(libraries, key=itemgetter(*["lib_type"]))
+            libraries = natsort.natsorted(libraries, key=itemgetter(*["name"]))
+            libraries = natsort.natsorted(libraries, key=itemgetter(*["type"]))
 
             type_to_call = {
                 "series": scans.getSeries,
@@ -4384,8 +4400,8 @@ def start_chocolate() -> None:
             }
 
             for library in libraries:
-                if library["lib_type"] in type_to_call:
-                    type_to_call[library["lib_type"]](library["lib_name"])  # type: ignore
+                if library["type"] in type_to_call:
+                    type_to_call[library["type"]](library["name"])
 
             print()
     print("\033[?25h", end="")
@@ -4410,9 +4426,73 @@ def start_chocolate() -> None:
             log_message = f"Error while updating Discord RPC: {e}"
             log("ERROR", "Discord RPC", log_message)
 
+    
+
     app.run(host="0.0.0.0", port=SERVER_PORT)
     events.execute_event(events.AFTER_START)
 
+
+def update_db_columns(engine, db):
+    # Connecter à la base de données
+    connection = engine.connect()
+    inspector = inspect(engine)
+
+    # Parcourir toutes les classes définies dans Base
+    for cls in db.metadata.tables.values():
+        # Si la classe est une sous-classe de db.Model
+        #print the attributes of the class
+        name = None
+
+        if hasattr(cls, "name"):
+            name = cls.name
+        elif hasattr(cls, "full_name"):
+            name = cls.full_name
+
+
+        if name:
+            table_name = name
+
+            columns = inspector.get_columns(table_name)
+
+            class_columns = cls.columns.keys()
+
+            missing_columns = [
+                column
+                for column in class_columns
+                if column not in [col["name"] for col in columns]
+            ]
+
+            extra_columns = [
+                column
+                for column in columns
+                if (column["name"] or column["full_name"]) not in class_columns
+            ]
+
+            for column in missing_columns:
+                column_type = cls.columns[column].type
+                connection.execute(
+                    text(
+                    f"ALTER TABLE {table_name} ADD COLUMN {column} {column_type};"
+                    )
+                )
+
+            for column in extra_columns:
+                name = None
+
+                if hasattr(column, "name"):
+                    name = column.name
+                elif hasattr(column, "full_name"):
+                    name = column.full_name
+                else:
+                    continue
+
+                connection.execute(
+                    text(
+                    f"ALTER TABLE {table_name} DROP COLUMN {column['name']};"
+                    )
+                )
+
+    connection.close()
 
 if __name__ == "__main__":
     start_chocolate()

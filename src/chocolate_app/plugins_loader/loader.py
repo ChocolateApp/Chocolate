@@ -1,8 +1,8 @@
 """A plugin loader"""
 
 import os
-import importlib
 import yaml
+import importlib
 
 def handle_default(yaml: dict, key: str, default: str = "Unknown") -> str:
     """Handle the default values for the plugin.yaml file"""
