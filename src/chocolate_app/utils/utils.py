@@ -1,17 +1,63 @@
+import hashlib
 import os
-import datetime
+import time
 import json
+import base64
 import requests
+import datetime
+import subprocess
 
-from flask import Request, abort
-
+from enum import Enum
+from io import BytesIO
+from typing import Any
+from flask import Request, abort, jsonify
 from PIL import Image, UnidentifiedImageError
 
-from chocolate_app import all_auth_tokens, get_dir_path, LOG_PATH
 from chocolate_app.tables import Users, Libraries
+from chocolate_app import all_auth_tokens, get_dir_path, LOG_PATH, get_language_file
 
 dir_path = get_dir_path()
+LANGUAGE_FILE = get_language_file()
 
+class Codes(Enum):
+    CONTINUE_REQUEST = 101
+    PROCESSING = 102
+
+    SUCCESS = 201
+    MISSING_DATA = 202
+    NO_RETURN_DATA = 203
+
+    USER_CREATED = 211
+    USER_DELETED = 212
+    USER_UPDATED = 213
+    USER_FOUND = 214
+    USER_NOT_FOUND = 215
+    USER_ALREADY_EXISTS = 216
+    USER_NOT_CREATED = 217
+    USER_NOT_DELETED = 218
+    USER_NOT_UPDATED = 219
+
+    LIBRARY_CREATED = 221
+    LIBRARY_DELETED = 222
+    LIBRARY_UPDATED = 223
+    LIBRARY_FOUND = 224
+    LIBRARY_NOT_FOUND = 225
+    LIBRARY_ALREADY_EXISTS = 226
+    LIBRARY_NOT_CREATED = 227
+    LIBRARY_NOT_DELETED = 228
+    LIBRARY_NOT_UPDATED = 229
+
+    SETTINGS_UPDATED = 231
+    SETTINGS_NOT_UPDATED = 232
+
+    LOGIN_SUCCESS = 241
+    LOGIN_FAILED = 242
+    NOT_LOGGED_IN = 243
+    LOGGED_IN = 244
+    WRONG_PASSWORD = 245
+    INVALID_TOKEN = 246
+
+    MEDIA_NOT_FOUND = 251
 
 def generate_log(request: Request, component: str) -> None:
     """
@@ -117,7 +163,10 @@ def path_join(*args) -> str:
     return "/".join(args).replace("\\", "/")
 
 
-def check_authorization(request, token, library=None):
+def check_authorization(request, token=None, library=None):
+    if not token:
+        token = request.headers.get("Authorization")
+
     if token not in all_auth_tokens:
         generate_log(request, "UNAUTHORIZED")
         abort(401)
@@ -125,7 +174,7 @@ def check_authorization(request, token, library=None):
     username = all_auth_tokens[token]["user"]
 
     if library:
-        the_lib = Libraries.query.filter_by(lib_name=library).first()
+        the_lib = Libraries.query.filter_by(name=library).first()
 
         if not the_lib:
             generate_log(request, "ERROR")
@@ -172,25 +221,21 @@ def user_in_lib(user_id, lib):
         return True
     return False
 
-def save_image(url, path, width=600, ratio=73/50):
-    if "Banner" in path:
-        width = 1920
-        ratio = 9/16
-    elif "Actor" in path:
-        width = 300
-        ratio = 1
-    height = int(width * ratio)
+def save_image(url, path):
     image_requests = requests.Session()
     if not os.path.exists(f"{path}.webp"):
         with open(f"{path}.png", "wb") as f:
-            f.write(image_requests.get(url).content)
+            try:
+                f.write(image_requests.get(url).content)
+            except Exception:
+                time.sleep(0.5)
+                return save_image(url, path)
 
         try:
             image = Image.open(f"{path}.png")
         except UnidentifiedImageError:
-            return "/static/images/broken" + "Banner" * ("Banner" in path) + ".png"
-        #resize image but don't crop it
-        image = image.resize((width, height), Image.ANTIALIAS)
+            return None
+        
         image.save(f"{path}.webp", "webp", optimize=True)
         if os.path.exists(f"{path}.png"):
             os.remove(f"{path}.png")
@@ -305,3 +350,96 @@ def get_chunk_user_token(request: Request) -> int | None:
         return None
     user = all_auth_tokens[token]["user"]
     return Users.query.filter_by(name=user).first().id
+
+
+def generate_response(code: Codes, error=False, data:Any = None) -> dict:
+    """
+    Function to generate a response, based on a model
+    """
+
+    output_json = {
+        "code": code.value,
+        "error": error,
+        "message": Codes(code).name,
+        "data": data,
+    }
+
+    return jsonify(output_json)
+
+def generate_b64_image(image_path: str | None, width: int | None = None, height: int | None = None) -> str | None:
+    """
+    Generate a base64 image
+
+    Args:
+        image_path (str | None): The path of the image
+
+    Returns:
+        str: The base64 image
+    """
+    if not image_path:
+        return None
+
+    if not os.path.exists(image_path):
+        return None
+
+    with open(image_path, "rb") as image_file:
+        image_b64 = base64.b64encode(image_file.read()).decode("utf-8")
+
+    image = Image.open(BytesIO(base64.b64decode(image_b64)))
+    if width:
+        wpercent = (width / float(image.size[0]))
+        hsize = int((float(image.size[1]) * float(wpercent)))
+        image = image.resize((width, hsize), Image.ANTIALIAS)
+    if height:
+        hpercent = (height / float(image.size[1]))
+        wsize = int((float(image.size[0]) * float(hpercent)))
+        image = image.resize((wsize, height), Image.ANTIALIAS)
+
+    img_io = BytesIO()
+    image.save(img_io, 'WEBP')
+    img_io.seek(0)
+    img_str = base64.b64encode(img_io.getvalue()).decode("utf-8")
+
+    return f"data:image/png;base64,{img_str}"
+
+def translate(query: str | int) -> str:
+    """
+    Translate a query
+
+    Args:
+        query (str | number): The query to get the translation
+
+    Returns:
+        str: The translated query
+    """
+    if not query:
+        return ""
+    
+    if isinstance(query, int):
+        query = str(query)
+
+    return LANGUAGE_FILE[query]
+
+
+def hash_string(string: str) -> str:
+    return hashlib.md5(string.encode()).hexdigest()
+
+def length_video(path: str) -> float:
+    seconds = subprocess.run(
+        [
+            "ffprobe",
+            "-v",
+            "error",
+            "-show_entries",
+            "format=duration",
+            "-of",
+            "default=noprint_wrappers=1:nokey=1",
+            path,
+        ],
+        stdout=subprocess.PIPE,
+        text=True,
+    )
+    try:
+        return float(seconds.stdout)
+    except ValueError:
+        return 0.0
