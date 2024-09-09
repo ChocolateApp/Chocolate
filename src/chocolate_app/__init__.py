@@ -1,21 +1,22 @@
 # Copyright (C) 2024 Impre_visible
 import os
-import configparser
-import platform
-import argparse
-import logging
-import pathlib
+import uuid
+import json
 import shutil
+import hashlib
+import pathlib
+import logging
+import argparse
+import platform
+import configparser
 
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from flask_cors import CORS
-from flask_login import LoginManager  # type: ignore
-from flask_migrate import Migrate
-
-from typing import Dict, Any
-
 from tmdbv3api import TMDb  # type: ignore
+from flask_cors import CORS
+from typing import Dict, Any
+from flask_migrate import Migrate
+from flask_login import LoginManager  # type: ignore
+from flask_sqlalchemy import SQLAlchemy
 
 from chocolate_app.plugins_loader import loader
 
@@ -24,14 +25,11 @@ MIGRATE: Migrate = Migrate()
 LOGIN_MANAGER: LoginManager = LoginManager()
 all_auth_tokens: Dict[Any, Any] = {}
 
-
 class ChocolateException(Exception):
     """Base class for exceptions in Chocolate"""
 
-
 class UnsupportedSystemDefaultPath(ChocolateException):
     """Raised when the default path for the config file and the database file is not supported by Chocolate"""
-
 
 class TemplateNotFound(ChocolateException):
     """Raised when a template was not found"""
@@ -40,7 +38,8 @@ class TemplateNotFound(ChocolateException):
 parser: argparse.ArgumentParser = argparse.ArgumentParser("Chocolate")
 parser.add_argument("-c", "--config", help="Path to the config file (a .ini file)")
 parser.add_argument("--artefacts", help="Path to the artefacts folder (a folder)")
-parser.add_argument("-d", "--db", help="Path to the database file (a .db file)")
+parser.add_argument("-sqlite_file", "--sqlite_file", help="Path to the SQLLite file (a .db file)")
+parser.add_argument("-db", "--database-uri", help="Database URI to use (PostgreSQL, MySQL, etc.)")
 parser.add_argument("-i", "--images", help="Path to the images folder (a folder)")
 parser.add_argument("-pl", "--plugins", help="Path to the plugins folder (a folder)")
 parser.add_argument("-l","--logs", help="Path to the logs file (a .log file)")
@@ -56,7 +55,7 @@ ARGUMENTS = parser.parse_args()
 paths = {
     "Windows": {
         "config": f"{os.getenv('APPDATA')}/Chocolate/config.ini",
-        "db": f"{os.getenv('APPDATA')}/Chocolate/database.db",
+        "sqlite_file": f"{os.getenv('APPDATA')}/Chocolate/database.db",
         "images": f"{os.getenv('APPDATA')}/Chocolate/images",
         "logs": f"{os.getenv('APPDATA')}/Chocolate/server.log",
         "plugins": f"{os.getenv('APPDATA')}/Chocolate/plugins",
@@ -66,7 +65,7 @@ paths = {
     },
     "Linux": {
         "config": "/var/chocolate/config.ini",
-        "db": "/var/chocolate/database.db",
+        "sqlite_file": "/var/chocolate/database.db",
         "images": "/var/chocolate/images/",
         "plugins": "/var/chocolate/plugins/",
         "logs": "/var/chocolate/server.log",
@@ -76,7 +75,7 @@ paths = {
     },
     "Darwin": {
         "config": f"{os.getenv('HOME')}/Library/Application Support/Chocolate/config.ini",
-        "db": f"{os.getenv('HOME')}/Library/Application Support/Chocolate/database.db",
+        "sqlite_file": f"{os.getenv('HOME')}/Library/Application Support/Chocolate/database.db",
         "images": f"{os.getenv('HOME')}/Library/Application Support/Chocolate/images/",
         "plugins": f"{os.getenv('HOME')}/Library/Application Support/Chocolate/plugins/",
         "logs": f"{os.getenv('HOME')}/Library/Application Support/Chocolate/server.log",
@@ -96,8 +95,10 @@ if OPERATING_SYSTEM not in paths.keys():
 CONFIG_PATH: str = ARGUMENTS.config or paths[OPERATING_SYSTEM]["config"]
 CONFIG_PATH = CONFIG_PATH.replace("\\", "/")
 
-DB_PATH: str = ARGUMENTS.db or paths[OPERATING_SYSTEM]["db"]
-DB_PATH = DB_PATH.replace("\\", "/")
+SQLITE_PATH: str = ARGUMENTS.sqlite_file or paths[OPERATING_SYSTEM]["sqlite_file"]
+SQLITE_PATH = SQLITE_PATH.replace("\\", "/")
+
+DB_URI: str = ARGUMENTS.database_uri
 
 LOG_PATH: str = ARGUMENTS.logs or paths[OPERATING_SYSTEM]["logs"]
 LOG_PATH = LOG_PATH.replace("\\", "/")
@@ -133,13 +134,19 @@ def replace_path(path: str) -> str:
         paths[OPERATING_SYSTEM]["replace_from"], paths[OPERATING_SYSTEM]["replace_to"]
     )
 
+def generate_secret_key():
+    mac_addr = hex(uuid.getnode()).encode('utf-8')
+    salt = b'chocolate is the best media manager ever'
+    secret_key = hashlib.sha256(mac_addr + salt).hexdigest()
+    
+    return secret_key
 
 try:
     if not os.path.isdir(os.path.dirname(CONFIG_PATH)):
         os.mkdir(os.path.dirname(CONFIG_PATH))
 except PermissionError:
     CONFIG_PATH = replace_path(CONFIG_PATH)
-    DB_PATH = replace_path(DB_PATH)
+    SQLITE_PATH = replace_path(SQLITE_PATH)
     LOG_PATH = replace_path(LOG_PATH)
     IMAGES_PATH = replace_path(IMAGES_PATH)
 
@@ -169,25 +176,32 @@ def create_app() -> Flask:
         __name__, static_folder=f"{dir_path}/static", template_folder=TEMPLATE_FOLDER
     )
 
-    app.secret_key = os.urandom(24)
+    app.secret_key = generate_secret_key()
 
     CORS(app, supports_credentials=True, resources={r"/*": {"origins": "*"}})
-    app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
+    if DB_URI:
+        app.config["SQLALCHEMY_DATABASE_URI"] = DB_URI
+    else:
+        app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{SQLITE_PATH}"
     app.config["MAX_CONTENT_LENGTH"] = 4096 * 4096
     app.config["UPLOAD_FOLDER"] = f"{dir_path}/static/img/"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["DIR_PATH"] = dir_path
     app.config["JSON_AS_ASCII"] = False
 
+    
     from .routes.users import users_bp
     from .routes.settings import settings_bp
     from .routes.libraries import libraries_bp
     from .routes.arr import arr_bp
 
+    from .routes.api.index import api_bp
+
     app.register_blueprint(users_bp)
     app.register_blueprint(settings_bp)
     app.register_blueprint(libraries_bp)
     app.register_blueprint(arr_bp)
+    app.register_blueprint(api_bp)
 
     DB.init_app(app)
     MIGRATE.init_app(app, DB)
@@ -291,11 +305,41 @@ def register_plugins() -> None:
     """
     loader.load_plugins(PLUGINS_PATH)
 
+def get_language_file() -> Dict:
+    dir_path = get_dir_path()
+
+    language = config["ChocolateSettings"]["language"]
+
+    if (
+        not os.path.isfile(f"{dir_path}/static/lang/{language.lower()}.json")
+        or "{}"
+        in open(
+            f"{dir_path}/static/lang/{language.lower()}.json", "r", encoding="utf-8"
+        ).read()
+    ):
+        language = "EN"
+
+    with open(
+        f"{dir_path}/static/lang/{language.lower()}.json", "r", encoding="utf-8"
+    ) as f:
+        language = json.load(f)
+
+    with open(f"{dir_path}/static/lang/en.json", "r", encoding="utf-8") as f:
+        en = json.load(f)
+
+    language_dict = language
+
+    for key in en:
+        if key not in language_dict:
+            language_dict[key] = en[key]
+
+    return language_dict
 
 check_dependencies()
 
 config = get_config()
 tmdb: TMDb = create_tmdb()
 app = create_app()
+language_file = get_language_file()
 
 register_plugins()
