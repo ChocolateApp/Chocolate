@@ -601,25 +601,43 @@ class MusicLiked(DB.Model):  # type: ignore
         return f"<MusicLiked {self.user_id}>"
 
 
-class LatestEpisodeWatched(DB.Model):  # type: ignore
+class MediaPlayed(DB.Model):  # type: ignore
     """
-    LatestEpisodeWatched model
+    MediaPlayed model
+
+    This table is used to store the media played by the users, 
+    to have a history of the media played, 
+    be able to continue the media where the user stopped,
+    and to have statistics on the media
 
     ...
 
     Attributes
     ----------
+    id : int
     user_id : int
-    serie_id : int
-    episode_id : int
+    media_type : str
+    media_id : int
+    season_id : int | None
+    serie_id : int | None
+    date : datetime
+    hour : str
+    duration : int
     """
 
-    user_id = DB.Column(DB.Integer, primary_key=True)
-    serie_id = DB.Column(DB.Integer, primary_key=True)
-    episode_id = DB.Column(DB.Integer)
+    id = DB.Column(DB.Integer, autoincrement=True, primary_key=True)
+    user_id = DB.Column(DB.Integer)
+    media_type = DB.Column(DB.String(255))
+    media_id = DB.Column(DB.Integer)
+    season_id = DB.Column(DB.Integer, nullable=True)
+    serie_id = DB.Column(DB.Integer, nullable=True)
+    date = DB.Column(DB.Date)
+    hour = DB.Column(DB.String(255))
+    duration = DB.Column(DB.Integer)
+
 
     def __repr__(self) -> str:
-        return f"<LatestEpisodeWatched {self.user_id}>"
+        return f"<MediaPlayed {self.id}>"
 
 
 class InviteCodes(DB.Model):  # type: ignore
