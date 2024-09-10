@@ -8,10 +8,11 @@ from videoprops import get_video_properties
 from flask import Blueprint, make_response, request, Response, abort
 
 from chocolate_app.routes.api.auth import token_required
-from chocolate_app.tables import OthersVideos, Movies, Albums, Games, Books, Episodes
-from chocolate_app import VIDEO_CHUNK_LENGTH, AUDIO_CHUNK_LENGTH, FFMPEG_ARGS, VIDEO_CODEC, ARTEFACTS_PATH
+from chocolate_app.tables import OthersVideos, Movies, Albums, Games, Books, Episodes, MediaPlayed
+from chocolate_app import DB, VIDEO_CHUNK_LENGTH, AUDIO_CHUNK_LENGTH, FFMPEG_ARGS, VIDEO_CODEC, ARTEFACTS_PATH
 from chocolate_app.utils.utils import generate_response, Codes, length_video, get_chunk_user_token, hash_string
 from chocolate_app.routes.api.medias import movie_to_media, episode_to_media, other_to_media, album_to_media
+
 
 watch_bp = Blueprint('watch', __name__, url_prefix='/watch')
 
@@ -24,6 +25,25 @@ class PreviousLagInfo:
 
 VIDEO_PREVIOUS_LAG: Dict[str, PreviousLagInfo] = {}
 AUDIO_PREVIOUS_LAG: Dict[str, PreviousLagInfo] = {}
+
+def set_media_played(media_type: str, media_id: int, user_id: int, duration: int = 0) -> None:
+    media_played = MediaPlayed.query.filter_by(media_id=media_id, media_type=media_type, user_id=user_id).first()
+    if not media_played:
+        media_played = MediaPlayed(media_id=media_id, media_type=media_type, user_id=user_id)
+        DB.session.add(media_played)
+
+    media_played.date = datetime.datetime.now().date()
+    media_played.time = int(datetime.datetime.now().timestamp())
+    media_played.duration = duration
+    
+    if media_type == "show":
+        episode_data = Episodes.query.filter_by(id=media_id).first()
+        if not episode_data:
+            return
+        media_played.season_id = episode_data.season_id
+        media_played.serie_id = episode_data.serie_id
+
+    DB.session.commit()
 
 def get_media_slug(media_id: int, media_type: str) -> str:
     if media_type == "show":
@@ -274,7 +294,8 @@ def audio_media(audio_id: int, media_type: str, media_id: int) -> Response:
 
 
 @watch_bp.route("/video_chunk/<quality>/<media_type>/<int:media_id>/<int:idx>.ts", methods=["GET"])
-def video_chunk(quality: str, media_type: str, media_id: int, idx: int) -> Response:
+@token_required
+def video_chunk(current_user, quality: str, media_type: str, media_id: int, idx: int) -> Response:
     seconds = (idx - 1) * VIDEO_CHUNK_LENGTH
 
     token = get_chunk_user_token(request)
@@ -369,6 +390,11 @@ def video_chunk(quality: str, media_type: str, media_id: int, idx: int) -> Respo
         VIDEO_PREVIOUS_LAG[key].lag = 0
 
     VIDEO_PREVIOUS_LAG[key].lag_id = idx
+
+    current_time = request.headers.get("X-Current-Time")
+
+    if current_time:
+        set_media_played(media_type, media_id, current_user.id, round(float(current_time)))
 
     response = make_response(data)
     response.headers.set("Content-Type", "video/MP2T")
