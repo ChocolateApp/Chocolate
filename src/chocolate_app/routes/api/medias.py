@@ -632,18 +632,7 @@ def get_image(image_type: str, media_type: str, media_id: int) -> Response:
         return send_file(f"static/img/broken{ 'Banner' if image_type == 'banner' else '' }.webp", mimetype="image/webp")
 
 def genre_id_to_name(genre_id: int) -> str:
-    #TODO: Use language file
-    genres = {
-        10751: "Family",
-        35: "Comedy",
-        16: "Animated",
-        28: "Action",
-        53: "Thriller",
-        27: "Horror",
-        18: "Drama",
-        37: "Western",
-    }
-    return genres.get(genre_id, "Unknown")
+    return translate(genre_id)
 
 
 def search_medias(medias: List[Dict[str, Any]], search_terms: List[str]) -> Dict[str, List[Dict[str, Any]]]:
