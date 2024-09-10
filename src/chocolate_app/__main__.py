@@ -2637,7 +2637,9 @@ def get_all_others(library: str) -> Response:
 
 @app.route("/get_tv/<tv_name>/<id>")
 def get_tv(tv_name: str, id: str) -> Response:
-    #FIXME: This function don't work, should be in /api/medias
+    #FIXME: This function don't work + should be in /api/medias
+    return jsonify([])
+
     if overrides.have_override(overrides.GET_TV):
         return overrides.execute_override(overrides.GET_TV, request, tv_name, id)
 
@@ -2704,6 +2706,8 @@ def get_tv(tv_name: str, id: str) -> Response:
 
 @app.route("/get_channels/<channels>")
 def get_channels(channels: str) -> Response:
+    #FIXME: This function don't work + should be in /api/medias
+    return jsonify([])
 
     if overrides.have_override(overrides.GET_CHANNELS):
         return overrides.execute_override(overrides.GET_CHANNELS, request, channels)
@@ -2767,6 +2771,8 @@ def get_channels(channels: str) -> Response:
 
 @app.route("/search_tv/<library>/<search>")
 def search_tv(library: str, search: str) -> Response:
+    #FIXME: This function don't work + should be in /api/medias
+    return jsonify([])
 
     if overrides.have_override(overrides.SEARCH_TV):
         return overrides.execute_override(overrides.SEARCH_TV, request, library, search)
