@@ -82,7 +82,6 @@ from chocolate_app.tables import (
     Albums,
     Actors,
     Games,
-    LatestEpisodeWatched,
     LibrariesMerge,
     RecurringContent,
 )
@@ -2022,13 +2021,7 @@ def get_series_data(serie_id: int) -> Response:
         serie = Series.query.filter_by(id=serie_id).first().__dict__
         serie["seasons"] = get_serie_seasons(serie["id"])
 
-        latest_episode_watched_db = LatestEpisodeWatched.query.filter_by(
-            serie_id=serie_id
-        ).first()
-        if latest_episode_watched_db is not None:
-            serie["latest_id"] = latest_episode_watched_db.episode_id
-        else:
-            serie["latest_id"] = None
+        serie["latest_id"] = None
 
         del serie["_sa_instance_state"]
         return jsonify(serie)
@@ -3493,26 +3486,6 @@ def can_i_play_episode(episode_id: int) -> Response:
         episode = Episodes.query.filter_by(episode_id=episode_id).first()
         season = Seasons.query.filter_by(season_id=episode.season_id).first()
         serie = Series.query.filter_by(id=season.serie).first()
-
-        latest_episode_of_serie_exist = (
-            LatestEpisodeWatched.query.filter_by(
-                serie_id=serie.id, user_id=users.id
-            ).first()
-            is not None
-        )
-
-        if latest_episode_of_serie_exist:
-            latest_episode_of_serie = LatestEpisodeWatched.query.filter_by(
-                serie_id=serie.id, user_id=users.id
-            ).first()
-            latest_episode_of_serie.episode_id = episode_id
-            DB.session.commit()
-        else:
-            latest_episode_of_serie = LatestEpisodeWatched(
-                serie_id=serie.id, user_id=users.id, episode_id=episode_id
-            )
-            DB.session.add(latest_episode_of_serie)
-            DB.session.commit()
 
         if episode is None:
             abort(404)

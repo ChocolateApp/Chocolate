@@ -1,5 +1,6 @@
 import os
 import random
+import re
 import natsort
 import datetime
 import requests
@@ -15,7 +16,7 @@ from flask import Blueprint, request, Response, abort, send_file
 from chocolate_app import get_language_file
 from chocolate_app.routes.api.auth import token_required
 from chocolate_app.utils.utils import generate_response, Codes, translate
-from chocolate_app.tables import Users, LatestEpisodeWatched, Series, Movies, Actors, Albums, Artists, Episodes, Seasons, Tracks, Games, Books, OthersVideos, Libraries
+from chocolate_app.tables import Users, Series, Movies, Actors, Albums, Artists, Episodes, Seasons, Tracks, Games, Books, OthersVideos, Libraries
 
 medias_bp = Blueprint('medias', __name__, url_prefix='/medias')
 
@@ -253,8 +254,8 @@ def parse_tv_folder(tv_path) -> Any:
 def get_continue_watching(user: Users) -> List[Dict[str, Any]]:
     #TODO: Implement real continue watching system, for Movies, Series and Others
     user_id = user.id
-
-    continue_watching = LatestEpisodeWatched.query.filter_by(user_id=user_id).all()
+    return []
+    continue_watching = #TODO: Impletement continue watching .query.filter_by(user_id=user_id).all()
     continue_watching_list = [watching.__dict__ for watching in continue_watching]
 
     for watching in continue_watching_list:
@@ -732,6 +733,8 @@ def search_medias_route(type: str) -> Response:
         "main_media": search_results[0],
         "medias": search_results[1:],
     }
+
+    print(data)
 
     return (generate_response(Codes.SUCCESS, False, data))
 
