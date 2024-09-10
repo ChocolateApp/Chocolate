@@ -255,7 +255,8 @@ def get_continue_watching(user: Users) -> List[Dict[str, Any]]:
     #TODO: Implement real continue watching system, for Movies, Series and Others
     user_id = user.id
     return []
-    continue_watching = #TODO: Impletement continue watching .query.filter_by(user_id=user_id).all()
+    #TODO: Impletement continue watching 
+    # continue_watching =.query.filter_by(user_id=user_id).all()
     continue_watching_list = [watching.__dict__ for watching in continue_watching]
 
     for watching in continue_watching_list:
