@@ -621,7 +621,7 @@ class MediaPlayed(DB.Model):  # type: ignore
     season_id : int | None
     serie_id : int | None
     date : datetime
-    hour : str
+    time : int
     duration : int
     """
 
@@ -632,7 +632,7 @@ class MediaPlayed(DB.Model):  # type: ignore
     season_id = DB.Column(DB.Integer, nullable=True)
     serie_id = DB.Column(DB.Integer, nullable=True)
     date = DB.Column(DB.Date)
-    hour = DB.Column(DB.String(255))
+    time = DB.Column(DB.Integer)
     duration = DB.Column(DB.Integer)
 
 
