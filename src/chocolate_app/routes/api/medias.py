@@ -652,11 +652,14 @@ def search_medias(medias: List[Dict[str, Any]], search_terms: List[str]) -> Dict
         if not media:
             continue
         count = 0.0
-        title = media["title"].lower()
-        alternative_titles = media["alternatives_titles"]
-        description = media["description"].lower().split(" ")
-        genres = [genre_id_to_name(genre) for genre in media["genres"]]
-        people = media["peoples"]
+        try:
+            title = media["title"].lower()
+            alternative_titles = media["alternatives_titles"]
+            description = media["description"].lower().split(" ")
+            genres = [genre_id_to_name(genre) for genre in media["genres"]]
+            people = media["peoples"]
+        except:
+            continue
 
         for term in search_terms:
             term = term.lower()
