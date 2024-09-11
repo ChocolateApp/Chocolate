@@ -8,7 +8,7 @@ from videoprops import get_video_properties
 from flask import Blueprint, make_response, request, Response, abort
 
 from chocolate_app.routes.api.auth import token_required
-from chocolate_app.tables import OthersVideos, Movies, Albums, Games, Books, Episodes, MediaPlayed
+from chocolate_app.tables import OthersVideos, Movies, Albums, Games, Books, Episodes, MediaPlayed, Series, Seasons
 from chocolate_app import DB, VIDEO_CHUNK_LENGTH, AUDIO_CHUNK_LENGTH, FFMPEG_ARGS, VIDEO_CODEC, ARTEFACTS_PATH
 from chocolate_app.utils.utils import generate_response, Codes, length_video, get_chunk_user_token, hash_string
 from chocolate_app.routes.api.medias import movie_to_media, episode_to_media, other_to_media, album_to_media
@@ -40,8 +40,8 @@ def set_media_played(media_type: str, media_id: int, user_id: int, duration: int
         episode_data = Episodes.query.filter_by(id=media_id).first()
         if not episode_data:
             return
-        media_played.season_id = episode_data.season_id
-        media_played.serie_id = episode_data.serie_id
+        media_played.season_id = Seasons.query.filter_by(tmdb_id=episode_data.season_id).first().id
+        media_played.serie_id = Series.query.filter_by(tmdb_id=episode_data.serie_id).first().id
 
     DB.session.commit()
 

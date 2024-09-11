@@ -16,7 +16,7 @@ from flask import Blueprint, request, Response, abort, send_file
 from chocolate_app import get_language_file
 from chocolate_app.routes.api.auth import token_required
 from chocolate_app.utils.utils import generate_response, Codes, translate
-from chocolate_app.tables import Users, Series, Movies, Actors, Albums, Artists, Episodes, Seasons, Tracks, Games, Books, OthersVideos, Libraries
+from chocolate_app.tables import Users, Series, Movies, Actors, Albums, Artists, Episodes, Seasons, Tracks, Games, Books, OthersVideos, Libraries, MediaPlayed
 
 medias_bp = Blueprint('medias', __name__, url_prefix='/medias')
 
@@ -90,10 +90,16 @@ def episode_to_media(episode_id) -> Dict[str, Any]:
 
 def serie_to_media(serie_id) -> Dict[str, Any]:
     serie = Series.query.filter_by(id=serie_id).first()
-    #TODO: Don't select the first one, select the last ep you watched
-    episode = natsort.natsorted(Episodes.query.filter_by(serie_id=serie.tmdb_id).all(), key=lambda x: x.release_date)[0]
+    serie_media_played = MediaPlayed.query.filter_by(serie_id=serie_id, media_type="show").all()
 
-    return episode_to_media(episode.id)
+    if not serie_media_played:
+        return episode_to_media(natsort.natsorted(Episodes.query.filter_by(serie_id=serie.tmdb_id).all(), key=lambda x: x.release_date)[0].id)
+    
+    serie_media_played = [media.__dict__ for media in serie_media_played]
+
+    serie_media_played = natsort.natsorted(serie_media_played, key=itemgetter(*["date", "time"]), reverse=True)
+    
+    return episode_to_media(serie_media_played[0]["media_id"])
 
 def movie_to_media(movie_id) -> Dict[str, Any]:
     movie = Movies.query.filter_by(id=movie_id).first()
@@ -254,17 +260,34 @@ def parse_tv_folder(tv_path) -> Any:
 def get_continue_watching(user: Users) -> List[Dict[str, Any]]:
     #TODO: Implement real continue watching system, for Movies, Series and Others
     user_id = user.id
-    return []
     #TODO: Impletement continue watching 
-    # continue_watching =.query.filter_by(user_id=user_id).all()
-    continue_watching_list = [watching.__dict__ for watching in continue_watching]
+    continue_watching = MediaPlayed.query.filter_by(user_id=user_id).all()
+    continue_watching_list = [media.__dict__ for media in continue_watching]
 
     for watching in continue_watching_list:
         del watching["_sa_instance_state"]
-    
-    continue_watching_list = [episode_to_media(episode["episode_id"]) for episode in continue_watching_list]
 
-    return continue_watching_list
+    serie_ids_in_continue = []
+
+    #sort by date, and then by time
+    continue_watching_list = natsort.natsorted(continue_watching_list, key=itemgetter(*["date", "time"]), reverse=True)
+    continue_watching_list_to_return = []
+
+    type_to_function = {
+        "movie": movie_to_media,
+        "show": episode_to_media,
+        "album": album_to_media,
+        "other": other_to_media,
+    }
+
+    for watching in continue_watching_list:
+        if watching["media_type"] == "show" and watching["serie_id"] in serie_ids_in_continue:
+            continue
+        if watching["media_type"] == "show":
+            serie_ids_in_continue.append(watching["serie_id"])
+        continue_watching_list_to_return.append(type_to_function[watching["media_type"]](watching["media_id"]))
+        
+    return continue_watching_list_to_return
 
 def get_all_medias_without_albums() -> Dict[str, List[Dict[str, Any]]]:
     all_movies = [movie_to_media(movie.id) for movie in Movies.query.all()]
