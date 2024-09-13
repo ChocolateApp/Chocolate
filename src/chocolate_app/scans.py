@@ -2066,7 +2066,6 @@ def getOthersVideos(library: str, allVideosPath: str | None = None) -> None:
             except Exception:
                 banner = "/static/img/broken.webp"
             video = OthersVideos(
-                video_hash=hash,
                 title=title,
                 slug=slug,
                 banner=banner,

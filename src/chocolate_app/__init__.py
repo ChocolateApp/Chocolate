@@ -25,11 +25,14 @@ MIGRATE: Migrate = Migrate()
 LOGIN_MANAGER: LoginManager = LoginManager()
 all_auth_tokens: Dict[Any, Any] = {}
 
+
 class ChocolateException(Exception):
     """Base class for exceptions in Chocolate"""
 
+
 class UnsupportedSystemDefaultPath(ChocolateException):
     """Raised when the default path for the config file and the database file is not supported by Chocolate"""
+
 
 class TemplateNotFound(ChocolateException):
     """Raised when a template was not found"""
@@ -38,14 +41,22 @@ class TemplateNotFound(ChocolateException):
 parser: argparse.ArgumentParser = argparse.ArgumentParser("Chocolate")
 parser.add_argument("-c", "--config", help="Path to the config file (a .ini file)")
 parser.add_argument("--artefacts", help="Path to the artefacts folder (a folder)")
-parser.add_argument("-sqlite_file", "--sqlite_file", help="Path to the SQLLite file (a .db file)")
-parser.add_argument("-db", "--database-uri", help="Database URI to use (PostgreSQL, MySQL, etc.)")
+parser.add_argument(
+    "-sqlite_file", "--sqlite_file", help="Path to the SQLLite file (a .db file)"
+)
+parser.add_argument(
+    "-db", "--database-uri", help="Database URI to use (PostgreSQL, MySQL, etc.)"
+)
 parser.add_argument("-i", "--images", help="Path to the images folder (a folder)")
 parser.add_argument("-pl", "--plugins", help="Path to the plugins folder (a folder)")
-parser.add_argument("-l","--logs", help="Path to the logs file (a .log file)")
-parser.add_argument("-ns","--no-scans", help="Disable startup scans", action="store_true")
+parser.add_argument("-l", "--logs", help="Path to the logs file (a .log file)")
+parser.add_argument(
+    "-ns", "--no-scans", help="Disable startup scans", action="store_true"
+)
 parser.add_argument("-p", "--port", help="Port to run the server on", type=int)
-parser.add_argument("-c:v", "--video-codec", help="Video codec to use", default="libx264")
+parser.add_argument(
+    "-c:v", "--video-codec", help="Video codec to use", default="libx264"
+)
 parser.add_argument("-c:a", "--audio-codec", help="Audio codec to use", default="aac")
 parser.add_argument("-f", "--ffmpeg-args", help="FFmpeg arguments to use", nargs="*")
 
@@ -129,17 +140,20 @@ FFMPEG_ARGS: list = ARGUMENTS.ffmpeg_args or []
 if len(FFMPEG_ARGS) == 1:
     FFMPEG_ARGS = FFMPEG_ARGS[0].split(" ")
 
+
 def replace_path(path: str) -> str:
     return path.replace(
         paths[OPERATING_SYSTEM]["replace_from"], paths[OPERATING_SYSTEM]["replace_to"]
     )
 
+
 def generate_secret_key():
-    mac_addr = hex(uuid.getnode()).encode('utf-8')
-    salt = b'chocolate is the best media manager ever'
+    mac_addr = hex(uuid.getnode()).encode("utf-8")
+    salt = b"chocolate is the best media manager ever"
     secret_key = hashlib.sha256(mac_addr + salt).hexdigest()
-    
+
     return secret_key
+
 
 try:
     if not os.path.isdir(os.path.dirname(CONFIG_PATH)):
@@ -151,7 +165,7 @@ except PermissionError:
     IMAGES_PATH = replace_path(IMAGES_PATH)
 
 VIDEO_CHUNK_LENGTH = 12
-AUDIO_CHUNK_LENGTH = 30
+AUDIO_CHUNK_LENGTH = 12
 
 if os.getenv("NO_SCANS") == "true":
     ARGUMENTS.no_scans = True
@@ -183,13 +197,13 @@ def create_app() -> Flask:
         app.config["SQLALCHEMY_DATABASE_URI"] = DB_URI
     else:
         app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{SQLITE_PATH}"
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_size": 30, "max_overflow": 0}
     app.config["MAX_CONTENT_LENGTH"] = 4096 * 4096
     app.config["UPLOAD_FOLDER"] = f"{dir_path}/static/img/"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["DIR_PATH"] = dir_path
     app.config["JSON_AS_ASCII"] = False
 
-    
     from .routes.users import users_bp
     from .routes.settings import settings_bp
     from .routes.libraries import libraries_bp
@@ -229,6 +243,7 @@ def check_dependencies() -> None:
         logging.warning(
             "git is not installed. Chocolate will not be able to install plugins."
         )
+
 
 def get_dir_path() -> str:
     """
@@ -305,6 +320,7 @@ def register_plugins() -> None:
     """
     loader.load_plugins(PLUGINS_PATH)
 
+
 def get_language_file() -> Dict:
     dir_path = get_dir_path()
 
@@ -334,6 +350,7 @@ def get_language_file() -> Dict:
             language_dict[key] = en[key]
 
     return language_dict
+
 
 check_dependencies()
 

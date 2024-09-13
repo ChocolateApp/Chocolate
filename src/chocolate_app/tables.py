@@ -635,7 +635,6 @@ class MediaPlayed(DB.Model):  # type: ignore
     time = DB.Column(DB.Integer)
     duration = DB.Column(DB.Integer)
 
-
     def __repr__(self) -> str:
         return f"<MediaPlayed {self.id}>"
 

@@ -10,7 +10,7 @@ import subprocess
 from enum import Enum
 from io import BytesIO
 from typing import Any
-from flask import Request, abort, jsonify
+from flask import Request, Response, abort, jsonify
 from PIL import Image, UnidentifiedImageError
 
 from chocolate_app.tables import Users, Libraries
@@ -19,6 +19,7 @@ from chocolate_app import all_auth_tokens, get_dir_path, LOG_PATH, get_language_
 dir_path = get_dir_path()
 LANGUAGE_FILE = get_language_file()
 
+
 class Codes(Enum):
     CONTINUE_REQUEST = 101
     PROCESSING = 102
@@ -26,6 +27,7 @@ class Codes(Enum):
     SUCCESS = 201
     MISSING_DATA = 202
     NO_RETURN_DATA = 203
+    INVALID_MEDIA_TYPE = 204
 
     USER_CREATED = 211
     USER_DELETED = 212
@@ -58,6 +60,7 @@ class Codes(Enum):
     INVALID_TOKEN = 246
 
     MEDIA_NOT_FOUND = 251
+
 
 def generate_log(request: Request, component: str) -> None:
     """
@@ -191,6 +194,7 @@ def check_authorization(request, token=None, library=None):
             generate_log(request, "ERROR")
             abort(404)
 
+
 def check_admin(request, token):
     if token not in all_auth_tokens:
         generate_log(request, "UNAUTHORIZED")
@@ -203,6 +207,7 @@ def check_admin(request, token):
     if user is None or not user.account_type == "Admin":
         generate_log(request, "UNAUTHORIZED")
         abort(401)
+
 
 def user_in_lib(user_id, lib):
     user = Users.query.filter_by(id=user_id).first()
@@ -221,6 +226,7 @@ def user_in_lib(user_id, lib):
         return True
     return False
 
+
 def save_image(url, path):
     image_requests = requests.Session()
     if not os.path.exists(f"{path}.webp"):
@@ -235,12 +241,13 @@ def save_image(url, path):
             image = Image.open(f"{path}.png")
         except UnidentifiedImageError:
             return None
-        
+
         image.save(f"{path}.webp", "webp", optimize=True)
         if os.path.exists(f"{path}.png"):
             os.remove(f"{path}.png")
 
     return f"{path}.webp"
+
 
 def check_extension(file, extensions: list) -> bool:
     """
@@ -258,6 +265,7 @@ def check_extension(file, extensions: list) -> bool:
         return True
     return False
 
+
 def is_video_file(file: str) -> bool:
     """
     Check if the file is a video file
@@ -270,6 +278,7 @@ def is_video_file(file: str) -> bool:
     """
     extensions = ["mkv", "avi", "mp4", "webm", "ogg", "m4v", "mov", "wmv", "flv", "3gp"]
     return check_extension(file, extensions)
+
 
 def is_music_file(file: str) -> bool:
     """
@@ -284,6 +293,7 @@ def is_music_file(file: str) -> bool:
     extensions = ["mp3", "wav", "ogg", "flac", "m4a", "wma"]
     return check_extension(file, extensions)
 
+
 def is_book_file(file: str) -> bool:
     """
     Check if the file is a book file
@@ -297,10 +307,11 @@ def is_book_file(file: str) -> bool:
     extensions = ["pdf", "epub", "cbz", "cbr"]
     return check_extension(file, extensions)
 
+
 def is_image_file(file: str) -> bool:
     """
     Check if the file is an image file
-    
+
     Args:
         file (str): The file to check
 
@@ -309,6 +320,7 @@ def is_image_file(file: str) -> bool:
     """
     extensions = ["png", "jpg", "jpeg", "gif", "webp"]
     return check_extension(file, extensions)
+
 
 def is_compressed_file(file: str) -> bool:
     """
@@ -323,6 +335,7 @@ def is_compressed_file(file: str) -> bool:
     extensions = ["zip", "rar", "7z", "tar", "gz", "bz2", "xz"]
     return check_extension(file, extensions)
 
+
 def is_directory(path: str) -> bool:
     """
     Check if the path is a directory
@@ -334,6 +347,7 @@ def is_directory(path: str) -> bool:
         bool: True if the path is a directory, False otherwise
     """
     return os.path.isdir(path)
+
 
 def get_chunk_user_token(request: Request) -> int | None:
     """
@@ -352,7 +366,7 @@ def get_chunk_user_token(request: Request) -> int | None:
     return Users.query.filter_by(name=user).first().id
 
 
-def generate_response(code: Codes, error=False, data:Any = None) -> dict:
+def generate_response(code: Codes, error=False, data: Any = None) -> Response:
     """
     Function to generate a response, based on a model
     """
@@ -366,7 +380,10 @@ def generate_response(code: Codes, error=False, data:Any = None) -> dict:
 
     return jsonify(output_json)
 
-def generate_b64_image(image_path: str | None, width: int | None = None, height: int | None = None) -> str | None:
+
+def generate_b64_image(
+    image_path: str | None, width: int | None = None, height: int | None = None
+) -> str | None:
     """
     Generate a base64 image
 
@@ -387,20 +404,21 @@ def generate_b64_image(image_path: str | None, width: int | None = None, height:
 
     image = Image.open(BytesIO(base64.b64decode(image_b64)))
     if width:
-        wpercent = (width / float(image.size[0]))
+        wpercent = width / float(image.size[0])
         hsize = int((float(image.size[1]) * float(wpercent)))
         image = image.resize((width, hsize), Image.ANTIALIAS)
     if height:
-        hpercent = (height / float(image.size[1]))
+        hpercent = height / float(image.size[1])
         wsize = int((float(image.size[0]) * float(hpercent)))
         image = image.resize((wsize, height), Image.ANTIALIAS)
 
     img_io = BytesIO()
-    image.save(img_io, 'WEBP')
+    image.save(img_io, "WEBP")
     img_io.seek(0)
     img_str = base64.b64encode(img_io.getvalue()).decode("utf-8")
 
     return f"data:image/png;base64,{img_str}"
+
 
 def translate(query: str | int) -> str:
     """
@@ -414,7 +432,7 @@ def translate(query: str | int) -> str:
     """
     if not query:
         return ""
-    
+
     if isinstance(query, int):
         query = str(query)
 
@@ -423,6 +441,7 @@ def translate(query: str | int) -> str:
 
 def hash_string(string: str) -> str:
     return hashlib.md5(string.encode()).hexdigest()
+
 
 def length_video(path: str) -> float:
     seconds = subprocess.run(

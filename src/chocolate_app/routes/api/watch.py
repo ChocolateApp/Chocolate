@@ -8,42 +8,85 @@ from videoprops import get_video_properties
 from flask import Blueprint, make_response, request, Response, abort
 
 from chocolate_app.routes.api.auth import token_required
-from chocolate_app.tables import OthersVideos, Movies, Albums, Games, Books, Episodes, MediaPlayed, Series, Seasons
-from chocolate_app import DB, VIDEO_CHUNK_LENGTH, AUDIO_CHUNK_LENGTH, FFMPEG_ARGS, VIDEO_CODEC, ARTEFACTS_PATH
-from chocolate_app.utils.utils import generate_response, Codes, length_video, get_chunk_user_token, hash_string
-from chocolate_app.routes.api.medias import movie_to_media, episode_to_media, other_to_media, album_to_media
+from chocolate_app.tables import (
+    OthersVideos,
+    Movies,
+    Albums,
+    Games,
+    Books,
+    Episodes,
+    MediaPlayed,
+    Series,
+    Seasons,
+)
+from chocolate_app import (
+    DB,
+    VIDEO_CHUNK_LENGTH,
+    AUDIO_CHUNK_LENGTH,
+    FFMPEG_ARGS,
+    VIDEO_CODEC,
+    ARTEFACTS_PATH,
+)
+from chocolate_app.utils.utils import (
+    generate_response,
+    Codes,
+    length_video,
+    get_chunk_user_token,
+    hash_string,
+)
+from chocolate_app.routes.api.medias import (
+    movie_to_media,
+    episode_to_media,
+    other_to_media,
+    album_to_media,
+)
 
 
-watch_bp = Blueprint('watch', __name__, url_prefix='/watch')
+watch_bp = Blueprint("watch", __name__, url_prefix="/watch")
 
 LOG_LEVEL = "error"
+
 
 class PreviousLagInfo:
     def __init__(self, lag: int, lag_id: int):
         self.lag = lag
         self.lag_id = lag_id
 
+
 VIDEO_PREVIOUS_LAG: Dict[str, PreviousLagInfo] = {}
 AUDIO_PREVIOUS_LAG: Dict[str, PreviousLagInfo] = {}
 
-def set_media_played(media_type: str, media_id: int, user_id: int, duration: int = 0) -> None:
-    media_played = MediaPlayed.query.filter_by(media_id=media_id, media_type=media_type, user_id=user_id).first()
+
+def set_media_played(
+    media_type: str, media_id: int, user_id: int, duration: int = 0
+) -> None:
+    media_played = MediaPlayed.query.filter_by(
+        media_id=media_id, media_type=media_type, user_id=user_id
+    ).first()
     if not media_played:
-        media_played = MediaPlayed(media_id=media_id, media_type=media_type, user_id=user_id)
+        media_played = MediaPlayed(
+            media_id=media_id, media_type=media_type, user_id=user_id
+        )
         DB.session.add(media_played)
 
     media_played.date = datetime.datetime.now().date()
+    media_played.hour = datetime.datetime.now().time()
     media_played.time = int(datetime.datetime.now().timestamp())
     media_played.duration = duration
-    
+
     if media_type == "show":
         episode_data = Episodes.query.filter_by(id=media_id).first()
         if not episode_data:
             return
-        media_played.season_id = Seasons.query.filter_by(tmdb_id=episode_data.season_id).first().id
-        media_played.serie_id = Series.query.filter_by(tmdb_id=episode_data.serie_id).first().id
-
+        media_played.season_id = (
+            Seasons.query.filter_by(tmdb_id=episode_data.season_id).first().id
+        )
+        media_played.serie_id = (
+            Series.query.filter_by(tmdb_id=episode_data.serie_id).first().id
+        )
+    print(f"La durée de l'épisode {media_id} est de {duration} secondes")
     DB.session.commit()
+
 
 def get_media_slug(media_id: int, media_type: str) -> str:
     if media_type == "show":
@@ -60,7 +103,8 @@ def get_media_slug(media_id: int, media_type: str) -> str:
         return Books.query.filter_by(id=media_id).first().slug
     return None
 
-def generate_m3u8(media: Any) -> str:
+
+def generate_m3u8(media: Any) -> Response:
     media_id = media["id"]
     media_type = media["type"]
 
@@ -86,7 +130,7 @@ def generate_m3u8(media: Any) -> str:
         360: "avc1.6e001e",
         480: "avc1.6e001f",
         720: "avc1.6e0020",
-        1080: "avc1.6e0032"
+        1080: "avc1.6e0032",
     }
 
     file = []
@@ -99,8 +143,8 @@ def generate_m3u8(media: Any) -> str:
 
             m3u8_line += f'CODECS="{quality_to_codec[int(quality)]}",RESOLUTION={new_height}x{new_width},SUBTITLES="subs",AUDIO="audio"\n/api/watch/video_media/{quality}/{media_type}/{media_id}.m3u8\n'
             file.append(m3u8_line)
-    last_line = f'#EXT-X-STREAM-INF:BANDWIDTH={int(width*height*2.75)},'
-    
+    last_line = f"#EXT-X-STREAM-INF:BANDWIDTH={int(width*height*2.75)},"
+
     codec = "avc1.6e0033"
 
     if height in quality_to_codec:
@@ -112,10 +156,20 @@ def generate_m3u8(media: Any) -> str:
     m3u8_file += file_str
     response = make_response(m3u8_file)
 
+    response.headers.set("Content-Type", "vnd.apple.mpegURL")
+    response.headers.set("Range", "bytes=0-4095")
+    response.headers.set("Accept-Encoding", "*")
+    response.headers.set("Access-Control-Allow-Origin", "*")
+    response.headers.set(
+        "Content-Disposition", "attachment", filename=f"{media_id}_{media_type}.m3u8"
+    )
+
     return response
 
 
-def generate_caption_media(video_path: str, media_id: int | str, media_type: str) -> str:
+def generate_caption_media(
+    video_path: str, media_id: int | str, media_type: str
+) -> str:
     caption_command = [
         "ffprobe",
         "-loglevel",
@@ -175,7 +229,9 @@ def generate_caption_media(video_path: str, media_id: int | str, media_type: str
     return string
 
 
-def generate_audio_streams_media(movie_path: str, media_id: int | str, media_type: str) -> str:
+def generate_audio_streams_media(
+    movie_path: str, media_id: int | str, media_type: str
+) -> str:
     caption_command = [
         "ffprobe",
         "-loglevel",
@@ -194,7 +250,7 @@ def generate_audio_streams_media(movie_path: str, media_id: int | str, media_typ
     audio_stream_response = audio_stream_pipe.stdout.read().decode("utf-8")
     audio_stream_response = audio_stream_response.split("\n")
     audio_stream_response.pop()
-    
+
     audio_streams = []
 
     for line in audio_stream_response:
@@ -223,7 +279,7 @@ def generate_audio_streams_media(movie_path: str, media_id: int | str, media_typ
         audio_stream_language = audio_stream["language"]
         audio_stream_codec = audio_stream["codec"]
         audio_stream_type = audio_stream["type"]
-        #audio_stream_channels = audio_stream["channels"]
+        # audio_stream_channels = audio_stream["channels"]
         audio_stream_channels = 2
         audio_stream_url = (
             f"/api/watch/audio_media/{audio_stream_id}/{media_type}/{media_id}.m3u8"
@@ -232,14 +288,17 @@ def generate_audio_streams_media(movie_path: str, media_id: int | str, media_typ
 
     return audio_stream_string
 
-@watch_bp.route("/video_media/<quality>/<media_type>/<int:media_id>.m3u8", methods=["GET"])
+
+@watch_bp.route(
+    "/video_media/<quality>/<media_type>/<int:media_id>.m3u8", methods=["GET"]
+)
 def video_media(quality: str, media_type: str, media_id: int) -> Response:
     video_path = get_media_slug(media_id, media_type)
 
     duration = length_video(video_path)
-    
-    file = f"#EXTM3U\n#EXT-X-VERSION:3\n\n#EXT-X-TARGETDURATION:{VIDEO_CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-DISCONTINUITY-SEQUENCE: 0\n"
-    
+
+    file = f"#EXTM3U\n#EXT-X-VERSION:3\n\n#EXT-X-TARGETDURATION:{VIDEO_CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n"
+
     for i in range(0, int(duration), int(VIDEO_CHUNK_LENGTH)):
         extinf = float(VIDEO_CHUNK_LENGTH)
 
@@ -257,18 +316,23 @@ def video_media(quality: str, media_type: str, media_id: int) -> Response:
     response.headers.set("Accept-Encoding", "*")
     response.headers.set("Access-Control-Allow-Origin", "*")
     response.headers.set(
-        "Content-Disposition", "attachment", filename=f"{media_id}_{media_type}_{quality}.m3u8"
+        "Content-Disposition",
+        "attachment",
+        filename=f"{media_id}_{media_type}_{quality}.m3u8",
     )
 
     return response
 
-@watch_bp.route("/audio_media/<int:audio_id>/<media_type>/<int:media_id>.m3u8", methods=["GET"])
+
+@watch_bp.route(
+    "/audio_media/<int:audio_id>/<media_type>/<int:media_id>.m3u8", methods=["GET"]
+)
 def audio_media(audio_id: int, media_type: str, media_id: int) -> Response:
     video_path = get_media_slug(media_id, media_type)
 
     duration = length_video(video_path)
 
-    file = f"#EXTM3U\n#EXT-X-VERSION:3\n\n#EXT-X-TARGETDURATION:{AUDIO_CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-DISCONTINUITY-SEQUENCE: 0\n"
+    file = f"#EXTM3U\n#EXT-X-VERSION:3\n\n#EXT-X-TARGETDURATION:{AUDIO_CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n"
 
     for i in range(0, int(duration), int(AUDIO_CHUNK_LENGTH)):
         extinf = float(AUDIO_CHUNK_LENGTH)
@@ -287,15 +351,21 @@ def audio_media(audio_id: int, media_type: str, media_id: int) -> Response:
     response.headers.set("Accept-Encoding", "*")
     response.headers.set("Access-Control-Allow-Origin", "*")
     response.headers.set(
-        "Content-Disposition", "attachment", filename=f"{media_id}_{media_type}_{audio_id}.m3u8"
+        "Content-Disposition",
+        "attachment",
+        filename=f"{media_id}_{media_type}_{audio_id}.m3u8",
     )
 
     return response
 
 
-@watch_bp.route("/video_chunk/<quality>/<media_type>/<int:media_id>/<int:idx>.ts", methods=["GET"])
+@watch_bp.route(
+    "/video_chunk/<quality>/<media_type>/<int:media_id>/<int:idx>.ts", methods=["GET"]
+)
 @token_required
-def video_chunk(current_user, quality: str, media_type: str, media_id: int, idx: int) -> Response:
+def video_chunk(
+    current_user, quality: str, media_type: str, media_id: int, idx: int
+) -> Response:
     seconds = (idx - 1) * VIDEO_CHUNK_LENGTH
 
     token = get_chunk_user_token(request)
@@ -343,7 +413,7 @@ def video_chunk(current_user, quality: str, media_type: str, media_id: int, idx:
         new_height = round(float(width) / float(height) * new_width)
         if (new_height % 2) != 0:
             new_height += 1
-        
+
         command = [
             "ffmpeg",
             *FFMPEG_ARGS,
@@ -383,9 +453,13 @@ def video_chunk(current_user, quality: str, media_type: str, media_id: int, idx:
     if os.path.exists(temp_path):
         os.remove(temp_path)
 
-    VIDEO_PREVIOUS_LAG[key].lag = duration - (VIDEO_CHUNK_LENGTH - VIDEO_PREVIOUS_LAG[key].lag)
+    VIDEO_PREVIOUS_LAG[key].lag = duration - (
+        VIDEO_CHUNK_LENGTH - VIDEO_PREVIOUS_LAG[key].lag
+    )
     if VIDEO_PREVIOUS_LAG[key].lag_id == idx - 1:
-        VIDEO_PREVIOUS_LAG[key].lag = (duration) - (VIDEO_CHUNK_LENGTH - VIDEO_PREVIOUS_LAG[key].lag)
+        VIDEO_PREVIOUS_LAG[key].lag = (duration) - (
+            VIDEO_CHUNK_LENGTH - VIDEO_PREVIOUS_LAG[key].lag
+        )
     else:
         VIDEO_PREVIOUS_LAG[key].lag = 0
 
@@ -394,7 +468,9 @@ def video_chunk(current_user, quality: str, media_type: str, media_id: int, idx:
     current_time = request.headers.get("X-Current-Time")
 
     if current_time:
-        set_media_played(media_type, media_id, current_user.id, round(float(current_time)))
+        set_media_played(
+            media_type, media_id, current_user.id, round(float(current_time))
+        )
 
     response = make_response(data)
     response.headers.set("Content-Type", "video/MP2T")
@@ -407,7 +483,11 @@ def video_chunk(current_user, quality: str, media_type: str, media_id: int, idx:
 
     return response
 
-@watch_bp.route("/audio_chunk/<media_type>/<int:media_id>/<int:audio_idx>/<int:idx>.ts", methods=["GET"])
+
+@watch_bp.route(
+    "/audio_chunk/<media_type>/<int:media_id>/<int:audio_idx>/<int:idx>.ts",
+    methods=["GET"],
+)
 def audio_chunk(media_type: str, media_id: int, audio_idx: int, idx: int) -> Response:
     global AUDIO_PREVIOUS_LAG
 
@@ -434,14 +514,20 @@ def audio_chunk(media_type: str, media_id: int, audio_idx: int, idx: int) -> Res
         "-hide_banner",
         "-loglevel",
         LOG_LEVEL,
-        "-ss", str(time_start),       # Start time of the segment
-        "-t", str(AUDIO_CHUNK_LENGTH),         # End time of the segment
-        "-i", video_path,             # Set output offset
-        "-map", f"0:a:{audio_idx}",  # Select the audio stream
-        "-ac", "2",    # Number of audio channels
-        "-vn",                        # Disable video
-        "-f", "mp2",                 # Output format for HLS
-        "-"                      # Send the result to stdout
+        "-ss",
+        str(time_start),  # Start time of the segment
+        "-t",
+        str(AUDIO_CHUNK_LENGTH),  # End time of the segment
+        "-i",
+        video_path,  # Set output offset
+        "-map",
+        f"0:a:{audio_idx}",  # Select the audio stream
+        "-ac",
+        "2",  # Number of audio channels
+        "-vn",  # Disable video
+        "-f",
+        "mp2",  # Output format for HLS
+        "-",  # Send the result to stdout
     ]
 
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -462,7 +548,9 @@ def audio_chunk(media_type: str, media_id: int, audio_idx: int, idx: int) -> Res
         os.remove(temp_path)
 
     if AUDIO_PREVIOUS_LAG[key].lag < 0:
-        AUDIO_PREVIOUS_LAG[key].lag = (duration) - (VIDEO_CHUNK_LENGTH - AUDIO_PREVIOUS_LAG[key].lag)
+        AUDIO_PREVIOUS_LAG[key].lag = (duration) - (
+            VIDEO_CHUNK_LENGTH - AUDIO_PREVIOUS_LAG[key].lag
+        )
     else:
         AUDIO_PREVIOUS_LAG[key].lag = 0
 
@@ -483,19 +571,20 @@ def audio_chunk(media_type: str, media_id: int, audio_idx: int, idx: int) -> Res
 
 
 @watch_bp.route("/<media_type>/<int:media_id>", methods=["GET"])
-def watch_media(media_type: str, media_id: int) -> Response:
+@token_required
+def watch_media(current_user, media_type: str, media_id: int) -> Response:
     """Watch a media"""
     if media_type not in ["show", "movie", "album", "artist", "game", "book"]:
         return generate_response(Codes.INVALID_MEDIA_TYPE, True)
     media = None
     if media_type == "show":
-        media = episode_to_media(media_id)
+        media = episode_to_media(current_user.id, media_id)
     elif media_type == "movie":
-        media = movie_to_media(media_id)
+        media = movie_to_media(current_user.id, media_id)
     elif media_type == "other":
-        media = other_to_media(media_id)
+        media = other_to_media(current_user.id, media_id)
     elif media_type == "album":
-        media = album_to_media(media_id)
+        media = album_to_media(current_user.id, media_id)
     elif media_type == "game":
         media = Games.query.filter_by(id=media_id).first()
     elif media_type == "book":
@@ -503,8 +592,8 @@ def watch_media(media_type: str, media_id: int) -> Response:
 
     if not media:
         return generate_response(Codes.MEDIA_NOT_FOUND, True)
-    
+
     if media_type == "show" or media_type == "movie" or media_type == "other":
         return generate_m3u8(media)
-    
+
     return generate_response(Codes.INVALID_MEDIA_TYPE, True)

@@ -16,20 +16,44 @@ from flask import Blueprint, request, Response, abort, send_file
 from chocolate_app import get_language_file
 from chocolate_app.routes.api.auth import token_required
 from chocolate_app.utils.utils import generate_response, Codes, translate
-from chocolate_app.tables import Users, Series, Movies, Actors, Albums, Artists, Episodes, Seasons, Tracks, Games, Books, OthersVideos, Libraries, MediaPlayed
+from chocolate_app.tables import (
+    Users,
+    Series,
+    Movies,
+    Actors,
+    Albums,
+    Artists,
+    Episodes,
+    Seasons,
+    Tracks,
+    Games,
+    Books,
+    OthersVideos,
+    Libraries,
+    MediaPlayed,
+)
 
-medias_bp = Blueprint('medias', __name__, url_prefix='/medias')
+medias_bp = Blueprint("medias", __name__, url_prefix="/medias")
 
 LANGUAGE_FILE = get_language_file()
 
-def episode_to_media(episode_id) -> Dict[str, Any]:
+
+def episode_to_media(user_id, episode_id) -> Dict[str, Any] | None:
     episode = Episodes.query.filter_by(id=episode_id).first()
+    if not episode:
+        return None
     main_season = Seasons.query.filter_by(tmdb_id=episode.season_id).first()
+    if not main_season:
+        return None
     serie = Series.query.filter_by(tmdb_id=main_season.serie_id).first()
+    if not serie:
+        return None
 
-    seasons = natsort.natsorted(Seasons.query.filter_by(serie_id=serie.tmdb_id).all(), key=lambda x: x.release)
+    seasons = natsort.natsorted(
+        Seasons.query.filter_by(serie_id=serie.tmdb_id).all(), key=lambda x: x.release
+    )
 
-    #TODO: Don't select the first one, select the last you watched
+    # TODO: Don't select the first one, select the last you watched
 
     banner_b64 = serie.banner_b64
     logo_b64 = serie.logo_b64
@@ -41,32 +65,51 @@ def episode_to_media(episode_id) -> Dict[str, Any]:
     for actor in actors:
         actor = Actors.query.filter_by(id=actor).first()
         if actor:
-            actor_list.append({ "name": actor.name, "type": "actor" })
+            actor_list.append({"name": actor.name, "type": "actor"})
 
     serie_representation = []
 
     for season in seasons:
-        episodes = natsort.natsorted(Episodes.query.filter_by(season_id=season.tmdb_id).all(), key=lambda x: x.release_date)
+        episodes = natsort.natsorted(
+            Episodes.query.filter_by(season_id=season.tmdb_id).all(),
+            key=lambda x: x.release_date,
+        )
         eps = []
 
         for ep in episodes:
-            eps.append({
-                "id": ep.id,
-                "number": ep.number,
-                "title": ep.title,
-                "release_date": ep.release_date,
-                "file_date": datetime.datetime.fromtimestamp(os.path.getmtime(ep.slug)),
-                "banner_b64": ep.cover_b64,
-            })
+            eps.append(
+                {
+                    "id": ep.id,
+                    "number": ep.number,
+                    "title": ep.title,
+                    "release_date": ep.release_date,
+                    "file_date": datetime.datetime.fromtimestamp(
+                        os.path.getmtime(ep.slug)
+                    ),
+                    "banner_b64": ep.cover_b64,
+                }
+            )
 
-        serie_representation.append({
-            "season_id": season.id,
-            "season_number": season.number,
-            "episodes": eps,
-        })
+        serie_representation.append(
+            {
+                "season_id": season.id,
+                "season_number": season.number,
+                "episodes": eps,
+            }
+        )
+
+    last_duration = 0
+    try:
+        media_played = MediaPlayed.query.filter_by(
+            user_id=user_id, media_id=episode_id, media_type="show"
+        ).first()
+        if media_played:
+            last_duration = media_played.duration
+    except Exception:
+        pass
 
     media = {
-        "id": episode.id,
+        "id": episode_id,
         "title": serie.title,
         "alternatives_titles": [serie.title],
         "banner_id": serie.id,
@@ -79,42 +122,69 @@ def episode_to_media(episode_id) -> Dict[str, Any]:
         "release_date": datetime.datetime.strptime(serie.date, "%Y-%m-%d"),
         "file_date": datetime.datetime.fromtimestamp(os.path.getmtime(episode.slug)),
         "serie_representation": serie_representation,
+        "last_duration": last_duration,
         "images": {
             "banner": banner_b64,
             "logo": logo_b64,
             "cover": cover_b64,
         },
-        "peoples": actor_list
+        "peoples": actor_list,
     }
+
     return media
 
-def serie_to_media(serie_id) -> Dict[str, Any]:
+
+def serie_to_media(user_id, serie_id) -> Dict[str, Any] | None:
     serie = Series.query.filter_by(id=serie_id).first()
-    serie_media_played = MediaPlayed.query.filter_by(serie_id=serie_id, media_type="show").all()
+    if not serie:
+        return None
+    serie_media_played = MediaPlayed.query.filter_by(
+        user_id=user_id, serie_id=serie_id, media_type="show"
+    ).all()
 
     if not serie_media_played:
-        return episode_to_media(natsort.natsorted(Episodes.query.filter_by(serie_id=serie.tmdb_id).all(), key=lambda x: x.release_date)[0].id)
-    
+        return episode_to_media(
+            user_id,
+            natsort.natsorted(
+                Episodes.query.filter_by(serie_id=serie.tmdb_id).all(),
+                key=lambda x: x.release_date,
+            )[0].id,
+        )
+
     serie_media_played = [media.__dict__ for media in serie_media_played]
 
-    serie_media_played = natsort.natsorted(serie_media_played, key=itemgetter(*["date", "time"]), reverse=True)
-    
-    return episode_to_media(serie_media_played[0]["media_id"])
+    serie_media_played = natsort.natsorted(
+        serie_media_played, key=itemgetter(*["date", "time"]), reverse=True
+    )
 
-def movie_to_media(movie_id) -> Dict[str, Any]:
+    return episode_to_media(user_id, serie_media_played[0]["media_id"])
+
+
+def movie_to_media(user_id, movie_id) -> Dict[str, Any] | None:
     movie = Movies.query.filter_by(id=movie_id).first()
-
+    if not movie:
+        return None
     actors = movie.cast.split(",")
     actor_list = []
 
     for actor in actors:
         actor = Actors.query.filter_by(id=actor).first()
         if actor:
-            actor_list.append({ "name": actor.name, "type": "actor" })
+            actor_list.append({"name": actor.name, "type": "actor"})
 
     banner_b64 = movie.banner_b64
     logo_b64 = movie.logo_b64
     cover_b64 = movie.cover_b64
+
+    last_duration = 0
+    try:
+        media_played = MediaPlayed.query.filter_by(
+            user_id=user_id, media_id=movie_id, media_type="movie"
+        ).first()
+        if media_played:
+            last_duration = media_played.duration
+    except Exception:
+        pass
 
     media = {
         "id": movie.id,
@@ -129,21 +199,31 @@ def movie_to_media(movie_id) -> Dict[str, Any]:
         "duration": movie.duration,
         "release_date": datetime.datetime.strptime(movie.date, "%Y-%m-%d"),
         "file_date": datetime.datetime.fromtimestamp(movie.file_date),
+        "last_duration": last_duration,
         "images": {
             "banner": banner_b64,
             "logo": logo_b64,
             "cover": cover_b64,
         },
-        "peoples": actor_list
+        "peoples": actor_list,
     }
     return media
 
-def other_to_media(other_id) -> Dict[str, Any]:
-    other = OthersVideos.query.filter_by(id=other_id).first()
 
+def other_to_media(user_id, other_id) -> Dict[str, Any] | None:
+    other = OthersVideos.query.filter_by(id=other_id).first()
+    if not other:
+        return None
     banner_b64 = other.banner_b64
     logo_b64 = banner_b64
     cover_b64 = banner_b64
+
+    last_duration = 0
+    media_played = MediaPlayed.query.filter_by(
+        user_id=user_id, media_id=other_id, media_type="other"
+    ).first()
+    if media_played:
+        last_duration = media_played.duration
 
     media = {
         "id": other.video_hash,
@@ -158,19 +238,27 @@ def other_to_media(other_id) -> Dict[str, Any]:
         "duration": other.duration,
         "release_date": "N/A",
         "file_date": datetime.datetime.fromtimestamp(os.path.getmtime(other.slug)),
+        "last_duration": last_duration,
         "images": {
             "banner": banner_b64,
             "logo": logo_b64,
             "cover": cover_b64,
         },
-        "peoples": []
+        "peoples": [],
     }
     return media
 
-def album_to_media(album_id) -> Dict[str, Any]:
+
+def album_to_media(user_id, album_id) -> Dict[str, Any] | None:
     album = Albums.query.filter_by(id=album_id).first()
+    if not album:
+        return None
     artist = Artists.query.filter_by(id=album.artist_id).first()
+    if not artist:
+        return None
     track = Tracks.query.filter_by(album_id=album_id).first()
+    if not track:
+        return None
 
     cover_b64 = album.cover_b64
     banner_b64 = cover_b64
@@ -193,9 +281,10 @@ def album_to_media(album_id) -> Dict[str, Any]:
             "logo": None,
             "cover": cover_b64,
         },
-        "peoples": [{ "name": artist.name, "type": "artist" }]
+        "peoples": [{"name": artist.name, "type": "artist"}],
     }
     return media
+
 
 def tv_to_media(tv_path, channel) -> Dict[str, Any]:
     logo_url = channel["logo"]
@@ -212,7 +301,7 @@ def tv_to_media(tv_path, channel) -> Dict[str, Any]:
     image.save(logo, "webp")
 
     with open(logo, "rb") as image_file:
-        banner_b64 = base64.b64encode(image_file.read()).decode("utf-8")    
+        banner_b64 = base64.b64encode(image_file.read()).decode("utf-8")
 
     media = {
         "id": channel["tvg"]["id"],
@@ -232,14 +321,14 @@ def tv_to_media(tv_path, channel) -> Dict[str, Any]:
             "logo": None,
             "cover": banner_b64,
         },
-        "peoples": []
+        "peoples": [],
     }
-    
 
-    return {"temp":"todo"}
+    return {"temp": "todo"}
+
 
 def parse_tv_folder(tv_path) -> Any:
-    #it's a m3u file, either on http or local
+    # it's a m3u file, either on http or local
     raw_file = None
     if tv_path.startswith("http"):
         raw_file = requests.get(tv_path).text
@@ -251,16 +340,16 @@ def parse_tv_folder(tv_path) -> Any:
 
     channels = []
     parser = M3uParser()
-    file = parser.parse(raw_file)
+    file = parser.parse(raw_file)  # type: ignore
     channels = file._streams_info
 
     return channels
 
 
 def get_continue_watching(user: Users) -> List[Dict[str, Any]]:
-    #TODO: Implement real continue watching system, for Movies, Series and Others
+    # TODO: Implement real continue watching system, for Movies, Series and Others
     user_id = user.id
-    #TODO: Impletement continue watching 
+    # TODO: Impletement continue watching
     continue_watching = MediaPlayed.query.filter_by(user_id=user_id).all()
     continue_watching_list = [media.__dict__ for media in continue_watching]
 
@@ -269,8 +358,10 @@ def get_continue_watching(user: Users) -> List[Dict[str, Any]]:
 
     serie_ids_in_continue = []
 
-    #sort by date, and then by time
-    continue_watching_list = natsort.natsorted(continue_watching_list, key=itemgetter(*["date", "time"]), reverse=True)
+    # sort by date, and then by time
+    continue_watching_list = natsort.natsorted(
+        continue_watching_list, key=itemgetter(*["date", "time"]), reverse=True
+    )
     continue_watching_list_to_return = []
 
     type_to_function = {
@@ -281,50 +372,73 @@ def get_continue_watching(user: Users) -> List[Dict[str, Any]]:
     }
 
     for watching in continue_watching_list:
-        if watching["media_type"] == "show" and watching["serie_id"] in serie_ids_in_continue:
+        if (
+            watching["media_type"] == "show"
+            and watching["serie_id"] in serie_ids_in_continue
+        ):
             continue
         if watching["media_type"] == "show":
             serie_ids_in_continue.append(watching["serie_id"])
-        continue_watching_list_to_return.append(type_to_function[watching["media_type"]](watching["media_id"]))
-        
+        continue_watching_list_to_return.append(
+            type_to_function[watching["media_type"]](user_id, watching["media_id"])
+        )
+
     return continue_watching_list_to_return
 
-def get_all_medias_without_albums() -> Dict[str, List[Dict[str, Any]]]:
-    all_movies = [movie_to_media(movie.id) for movie in Movies.query.all()]
-    all_series = [serie_to_media(serie.id) for serie in Series.query.all()]
-    
+
+def get_all_medias_without_albums(user_id) -> List[Dict[str, Any]]:
+    all_movies = [movie_to_media(user_id, movie.id) for movie in Movies.query.all()]
+    all_series = [serie_to_media(user_id, serie.id) for serie in Series.query.all()]
+
     all_medias = all_movies + all_series
-    
-    return all_medias
 
-def get_all_medias() -> Dict[str, List[Dict[str, Any]]]:
-    return get_all_medias_without_albums() + [album_to_media(album.id) for album in Albums.query.all()]
+    return all_medias  # type: ignore
 
-def get_latest_scanned_medias(all_medias: Dict[str, List[Dict[str, Any]]]) -> Dict[str, List[Dict[str, Any]]]:
-    all_medias = natsort.natsorted(all_medias, key=itemgetter(*["file_date"]), reverse=True)
-    return all_medias[:15]
 
-def get_latest_medias(all_medias: Dict[str, List[Dict[str, Any]]]) -> Dict[str, List[Dict[str, Any]]]:
-    all_medias = natsort.natsorted(all_medias, key=itemgetter(*["release_date"]), reverse=True)
-    return all_medias[:15]
+def get_all_medias(user_id) -> Dict[str, List[Dict[str, Any]]]:
+    all_medias_without_albums = get_all_medias_without_albums(user_id)
+    all_albums = [album_to_media(user_id, album.id) for album in Albums.query.all()]
+    all_albums = [album for album in all_albums if album is not None]
+    return all_medias_without_albums + all_albums  # type: ignore
 
-def get_top_rated_medias(all_medias: Dict[str, List[Dict[str, Any]]]) -> Dict[str, List[Dict[str, Any]]]:
-    all_medias = natsort.natsorted(all_medias, key=itemgetter(*["note"]), reverse=True)
-    return all_medias[:15]
 
-def get_best_of_year(all_medias: Dict[str, List[Dict[str, Any]]]) -> Dict[str, List[Dict[str, Any]]]:
+def get_medias_for_key(key: str, all_medias: List[Dict[str, Any]]) -> List[str]:
+    medias = [media for media in all_medias if media is not None]
+    medias = natsort.natsorted(medias, key=itemgetter(*[key]), reverse=True)
+    return medias[:15]  # type: ignore
+
+
+def get_latest_scanned_medias(all_medias: List[Dict[str, Any]]) -> List[str]:
+    return get_medias_for_key("file_date", all_medias)
+
+
+def get_latest_medias(all_medias: List[Dict[str, Any]]) -> List[str]:
+    return get_medias_for_key("release_date", all_medias)
+
+
+def get_top_rated_medias(all_medias: List[Dict[str, Any]]) -> List[str]:
+    return get_medias_for_key("note", all_medias)
+
+
+def get_best_of_year(all_medias: List[Dict[str, Any]]) -> List[str]:
     current_year = datetime.datetime.now().year
 
-    all_medias = [media for media in all_medias if media["release_date"].year == current_year]
+    medias = [media for media in all_medias if media is not None]
+    medias = [
+        media for media in medias if media["release_date"].year == current_year  # type: ignore
+    ]
 
-    all_medias = natsort.natsorted(all_medias, key=itemgetter(*["note"]), reverse=True)
+    medias = natsort.natsorted(medias, key=itemgetter(*["note"]), reverse=True)
 
-    return all_medias[:15]
+    return medias[:15]  # type: ignore
 
-def get_media_for_genre(genre: int, all_medias: Dict[str, List[Dict[str, Any]]]) -> Dict[str, List[Dict[str, Any]]]:
-    all_medias = [media for media in all_medias if int(genre) in media["genres"]]
-    all_medias = natsort.natsorted(all_medias, key=itemgetter(*["release_date"]))
-    return all_medias[:15]
+
+def get_media_for_genre(genre: int, all_medias: list[Dict[str, Any]]) -> List[str]:
+    medias = [media for media in all_medias if media is not None]
+    medias = [media for media in medias if int(genre) in media["genres"]]  # type: ignore
+    medias = natsort.natsorted(medias, key=itemgetter(*["release_date"]))
+    return medias[:15]  # type: ignore
+
 
 @medias_bp.route("home", methods=["GET"])
 @token_required
@@ -346,16 +460,17 @@ def get_home_medias(current_user) -> Response:
         "western": [],
     }
 
-    all_medias = get_all_medias_without_albums()
-    albums = [album_to_media(album.id) for album in Albums.query.all()]
-    
+    all_medias: Any = get_all_medias_without_albums(current_user.id)
+    albums = [album_to_media(current_user.id, album.id) for album in Albums.query.all()]
+    albums = [album for album in albums if album is not None]
+
     continue_watching = get_continue_watching(current_user)
     data["continue_watching"] = continue_watching
 
-    latest = get_latest_medias(all_medias + albums)
+    latest = get_latest_medias(all_medias + albums)  # type: ignore
     data["latest"] = latest
 
-    recently_added = get_latest_scanned_medias(all_medias + albums)
+    recently_added = get_latest_scanned_medias(all_medias + albums)  # type: ignore
     data["recently_added"] = recently_added
 
     top_rated = get_top_rated_medias(all_medias)
@@ -387,29 +502,27 @@ def get_home_medias(current_user) -> Response:
 
     western = get_media_for_genre(37, all_medias)
     data["western"] = western
-        
+
     keys = list(data.keys())
     keys.pop(0)
 
     for key in keys:
         medias = data[key]
         for media in medias:
-            if "alternatives_titles" in media:
-                del media["alternatives_titles"]
             if media in all_medias:
                 all_medias.remove(media)
-    
+
     if len(all_medias) > 0:
-        data["main_media"] = random.choice(all_medias)
+        data["main_media"] = random.choice(all_medias)  # type: ignore
     else:
-        data["main_media"] = get_all_medias_without_albums()[0]
-    
-    return (generate_response(Codes.SUCCESS, False, data))
+        data["main_media"] = get_all_medias_without_albums()[0]  # type: ignore
+
+    return generate_response(Codes.SUCCESS, False, data)
 
 
 @medias_bp.route("movies", methods=["GET"])
 @token_required
-def get_movies_media() -> Response:
+def get_movies_media(current_user) -> Response:
     data = {
         "main_media": None,
         "continue_watching": [],
@@ -427,8 +540,11 @@ def get_movies_media() -> Response:
         "western": [],
     }
 
-    all_medias = [movie_to_media(movie.id) for movie in Movies.query.all()]
-    
+    all_medias = [
+        movie_to_media(current_user.id, movie.id) for movie in Movies.query.all()
+    ]
+    all_medias: Any = [media for media in all_medias if media is not None]
+
     latest = get_latest_medias(all_medias)
     data["latest"] = latest
 
@@ -464,7 +580,7 @@ def get_movies_media() -> Response:
 
     western = get_media_for_genre(37, all_medias)
     data["western"] = western
-        
+
     keys = list(data.keys())
     keys.pop(0)
 
@@ -473,13 +589,17 @@ def get_movies_media() -> Response:
         for media in medias:
             if media in all_medias:
                 all_medias.remove(media)
-    
+
     if len(all_medias) > 0:
         data["main_media"] = random.choice(all_medias)
     else:
-        data["main_media"] = get_all_medias_without_albums()[0]
-    
-    return (generate_response(Codes.SUCCESS, False, data))
+        medias = get_all_medias_without_albums(current_user.id)
+        if len(medias) > 0:
+            data["main_media"] = medias[0]
+        else:
+            data["main_media"] = None
+
+    return generate_response(Codes.SUCCESS, False, data)
 
 
 @medias_bp.route("shows", methods=["GET"])
@@ -502,8 +622,11 @@ def get_shows_media(current_user) -> Response:
         "western": [],
     }
 
-    all_medias = [serie_to_media(serie.id) for serie in Series.query.all()]
-    
+    all_medias = [
+        serie_to_media(current_user.id, serie.id) for serie in Series.query.all()
+    ]
+    all_medias = [media for media in all_medias if media is not None]
+
     continue_watching = get_continue_watching(current_user)
     data["continue_watching"] = continue_watching
 
@@ -542,7 +665,7 @@ def get_shows_media(current_user) -> Response:
 
     western = get_media_for_genre(37, all_medias)
     data["western"] = western
-        
+
     keys = list(data.keys())
     keys.pop(0)
 
@@ -551,18 +674,21 @@ def get_shows_media(current_user) -> Response:
         for media in medias:
             if media in all_medias:
                 all_medias.remove(media)
-    
+
     if len(all_medias) > 0:
         data["main_media"] = random.choice(all_medias)
     else:
-        data["main_media"] = get_all_medias_without_albums()[0]
-    
-    return (generate_response(Codes.SUCCESS, False, data))
+        medias = get_all_medias_without_albums(current_user.id)
+        if len(medias) > 0:
+            data["main_media"] = medias[0]
+        else:
+            data["main_media"] = None
+
+    return generate_response(Codes.SUCCESS, False, data)
+
 
 def get_tv_media(current_user) -> Response:
-    data = {
-        "medias": []
-    }
+    data = {"medias": []}
 
     all_tv_path = [lib.folder for lib in Libraries.query.filter_by(type="tv").all()]
 
@@ -571,50 +697,96 @@ def get_tv_media(current_user) -> Response:
     for tv_path in all_tv_path:
         channels = channels + parse_tv_folder(tv_path)
 
-    all_medias = [tv_to_media(tv_path, channel) for channel in channels]
+    all_medias = [tv_to_media(tv_path, channel) for channel in channels]  # type: ignore
+
+    return generate_response(Codes.SUCCESS, False, data)
+
 
 @medias_bp.route("/images/<image_type>/<media_type>/<media_id>", methods=["GET"])
 def get_image(image_type: str, media_type: str, media_id: int) -> Response:
     image = None
     if image_type == "banner":
         if media_type == "movie":
-            image = Movies.query.filter_by(id=media_id).first().banner
+            movie = Movies.query.filter_by(id=media_id).first()
+            if not movie:
+                abort(404)
+            image = movie.banner
         elif media_type == "show":
-            image = Series.query.filter_by(id=media_id).first().banner
+            serie = Series.query.filter_by(id=media_id).first()
+            if not serie:
+                abort(404)
+            image = serie.banner
         elif media_type == "episode":
             ep = Episodes.query.filter_by(episode_id=media_id).first()
-            season = Seasons.query.filter_by(season_id=ep.season_id).first()
-            image = Series.query.filter_by(id=season.serie).first().banner
+            if not ep:
+                abort(404)
+            serie = Series.query.filter_by(tmdb_id=ep.serie_id).first()
+            if not serie:
+                abort(404)
+            image = serie.banner
         elif media_type == "album":
-            image = Albums.query.filter_by(id=media_id).first().cover
-        elif media_type == "album":
-            image = Games.query.filter_by(id=media_id).first().cover
+            album = Albums.query.filter_by(id=media_id).first()
+            if not album:
+                abort(404)
+            image = album.cover
+        elif media_type == "game":
+            game = Games.query.filter_by(id=media_id).first()
+            if not game:
+                abort(404)
         elif media_type == "books":
-            image = Books.query.filter_by(id=media_id).first().cover
+            book = Books.query.filter_by(id=media_id).first()
+            if not book:
+                abort(404)
+            image = book.cover
         else:
             abort(404)
     elif image_type == "cover":
         if media_type == "movie":
-            image = Movies.query.filter_by(id=media_id).first().cover
+            movie = Movies.query.filter_by(id=media_id).first()
+            if not movie:
+                abort(404)
+            image = movie.cover
         elif media_type == "show":
-            image = Series.query.filter_by(id=media_id).first().cover
+            serie = Series.query.filter_by(id=media_id).first()
+            if not serie:
+                abort(404)
+            image = serie.cover
         elif media_type == "episode":
             ep = Episodes.query.filter_by(episode_id=media_id).first()
-            season = Seasons.query.filter_by(season_id=ep.season_id).first()
-            image = Series.query.filter_by(id=season.serie).first().cover
+            if not ep:
+                abort(404)
+            serie = Series.query.filter_by(tmdb_id=ep.serie_id).first()
+            if not serie:
+                abort(404)
+            image = serie.cover
         elif media_type == "album":
-            image = Albums.query.filter_by(id=media_id).first().cover
-        elif media_type == "album":
-            image = Games.query.filter_by(id=media_id).first().cover
-        elif media_type == "books": 
-            image = Books.query.filter_by(id=media_id).first().cover
+            album = Albums.query.filter_by(id=media_id).first()
+            if not album:
+                abort(404)
+            image = album.cover
+        elif media_type == "game":
+            game = Games.query.filter_by(id=media_id).first()
+            if not game:
+                abort(404)
+            image = game.cover
+        elif media_type == "books":
+            book = Books.query.filter_by(id=media_id).first()
+            if not book:
+                abort(404)
+            image = book.cover
         else:
             abort(404)
     elif image_type == "logo":
         if media_type == "show" or media_type == "episode":
-            image = Series.query.filter_by(id=media_id).first().logo
+            serie = Series.query.filter_by(id=media_id).first()
+            if not serie:
+                abort(404)
+            image = serie.logo
         elif media_type == "movie":
-            image = Movies.query.filter_by(id=media_id).first().logo
+            movie = Movies.query.filter_by(id=media_id).first()
+            if not movie:
+                abort(404)
+            image = movie.logo
         else:
             abort(404)
 
@@ -632,35 +804,41 @@ def get_image(image_type: str, media_type: str, media_id: int) -> Response:
     width = request.args.get("width")
     if width:
         image = Image.open(image)
-        wpercent = (int(width) / float(image.size[0]))
+        wpercent = int(width) / float(image.size[0])
         hsize = int((float(image.size[1]) * float(wpercent)))
-        image = image.resize((int(width), hsize), Image.ANTIALIAS)
+        image = image.resize((int(width), hsize), Image.ANTIALIAS)  # type: ignore
         img_io = BytesIO()
-        image.save(img_io, 'WEBP')
+        image.save(img_io, "WEBP")
         img_io.seek(0)
         return send_file(img_io, mimetype=mime_type.get(extension, "image/webp"))
-    
+
     height = request.args.get("height")
     if height:
         image = Image.open(image)
-        hpercent = (int(height) / float(image.size[1]))
+        hpercent = int(height) / float(image.size[1])
         wsize = int((float(image.size[0]) * float(hpercent)))
-        image = image.resize((wsize, int(height)), Image.ANTIALIAS)
+        image = image.resize((wsize, int(height)), Image.ANTIALIAS)  # type: ignore
         img_io = BytesIO()
-        image.save(img_io, 'WEBP')
+        image.save(img_io, "WEBP")
         img_io.seek(0)
         return send_file(img_io, mimetype=mime_type.get(extension, "image/webp"))
 
     try:
         return send_file(image, mimetype=mime_type.get(extension, "image/jpeg"))
     except FileNotFoundError:
-        return send_file(f"static/img/broken{ 'Banner' if image_type == 'banner' else '' }.webp", mimetype="image/webp")
+        return send_file(
+            f"static/img/broken{ 'Banner' if image_type == 'banner' else '' }.webp",
+            mimetype="image/webp",
+        )
+
 
 def genre_id_to_name(genre_id: int) -> str:
     return translate(genre_id)
 
 
-def search_medias(medias: List[Dict[str, Any]], search_terms: List[str]) -> Dict[str, List[Dict[str, Any]]]:
+def search_medias(
+    medias: List[Dict[str, Any]], search_terms: List[str], user_id
+) -> Dict[str, List[Dict[str, Any]]]:
     results = {}
     for media in medias:
         if not media:
@@ -672,7 +850,7 @@ def search_medias(medias: List[Dict[str, Any]], search_terms: List[str]) -> Dict
             description = media["description"].lower().split(" ")
             genres = [genre_id_to_name(genre) for genre in media["genres"]]
             people = media["peoples"]
-        except:
+        except Exception:
             continue
 
         for term in search_terms:
@@ -703,34 +881,36 @@ def search_medias(medias: List[Dict[str, Any]], search_terms: List[str]) -> Dict
                 results.append(media)
                 break
 
-    return results
+    return results  # type: ignore
 
 
-def search_movies(search_terms: List[str]) -> Dict[str, List[Dict[str, Any]]]:
-    movies = [movie_to_media(movie.id) for movie in Movies.query.all()]
-    
-    results = search_medias(movies, search_terms)
+def search_movies(user_id, search_terms: List[str]) -> Dict[str, List[Dict[str, Any]]]:
+    movies = [movie_to_media(user_id, movie.id) for movie in Movies.query.all()]
 
-    return results
-
-def search_series(search_terms: List[str]) -> Dict[str, List[Dict[str, Any]]]:
-    series = [serie_to_media(serie.id) for serie in Series.query.all()]
-    
-    results = search_medias(series, search_terms)
+    results = search_medias(movies, search_terms, user_id)  # type: ignore
 
     return results
 
-def search_musics(search_terms: List[str]) -> Dict[str, List[Dict[str, Any]]]:
-    albums = [album_to_media(album.id) for album in Albums.query.all()]
-    
-    results = search_medias(albums, search_terms)
+
+def search_series(user_id, search_terms: List[str]) -> Dict[str, List[Dict[str, Any]]]:
+    series = [serie_to_media(user_id, serie.id) for serie in Series.query.all()]
+
+    results = search_medias(series, search_terms, user_id)  # type: ignore
+
+    return results
+
+
+def search_musics(user_id, search_terms: List[str]) -> Dict[str, List[Dict[str, Any]]]:
+    albums = [album_to_media(user_id, album.id) for album in Albums.query.all()]
+
+    results = search_medias(albums, search_terms, user_id)  # type: ignore
 
     return results
 
 
 @medias_bp.route("/search/<type>", methods=["GET"])
 @token_required
-def search_medias_route(type: str) -> Response:
+def search_medias_route(current_user, type: str) -> Response:
     if type not in ["home", "movies", "shows", "musics"]:
         abort(404)
 
@@ -738,45 +918,51 @@ def search_medias_route(type: str) -> Response:
 
     if not search:
         abort(400, "Missing search")
-
+    search_results = []
     search_terms = search.split(" ")
-    
+
     if type == "home":
-        search_results = search_medias(get_all_medias(), search_terms)
+        search_results = search_medias(get_all_medias(current_user.id), search_terms, current_user.id)  # type: ignore
     elif type == "movies":
-        search_results = search_movies(search_terms)
+        search_results = search_movies(current_user.id, search_terms)
     elif type == "shows":
-        search_results = search_series(search_terms)
+        search_results = search_series(current_user.id, search_terms)
     elif type == "musics":
-        search_results = search_musics(search_terms)
+        search_results = search_musics(current_user.id, search_terms)
 
     if len(search_results) == 0:
-        return (generate_response(Codes.NO_RETURN_DATA, False))
+        return generate_response(Codes.NO_RETURN_DATA, False)
 
-    data = {
-        "main_media": search_results[0],
-        "medias": search_results[1:],
-    }
+    if len(search_results) > 1:
+        data = {
+            "main_media": search_results[0],  # type: ignore
+            "medias": search_results[1:],  # type: ignore
+        }
+    elif len(search_results) == 1:
+        data = {"main_media": search_results[0], "medias": []}  # type: ignore
+    else:
+        data = {"main_media": None, "medias": []}
 
     print(data)
 
-    return (generate_response(Codes.SUCCESS, False, data))
+    return generate_response(Codes.SUCCESS, False, data)
+
 
 @medias_bp.route("/media/<media_type>/<media_id>", methods=["GET"])
 @token_required
-def get_media(media_type: str, media_id: int) -> Response:
+def get_media(current_user, media_type: str, media_id: int) -> Response:
     if media_type == "movie":
-        media = movie_to_media(media_id)
+        media = movie_to_media(current_user.id, media_id)
     elif media_type == "show":
-        media = episode_to_media(media_id)
+        media = episode_to_media(current_user.id, media_id)
     elif media_type == "album":
-        media = album_to_media(media_id)
+        media = album_to_media(current_user.id, media_id)
     elif media_type == "other":
-        media = other_to_media(media_id)
+        media = other_to_media(current_user.id, media_id)
     else:
         abort(404)
 
     if not media:
         abort(404)
 
-    return (generate_response(Codes.SUCCESS, False, media))
+    return generate_response(Codes.SUCCESS, False, media)
