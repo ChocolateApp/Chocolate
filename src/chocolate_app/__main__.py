@@ -62,7 +62,7 @@ from chocolate_app import (
     VIDEO_CODEC,
     AUDIO_CODEC,
     FFMPEG_ARGS,
-    get_language_file
+    get_language_file,
 )
 from chocolate_app.tables import (
     Language,
@@ -183,13 +183,16 @@ websites_trailers = {
     "Vimeo": "https://vimeo.com/",
 }
 
+
 def hashString(string: str) -> str:
     return hashlib.md5(string.encode()).hexdigest()
+
 
 class PreviousLagInfo:
     def __init__(self, lag: int, lag_id: int):
         self.lag = lag
         self.lag_id = lag_id
+
 
 VIDEO_PREVIOUS_LAG: Dict[str, PreviousLagInfo] = {}
 AUDIO_PREVIOUS_LAG: Dict[str, PreviousLagInfo] = {}
@@ -457,7 +460,7 @@ def create_m3u8(movie_id: int) -> Response:
         remaining_movie_duration = duration - i
         if remaining_movie_duration < VIDEO_CHUNK_LENGTH:
             extinf = remaining_movie_duration
-        
+
         file += f"#EXT-X-DISCONTINUITY\n"
         file += f"#EXTINF:{extinf},\n/chunk_movie/{movie_id}-{(i // VIDEO_CHUNK_LENGTH) + 1}.ts\n"  # noqa
 
@@ -481,7 +484,7 @@ def create_m3u8_quality(quality: str, movie_id: int) -> Response:
     video_path = movie.slug
     duration = length_video(video_path)
     file = f"#EXTM3U\n#EXT-X-VERSION:3\n\n#EXT-X-TARGETDURATION:{VIDEO_CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-DISCONTINUITY-SEQUENCE: 0\n"
-    
+
     for i in range(0, int(duration), int(VIDEO_CHUNK_LENGTH)):
         extinf = float(VIDEO_CHUNK_LENGTH)
 
@@ -559,7 +562,7 @@ def create_other_m3u8_quality(quality: str, hash: str) -> Response:
 def create_serie_m3u8(episode_id: str) -> Response:
     if ".m3u8" in episode_id:
         episode_id = episode_id.replace(".m3u8", "")
-        
+
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
     episode_path = episode.slug
     duration = length_video(episode_path)
@@ -634,7 +637,7 @@ def get_chunk_serie(episode_id: int, idx: int = 0) -> Response:
     time_start = str(datetime.timedelta(seconds=seconds + VIDEO_PREVIOUS_LAG[key].lag))
     time_end = str(datetime.timedelta(seconds=seconds + VIDEO_CHUNK_LENGTH))
 
-    #if not token:
+    # if not token:
     #    abort(401)
 
     events.execute_event(events.CHUNK_EPISODE_PLAY, episode, token, time=time_start)
@@ -678,9 +681,13 @@ def get_chunk_serie(episode_id: int, idx: int = 0) -> Response:
     if os.path.exists(temp_path):
         os.remove(temp_path)
 
-    VIDEO_PREVIOUS_LAG[key].lag = duration - (VIDEO_CHUNK_LENGTH - VIDEO_PREVIOUS_LAG[key].lag)
+    VIDEO_PREVIOUS_LAG[key].lag = duration - (
+        VIDEO_CHUNK_LENGTH - VIDEO_PREVIOUS_LAG[key].lag
+    )
     if VIDEO_PREVIOUS_LAG[key].lag_id == idx - 1:
-        VIDEO_PREVIOUS_LAG[key].lag = (duration) - (VIDEO_CHUNK_LENGTH - VIDEO_PREVIOUS_LAG[key].lag)
+        VIDEO_PREVIOUS_LAG[key].lag = (duration) - (
+            VIDEO_CHUNK_LENGTH - VIDEO_PREVIOUS_LAG[key].lag
+        )
     else:
         VIDEO_PREVIOUS_LAG[key].lag = 0
 
@@ -715,7 +722,7 @@ def get_chunk_serie_quality(quality: str, episode_id: int, idx: int = 0):
     time_start = str(datetime.timedelta(seconds=seconds + VIDEO_PREVIOUS_LAG[key].lag))
     time_end = str(datetime.timedelta(seconds=seconds + VIDEO_CHUNK_LENGTH))
 
-    #if not token:
+    # if not token:
     #    abort(401)
 
     events.execute_event(events.CHUNK_EPISODE_PLAY, episode, token, time=time_start)
@@ -727,7 +734,7 @@ def get_chunk_serie_quality(quality: str, episode_id: int, idx: int = 0):
     new_height = round(float(width) / float(height) * new_width)
     if (new_height % 2) != 0:
         new_height += 1
-    
+
     command = [
         "ffmpeg",
         *FFMPEG_ARGS,
@@ -767,9 +774,13 @@ def get_chunk_serie_quality(quality: str, episode_id: int, idx: int = 0):
     if os.path.exists(temp_path):
         os.remove(temp_path)
 
-    VIDEO_PREVIOUS_LAG[key].lag = duration - (VIDEO_CHUNK_LENGTH - VIDEO_PREVIOUS_LAG[key].lag)
+    VIDEO_PREVIOUS_LAG[key].lag = duration - (
+        VIDEO_CHUNK_LENGTH - VIDEO_PREVIOUS_LAG[key].lag
+    )
     if VIDEO_PREVIOUS_LAG[key].lag_id == idx - 1:
-        VIDEO_PREVIOUS_LAG[key].lag = (duration) - (VIDEO_CHUNK_LENGTH - VIDEO_PREVIOUS_LAG[key].lag)
+        VIDEO_PREVIOUS_LAG[key].lag = (duration) - (
+            VIDEO_CHUNK_LENGTH - VIDEO_PREVIOUS_LAG[key].lag
+        )
     else:
         VIDEO_PREVIOUS_LAG[key].lag = 0
 
@@ -807,7 +818,7 @@ def chunk_movie(movie_id: int, idx: int = 0) -> Response:
     time_start = str(datetime.timedelta(seconds=seconds + VIDEO_PREVIOUS_LAG[key].lag))
     time_end = str(datetime.timedelta(seconds=seconds + VIDEO_CHUNK_LENGTH))
 
-    #if not token:
+    # if not token:
     #    abort(401)
 
     events.execute_event(events.CHUNK_MOVIE_PLAY, movie, token, time=time_start)
@@ -849,9 +860,13 @@ def chunk_movie(movie_id: int, idx: int = 0) -> Response:
     if os.path.exists(temp_path):
         os.remove(temp_path)
 
-    VIDEO_PREVIOUS_LAG[key].lag = duration - (VIDEO_CHUNK_LENGTH - VIDEO_PREVIOUS_LAG[key].lag)
+    VIDEO_PREVIOUS_LAG[key].lag = duration - (
+        VIDEO_CHUNK_LENGTH - VIDEO_PREVIOUS_LAG[key].lag
+    )
     if VIDEO_PREVIOUS_LAG[key].lag_id == idx - 1:
-        VIDEO_PREVIOUS_LAG[key].lag = (duration) - (VIDEO_CHUNK_LENGTH - VIDEO_PREVIOUS_LAG[key].lag)
+        VIDEO_PREVIOUS_LAG[key].lag = (duration) - (
+            VIDEO_CHUNK_LENGTH - VIDEO_PREVIOUS_LAG[key].lag
+        )
     else:
         VIDEO_PREVIOUS_LAG[key].lag = 0
 
@@ -867,6 +882,7 @@ def chunk_movie(movie_id: int, idx: int = 0) -> Response:
     )
 
     return response
+
 
 @app.route("/chunk_movie/<quality>/<movie_id>-<int:idx>.ts", methods=["GET"])
 def get_chunk_quality(quality: str, movie_id: int, idx: int = 0) -> Response:
@@ -887,7 +903,7 @@ def get_chunk_quality(quality: str, movie_id: int, idx: int = 0) -> Response:
     time_start = str(datetime.timedelta(seconds=seconds + VIDEO_PREVIOUS_LAG[key].lag))
     time_end = str(datetime.timedelta(seconds=seconds + VIDEO_CHUNK_LENGTH))
 
-    #if not token:
+    # if not token:
     #    abort(401)
 
     events.execute_event(events.CHUNK_MOVIE_PLAY, movie, token, time=time_start)
@@ -939,9 +955,13 @@ def get_chunk_quality(quality: str, movie_id: int, idx: int = 0) -> Response:
     if os.path.exists(temp_path):
         os.remove(temp_path)
 
-    VIDEO_PREVIOUS_LAG[key].lag = duration - (VIDEO_CHUNK_LENGTH - VIDEO_PREVIOUS_LAG[key].lag)
+    VIDEO_PREVIOUS_LAG[key].lag = duration - (
+        VIDEO_CHUNK_LENGTH - VIDEO_PREVIOUS_LAG[key].lag
+    )
     if VIDEO_PREVIOUS_LAG[key].lag_id == idx - 1:
-        VIDEO_PREVIOUS_LAG[key].lag = (duration) - (VIDEO_CHUNK_LENGTH - VIDEO_PREVIOUS_LAG[key].lag)
+        VIDEO_PREVIOUS_LAG[key].lag = (duration) - (
+            VIDEO_CHUNK_LENGTH - VIDEO_PREVIOUS_LAG[key].lag
+        )
     else:
         VIDEO_PREVIOUS_LAG[key].lag = 0
 
@@ -1140,6 +1160,7 @@ def vtt_time_convert(time: str) -> float:
 
     return hh * 3600 + mm * 60 + ss + ms / 1000
 
+
 def vtt_time_convert_reverse(time: float) -> str:
     hh = int(time // 3600)
     mm = int((time % 3600) // 60)
@@ -1150,12 +1171,13 @@ def vtt_time_convert_reverse(time: float) -> str:
         return f"{mm:02}:{ss:02}.{ms:03}"
     return f"{hh:02}:{mm:02}:{ss:02}.{ms:03}"
 
+
 @app.route("/caption_movie/<movie_id>_<id>.m3u8", methods=["GET"])
 def caption_movie_by_id_to_m3_u8(movie_id: int, id: int) -> Response:
     movie = Movies.query.filter_by(id=movie_id).first()
     video_path = movie.slug
     movie_duration = length_video(video_path) + 1
-    
+
     m3u8_content = f"#EXTM3U\n#EXT-X-TARGETDURATION:{movie_duration}\n#EXT-X-VERSION:3\n\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXTINF:{movie_duration},\n/chunk_caption/{movie_id}_{id}.vtt\n#EXT-X-ENDLIST"
 
     response = make_response(m3u8_content)
@@ -1163,9 +1185,12 @@ def caption_movie_by_id_to_m3_u8(movie_id: int, id: int) -> Response:
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
     response.headers.set("Access-Control-Allow-Origin", "*")
-    response.headers.set("Content-Disposition", "attachment", filename=f"{movie_id}_{id}.m3u8")
-    
+    response.headers.set(
+        "Content-Disposition", "attachment", filename=f"{movie_id}_{id}.m3u8"
+    )
+
     return response
+
 
 @app.route("/chunk_caption/<movie_id>_<id>.vtt", methods=["GET"])
 def chunk_caption_by_id(movie_id: int, id: int) -> Response:
@@ -1189,8 +1214,11 @@ def chunk_caption_by_id(movie_id: int, id: int) -> Response:
 
     extract_captions_response = make_response(extract_captions.stdout)
 
-    extract_captions_response.data = b"WEBVTT\nX-TIMESTAMP-MAP=MPEGTS:900000,LOCAL:00:00:00.000\n" + extract_captions_response.data
-    
+    extract_captions_response.data = (
+        b"WEBVTT\nX-TIMESTAMP-MAP=MPEGTS:900000,LOCAL:00:00:00.000\n"
+        + extract_captions_response.data
+    )
+
     extract_captions_response.headers.set("Content-Type", "text/VTT")
     extract_captions_response.headers.set(
         "Content-Disposition", "attachment", filename=f"{movie_id}_{id}.vtt"
@@ -1198,12 +1226,15 @@ def chunk_caption_by_id(movie_id: int, id: int) -> Response:
 
     return extract_captions_response
 
+
 @app.route("/caption_serie/<episode_id>_<id>.m3u8", methods=["GET"])
 def caption_serie_by_id_to_m3_u8(episode_id: int, id: int) -> Response:
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
     video_path = episode.slug
-    episode_duration = (length_video(video_path) // VIDEO_CHUNK_LENGTH) * VIDEO_CHUNK_LENGTH + 1
-    
+    episode_duration = (
+        length_video(video_path) // VIDEO_CHUNK_LENGTH
+    ) * VIDEO_CHUNK_LENGTH + 1
+
     m3u8_content = f"#EXTM3U\n#EXT-X-TARGETDURATION:{episode_duration}\n#EXT-X-VERSION:3\n\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXTINF:{episode_duration},\n/chunk_caption_serie/{episode_id}_{id}.vtt\n#EXT-X-ENDLIST"
 
     response = make_response(m3u8_content)
@@ -1211,9 +1242,12 @@ def caption_serie_by_id_to_m3_u8(episode_id: int, id: int) -> Response:
     response.headers.set("Range", "bytes=0-4095")
     response.headers.set("Accept-Encoding", "*")
     response.headers.set("Access-Control-Allow-Origin", "*")
-    response.headers.set("Content-Disposition", "attachment", filename=f"{episode_id}_{id}.m3u8")
-    
+    response.headers.set(
+        "Content-Disposition", "attachment", filename=f"{episode_id}_{id}.m3u8"
+    )
+
     return response
+
 
 @app.route("/chunk_caption_serie/<episode_id>_<id>.vtt", methods=["GET"])
 def chunk_caption_serie_by_id(episode_id: int, id: int) -> Response:
@@ -1243,6 +1277,7 @@ def chunk_caption_serie_by_id(episode_id: int, id: int) -> Response:
 
     return extract_captions_response
 
+
 @app.route("/get_language", methods=["GET"])
 def get_language() -> Response:
     language = config["ChocolateSettings"]["language"]
@@ -1251,10 +1286,10 @@ def get_language() -> Response:
 
 @app.route("/get_all_movies/<library>", methods=["GET"])
 def get_all_movies(library: str) -> Response:
-    
+
     if overrides.have_override(overrides.GET_ALL_MOVIES):
         return overrides.execute_override(overrides.GET_ALL_MOVIES, request, library)
-    
+
     token = request.headers.get("Authorization")
     check_authorization(request, token, library)
     generate_log(request, "SERVER")
@@ -1289,7 +1324,9 @@ def get_all_movies(library: str) -> Response:
     for lib in merged_lib:
         movies = Movies.query.filter_by(library_name=lib).all()
         if movies:
-            movies_list += [movie.__dict__ for movie in movies]
+            list_movie = [movie.__dict__ for movie in movies]
+            list_movie = [a for a in list_movie if a is not None]
+            movies_list += list_movie
 
     for movie in movies_list:
         for key in list(movie.keys()):
@@ -1337,7 +1374,6 @@ def get_all_playlists(library: str) -> Response:
 
     if overrides.have_override(overrides.GET_ALL_PLAYLISTS):
         return overrides.execute_override(overrides.GET_ALL_PLAYLISTS, request, library)
-    
 
     token = request.headers.get("Authorization")
     check_authorization(request, token, library)
@@ -1383,7 +1419,7 @@ def get_all_albums(library: str) -> Response:
 
     if overrides.have_override(overrides.GET_ALL_ALBUMS):
         return overrides.execute_override(overrides.GET_ALL_ALBUMS, request, library)
-    
+
     token = request.headers.get("Authorization")
     check_authorization(request, token, library)
     generate_log(request, "SUCCESS")
@@ -1497,7 +1533,9 @@ def get_album_tracks(album_id: int) -> Response:
 def get_playlist_tracks(playlist_id: int) -> Response:
 
     if overrides.have_override(overrides.GET_PLAYLIST_TRACKS):
-        return overrides.execute_override(overrides.GET_PLAYLIST_TRACKS, request, playlist_id)
+        return overrides.execute_override(
+            overrides.GET_PLAYLIST_TRACKS, request, playlist_id
+        )
 
     token = request.headers.get("Authorization")
 
@@ -1765,7 +1803,7 @@ def remove_track_from_playlist() -> Response:
 
 @app.route("/get_track/<id>")
 def get_track(id: int) -> Response:
-    
+
     if overrides.have_override(overrides.GET_TRACK):
         return overrides.execute_override(overrides.GET_TRACK, request, id)
 
@@ -1845,7 +1883,9 @@ def get_artist(artist_id: int) -> Response:
 def get_artist_albums(artist_id: int) -> Response:
 
     if overrides.have_override(overrides.GET_ARTIST_ALBUMS):
-        return overrides.execute_override(overrides.GET_ARTIST_ALBUMS, request, artist_id)
+        return overrides.execute_override(
+            overrides.GET_ARTIST_ALBUMS, request, artist_id
+        )
 
     albums = Albums.query.filter_by(artist_id=artist_id).all()
     artist = Artists.query.filter_by(id=artist_id).first()
@@ -1866,7 +1906,9 @@ def get_artist_albums(artist_id: int) -> Response:
 def get_artist_tracks(artist_id: int) -> Response:
 
     if overrides.have_override(overrides.GET_ARTIST_TRACKS):
-        return overrides.execute_override(overrides.GET_ARTIST_TRACKS, request, artist_id)
+        return overrides.execute_override(
+            overrides.GET_ARTIST_TRACKS, request, artist_id
+        )
 
     generate_log(request, "SUCCESS")
 
@@ -1910,7 +1952,7 @@ def get_all_series(library: str) -> Response:
         abort(401)
 
     generate_log(request, "SUCCESS")
-    
+
     series = Series.query.filter_by(library_name=library).all()
     the_lib = Libraries.query.filter_by(name=library).first()
     user = Users.query.filter_by(id=token).first()
@@ -2199,7 +2241,9 @@ def edit_movie(id: int, library: str) -> Response:
     all_images = movie.images(new_movie_id)
 
     if len(all_images["logos"]) > 0:
-        logo_download_url = f"https://image.tmdb.org/t/p/original{all_images['logos'][0]['file_path']}"
+        logo_download_url = (
+            f"https://image.tmdb.org/t/p/original{all_images['logos'][0]['file_path']}"
+        )
         logo_url = f"{IMAGES_PATH}/{new_movie_id}_Movie_Logo"
     else:
         all_images = movie.images(new_movie_id, include_image_language="en")
@@ -2227,7 +2271,7 @@ def edit_serie(id: int, library: str):
     if request.method == "GET":
         print(f"Série ID : {id} - Library : {library}")
         serie = Series.query.filter_by(id=id, library_name=library).first()
-               
+
         serie = serie.__dict__
         del serie["_sa_instance_state"]
         serie_name = serie["title"]
@@ -2363,9 +2407,7 @@ def edit_serie(id: int, library: str):
                 DB.session.commit()
 
         all_series_path = Libraries.query.filter_by(name=library).first().folder
-        serie_modified_time = os.path.getmtime(
-            f"{all_series_path}/{the_serie.title}"
-        )
+        serie_modified_time = os.path.getmtime(f"{all_series_path}/{the_serie.title}")
 
         the_serie.cast = ",".join(new_cast[:5])
         the_serie.genre = ",".join(genre_list)
@@ -2470,7 +2512,9 @@ def get_episodes(season_id: int) -> Response:
 def get_episode_data(episode_id: int) -> Response:
 
     if overrides.have_override(overrides.GET_EPISODE_DATA):
-        return overrides.execute_override(overrides.GET_EPISODE_DATA, request, episode_id)
+        return overrides.execute_override(
+            overrides.GET_EPISODE_DATA, request, episode_id
+        )
 
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
     if episode is None:
@@ -2630,7 +2674,7 @@ def get_all_others(library: str) -> Response:
 
 @app.route("/get_tv/<tv_name>/<id>")
 def get_tv(tv_name: str, id: str) -> Response:
-    #FIXME: This function don't work + should be in /api/medias
+    # FIXME: This function don't work + should be in /api/medias
     return jsonify([])
 
     if overrides.have_override(overrides.GET_TV):
@@ -2651,7 +2695,7 @@ def get_tv(tv_name: str, id: str) -> Response:
             if not ligne.startswith(("#EXTINF", "http")):
                 m3u.remove(ligne)
             tvg_logo_regex = r'tvg-logo="(.+?)"'
-                
+
             match = re.search(tvg_logo_regex, m3u[i])
             if match and match.group(1) != '" group-title=':
                 tvg_logo = match.group(1)
@@ -2681,8 +2725,6 @@ def get_tv(tv_name: str, id: str) -> Response:
         else:
             next_id = None
 
-            
-
         return jsonify(
             {
                 "channel_url": the_line,
@@ -2699,7 +2741,7 @@ def get_tv(tv_name: str, id: str) -> Response:
 
 @app.route("/get_channels/<channels>")
 def get_channels(channels: str) -> Response:
-    #FIXME: This function don't work + should be in /api/medias
+    # FIXME: This function don't work + should be in /api/medias
     return jsonify([])
 
     if overrides.have_override(overrides.GET_CHANNELS):
@@ -2764,7 +2806,7 @@ def get_channels(channels: str) -> Response:
 
 @app.route("/search_tv/<library>/<search>")
 def search_tv(library: str, search: str) -> Response:
-    #FIXME: This function don't work + should be in /api/medias
+    # FIXME: This function don't work + should be in /api/medias
     return jsonify([])
 
     if overrides.have_override(overrides.SEARCH_TV):
@@ -2849,7 +2891,9 @@ def search_tv(library: str, search: str) -> Response:
 def search_tracks(library: str, search: str) -> Response:
 
     if overrides.have_override(overrides.SEARCH_TRACKS):
-        return overrides.execute_override(overrides.SEARCH_TRACKS, request, library, search)
+        return overrides.execute_override(
+            overrides.SEARCH_TRACKS, request, library, search
+        )
 
     tracks = Tracks.query.filter_by(library_name=library).all()
 
@@ -2888,7 +2932,9 @@ def search_tracks(library: str, search: str) -> Response:
 def search_albums(library: str, search: str) -> Response:
 
     if overrides.have_override(overrides.SEARCH_ALBUMS):
-        return overrides.execute_override(overrides.SEARCH_ALBUMS, request, library, search)
+        return overrides.execute_override(
+            overrides.SEARCH_ALBUMS, request, library, search
+        )
 
     albums = Albums.query.filter_by(library_name=library).all()
 
@@ -2919,10 +2965,12 @@ def search_albums(library: str, search: str) -> Response:
 
 @app.route("/search_artists/<library>/<search>")
 def search_artists(library: str, search: str) -> Response:
-    
+
     if overrides.have_override(overrides.SEARCH_ARTISTS):
-        return overrides.execute_override(overrides.SEARCH_ARTISTS, request, library, search)
-    
+        return overrides.execute_override(
+            overrides.SEARCH_ARTISTS, request, library, search
+        )
+
     artists = Artists.query.filter_by(library_name=library).all()
 
     search = search.lower()
@@ -2949,10 +2997,12 @@ def search_artists(library: str, search: str) -> Response:
 
 @app.route("/search_playlists/<library>/<search>")
 def search_playlists(library: str, search: str) -> Response:
-    
+
     if overrides.have_override(overrides.SEARCH_PLAYLISTS):
-        return overrides.execute_override(overrides.SEARCH_PLAYLISTS, request, library, search)
-    
+        return overrides.execute_override(
+            overrides.SEARCH_PLAYLISTS, request, library, search
+        )
+
     playlists = Playlists.query.filter_by(library_name=library).all()
 
     search = search.lower()
@@ -3055,7 +3105,9 @@ def get_all_consoles(library: str) -> Response:
 def get_all_games(lib: str, console_name: str) -> Response:
 
     if overrides.have_override(overrides.GET_ALL_GAMES):
-        return overrides.execute_override(overrides.GET_ALL_GAMES, request, lib, console_name)
+        return overrides.execute_override(
+            overrides.GET_ALL_GAMES, request, lib, console_name
+        )
 
     token = request.headers.get("Authorization")
     check_authorization(request, token, lib)
@@ -3113,9 +3165,11 @@ def bios(console: str) -> Response:
 def search_movies(library: str, search: str) -> Response:
     token = request.headers.get("Authorization")
     check_authorization(request, token, library)
-    
+
     if overrides.have_override(overrides.SEARCH_MOVIES):
-        data = overrides.execute_override(overrides.SEARCH_MOVIES, request, library, search)
+        data = overrides.execute_override(
+            overrides.SEARCH_MOVIES, request, library, search
+        )
         return data
 
     username = all_auth_tokens[token]["user"]
@@ -3182,10 +3236,12 @@ def search_movies(library: str, search: str) -> Response:
 
 @app.route("/search_series/<library>/<search>")
 def search_series(library: str, search: str) -> Response:
-    
+
     if overrides.have_override(overrides.SEARCH_SERIES):
-        return overrides.execute_override(overrides.SEARCH_SERIES, request, library, search)    
-    
+        return overrides.execute_override(
+            overrides.SEARCH_SERIES, request, library, search
+        )
+
     token = request.headers.get("Authorization")
     check_authorization(request, token, library)
 
@@ -3240,8 +3296,10 @@ def search_series(library: str, search: str) -> Response:
 def search_books(library: str, search: str) -> Response:
 
     if overrides.have_override(overrides.SEARCH_BOOKS):
-        return overrides.execute_override(overrides.SEARCH_BOOKS, request, library, search)
-    
+        return overrides.execute_override(
+            overrides.SEARCH_BOOKS, request, library, search
+        )
+
     token = request.headers.get("Authorization")
     check_authorization(request, token, library)
 
@@ -3283,8 +3341,10 @@ def search_books(library: str, search: str) -> Response:
 def search_others(library: str, search: str) -> Response:
 
     if overrides.have_override(overrides.SEARCH_OTHERS):
-        return overrides.execute_override(overrides.SEARCH_OTHERS, request, library, search)
-    
+        return overrides.execute_override(
+            overrides.SEARCH_OTHERS, request, library, search
+        )
+
     token = request.headers.get("Authorization")
     check_authorization(request, token, library)
 
@@ -3391,7 +3451,7 @@ def main_movie(movie_id: int) -> Response:
 
     token = get_chunk_user_token(request)
 
-    #if not token:
+    # if not token:
     #    abort(401)
 
     events.execute_event(events.MOVIE_PLAY, movie_id, token)
@@ -3414,9 +3474,9 @@ def main_movie(movie_id: int) -> Response:
         360: "avc1.6e001e",
         480: "avc1.6e001f",
         720: "avc1.6e0020",
-        1080: "avc1.6e0032"
+        1080: "avc1.6e0032",
     }
-    #qualities = []
+    # qualities = []
     file = []
     for quality in qualities:
         if quality < height:
@@ -3427,8 +3487,8 @@ def main_movie(movie_id: int) -> Response:
 
             m3u8_line += f'CODECS="{quality_to_codec[int(quality)]}",RESOLUTION={new_height}x{new_width},SUBTITLES="subs",AUDIO="audio"\n/video_movie/{quality}/{movie_id}.m3u8\n'
             file.append(m3u8_line)
-    last_line = f'#EXT-X-STREAM-INF:BANDWIDTH={int(width*height*2.75)},'
-    
+    last_line = f"#EXT-X-STREAM-INF:BANDWIDTH={int(width*height*2.75)},"
+
     codec = "avc1.6e0033"
 
     if height in quality_to_codec:
@@ -3534,7 +3594,7 @@ def main_serie(episode_id: int | str) -> Response:
 
     token = get_chunk_user_token(request)
 
-    #if not token:
+    # if not token:
     #    abort(401)
 
     events.execute_event(events.EPISODE_PLAY, episode_id, token)
@@ -3562,14 +3622,14 @@ def main_serie(episode_id: int | str) -> Response:
             m3u8_line = f"#EXT-X-STREAM-INF:BANDWIDTH={new_width*new_width}"
             if audio != "":
                 m3u8_line += ',AUDIO="audio"'
-            
+
             m3u8_line += f",RESOLUTION={new_height}x{new_width}\n/video_serie/{quality}/{episode_id}.m3u8\n"
             file.append(m3u8_line)
     last_line = f"#EXT-X-STREAM-INF:BANDWIDTH={width*height}"
 
     if audio != "":
         last_line += ',AUDIO="audio"'
-    
+
     last_line += f",RESOLUTION={width}x{height}\n/video_serie/{episode_id}.m3u8"
     file.append(last_line)
     file_str = "".join(file)
@@ -3766,7 +3826,7 @@ def generate_audio_streams_movie(movie_id: int, format: str) -> str:
     audio_stream_response = audio_stream_pipe.stdout.read().decode("utf-8")
     audio_stream_response = audio_stream_response.split("\n")
     audio_stream_response.pop()
-    
+
     audio_streams = []
 
     for line in audio_stream_response:
@@ -3795,14 +3855,13 @@ def generate_audio_streams_movie(movie_id: int, format: str) -> str:
         audio_stream_language = audio_stream["language"]
         audio_stream_codec = audio_stream["codec"]
         audio_stream_type = audio_stream["type"]
-        #audio_stream_channels = audio_stream["channels"]
+        # audio_stream_channels = audio_stream["channels"]
         audio_stream_channels = 2
-        audio_stream_url = (
-            f"/audio_movie/{movie_id}_{audio_stream_id}_{audio_stream_channels}_{format}.m3u8"
-        )
+        audio_stream_url = f"/audio_movie/{movie_id}_{audio_stream_id}_{audio_stream_channels}_{format}.m3u8"
         audio_stream_string += f'#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="audio",CHANNELS="{audio_stream_channels}",NAME="{audio_stream_language} ({audio_stream_type})",DEFAULT=NO,AUTOSELECT=YES,URI="{audio_stream_url}",LANGUAGE="{audio_stream_language}",CODECS="{audio_stream_codec}"\n'
 
     return audio_stream_string
+
 
 def generate_audio_streams_serie(episode_id: int) -> str:
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
@@ -3863,8 +3922,13 @@ def generate_audio_streams_serie(episode_id: int) -> str:
 
     return audio_stream_string
 
-@app.route("/audio_movie/<int:movie_id>_<int:audio_id>_<int:channels_count>_<format>.m3u8")
-def audio_movie(movie_id: int, audio_id: int, channels_count: int, format: str) -> Response:
+
+@app.route(
+    "/audio_movie/<int:movie_id>_<int:audio_id>_<int:channels_count>_<format>.m3u8"
+)
+def audio_movie(
+    movie_id: int, audio_id: int, channels_count: int, format: str
+) -> Response:
     movie = Movies.query.filter_by(id=movie_id).first()
     if not movie:
         abort(404)
@@ -3914,16 +3978,16 @@ def chunk_movie_audio(
     if not movie:
         abort(404)
     video_path = movie.slug
-    
+
     seconds = (chunk - 1) * AUDIO_CHUNK_LENGTH
-    
+
     time_start = datetime.timedelta(seconds=seconds + AUDIO_PREVIOUS_LAG[key].lag)
     time_end = datetime.timedelta(seconds=seconds + AUDIO_CHUNK_LENGTH)
 
     time_start = str(time_start)
     time_end = str(time_end)
-    
-    #if not token:
+
+    # if not token:
     #    abort(401)
 
     command = [
@@ -3932,14 +3996,20 @@ def chunk_movie_audio(
         "-hide_banner",
         "-loglevel",
         LOG_LEVEL,
-        "-ss", str(time_start),       # Start time of the segment
-        "-t", str(AUDIO_CHUNK_LENGTH),         # End time of the segment
-        "-i", video_path,             # Set output offset
-        "-map", f"0:a:{audio_id}",    # Select the specified audio stream
-        "-ac", "2",    # Number of audio channels
-        "-vn",                        # Disable video
-        "-f", format,                 # Output format for HLS
-        "-"                      # Send the result to stdout
+        "-ss",
+        str(time_start),  # Start time of the segment
+        "-t",
+        str(AUDIO_CHUNK_LENGTH),  # End time of the segment
+        "-i",
+        video_path,  # Set output offset
+        "-map",
+        f"0:a:{audio_id}",  # Select the specified audio stream
+        "-ac",
+        "2",  # Number of audio channels
+        "-vn",  # Disable video
+        "-f",
+        format,  # Output format for HLS
+        "-",  # Send the result to stdout
     ]
 
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -3960,7 +4030,9 @@ def chunk_movie_audio(
         os.remove(temp_path)
 
     if AUDIO_PREVIOUS_LAG[key].lag < 0:
-        AUDIO_PREVIOUS_LAG[key].lag = (duration) - (VIDEO_CHUNK_LENGTH - AUDIO_PREVIOUS_LAG[key].lag)
+        AUDIO_PREVIOUS_LAG[key].lag = (duration) - (
+            VIDEO_CHUNK_LENGTH - AUDIO_PREVIOUS_LAG[key].lag
+        )
     else:
         AUDIO_PREVIOUS_LAG[key].lag = 0
 
@@ -3979,6 +4051,7 @@ def chunk_movie_audio(
 
     return response
 
+
 @app.route("/audio_serie/<int:episode_id>_<int:audio_id>_<int:channels_count>.m3u8")
 def audio_serie(episode_id: int, audio_id: int, channels_count: int) -> Response:
     episode = Episodes.query.filter_by(episode_id=episode_id).first()
@@ -3988,7 +4061,7 @@ def audio_serie(episode_id: int, audio_id: int, channels_count: int) -> Response
     duration = length_video(video_path)
 
     file = f"#EXTM3U\n#EXT-X-VERSION:3\n\n#EXT-X-TARGETDURATION:{AUDIO_CHUNK_LENGTH}\n\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-DISCONTINUITY-SEQUENCE: 0\n"
-    
+
     for i in range(0, int(duration), int(AUDIO_CHUNK_LENGTH)):
         file += f"#EXT-X-DISCONTINUITY\n"
         file += f"#EXTINF:{int(AUDIO_CHUNK_LENGTH)},\n/chunk_serie_audio/{episode_id}-{audio_id}-{(i // AUDIO_CHUNK_LENGTH) + 1}-{channels_count}.ts\n"
@@ -4006,8 +4079,13 @@ def audio_serie(episode_id: int, audio_id: int, channels_count: int) -> Response
 
     return response
 
-@app.route("/chunk_serie_audio/<int:episode_id>-<int:audio_id>-<int:chunk>-<int:channel_count>.ts")
-def chunk_serie_audio(episode_id: int, audio_id: int, chunk: int, channel_count: int) -> Response:
+
+@app.route(
+    "/chunk_serie_audio/<int:episode_id>-<int:audio_id>-<int:chunk>-<int:channel_count>.ts"
+)
+def chunk_serie_audio(
+    episode_id: int, audio_id: int, chunk: int, channel_count: int
+) -> Response:
     global AUDIO_PREVIOUS_LAG
 
     token = get_chunk_user_token(request)
@@ -4038,14 +4116,20 @@ def chunk_serie_audio(episode_id: int, audio_id: int, chunk: int, channel_count:
         "-hide_banner",
         "-loglevel",
         LOG_LEVEL,
-        "-ss", str(time_start),       # Start time of the segment
-        "-t", str(AUDIO_CHUNK_LENGTH),         # End time of the segment
-        "-i", video_path,             # Set output offset
-        "-map", f"0:a:{audio_id}",    # Select the specified audio stream
-        "-ac", "2",    # Number of audio channels
-        "-vn",                        # Disable video
-        "-f", "mp2",                 # Output format for HLS
-        "-"                      # Send the result to stdout
+        "-ss",
+        str(time_start),  # Start time of the segment
+        "-t",
+        str(AUDIO_CHUNK_LENGTH),  # End time of the segment
+        "-i",
+        video_path,  # Set output offset
+        "-map",
+        f"0:a:{audio_id}",  # Select the specified audio stream
+        "-ac",
+        "2",  # Number of audio channels
+        "-vn",  # Disable video
+        "-f",
+        "mp2",  # Output format for HLS
+        "-",  # Send the result to stdout
     ]
 
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -4066,7 +4150,9 @@ def chunk_serie_audio(episode_id: int, audio_id: int, chunk: int, channel_count:
         os.remove(temp_path)
 
     if AUDIO_PREVIOUS_LAG[key].lag < 0:
-        AUDIO_PREVIOUS_LAG[key].lag = (duration) - (VIDEO_CHUNK_LENGTH - AUDIO_PREVIOUS_LAG[key].lag)
+        AUDIO_PREVIOUS_LAG[key].lag = (duration) - (
+            VIDEO_CHUNK_LENGTH - AUDIO_PREVIOUS_LAG[key].lag
+        )
     else:
         AUDIO_PREVIOUS_LAG[key].lag = 0
 
@@ -4085,6 +4171,7 @@ def chunk_serie_audio(episode_id: int, audio_id: int, chunk: int, channel_count:
 
     return response
 
+
 @app.route("/get_actor_data/<actor_id>", methods=["GET", "POST"])
 def get_actor_data(actor_id: int) -> Response:
 
@@ -4093,7 +4180,7 @@ def get_actor_data(actor_id: int) -> Response:
 
     if actor_id == "undefined":
         abort(404)
-        
+
     movies_data = []
     series_data = []
     actor = Actors.query.filter_by(actor_id=actor_id).first()
@@ -4197,6 +4284,7 @@ def movie_banner(id: int) -> Response:
         abort(404)
     return send_file(movie_banner, as_attachment=True)
 
+
 @app.route("/movie_logo/<id>")
 def movie_logo(id: int) -> Response:
     movie = Movies.query.filter_by(id=id).first()
@@ -4204,6 +4292,7 @@ def movie_logo(id: int) -> Response:
     if not os.path.exists(movie_logo):
         abort(404)
     return send_file(movie_logo, as_attachment=True)
+
 
 @app.route("/serie_cover/<id>")
 def serie_cover(id: int) -> Response:
@@ -4222,6 +4311,7 @@ def serie_banner(id: int) -> Response:
         abort(404)
     return send_file(serie_banner, as_attachment=True)
 
+
 @app.route("/serie_logo/<id>")
 def serie_logo(id: int) -> Response:
     serie = Series.query.filter_by(id=id).first()
@@ -4229,6 +4319,7 @@ def serie_logo(id: int) -> Response:
     if not os.path.exists(serie_logo):
         abort(404)
     return send_file(serie_logo, as_attachment=True)
+
 
 @app.route("/season_cover/<id>")
 def season_cover(id: int) -> Response:
@@ -4405,8 +4496,6 @@ def start_chocolate() -> None:
             log_message = f"Error while updating Discord RPC: {e}"
             log("ERROR", "Discord RPC", log_message)
 
-    
-
     app.run(host="0.0.0.0", port=SERVER_PORT)
     events.execute_event(events.AFTER_START)
 
@@ -4419,14 +4508,13 @@ def update_db_columns(engine, db):
     # Parcourir toutes les classes définies dans Base
     for cls in db.metadata.tables.values():
         # Si la classe est une sous-classe de db.Model
-        #print the attributes of the class
+        # print the attributes of the class
         name = None
 
         if hasattr(cls, "name"):
             name = cls.name
         elif hasattr(cls, "full_name"):
             name = cls.full_name
-
 
         if name:
             table_name = name
@@ -4450,9 +4538,7 @@ def update_db_columns(engine, db):
             for column in missing_columns:
                 column_type = cls.columns[column].type
                 connection.execute(
-                    text(
-                    f"ALTER TABLE {table_name} ADD COLUMN {column} {column_type};"
-                    )
+                    text(f"ALTER TABLE {table_name} ADD COLUMN {column} {column_type};")
                 )
 
             for column in extra_columns:
@@ -4466,12 +4552,11 @@ def update_db_columns(engine, db):
                     continue
 
                 connection.execute(
-                    text(
-                    f"ALTER TABLE {table_name} DROP COLUMN {column['name']};"
-                    )
+                    text(f"ALTER TABLE {table_name} DROP COLUMN {column['name']};")
                 )
 
     connection.close()
+
 
 if __name__ == "__main__":
     start_chocolate()

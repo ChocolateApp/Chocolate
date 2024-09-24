@@ -223,7 +223,6 @@ def createAlbum(
     cover = save_image(album.cover_big, f"{IMAGES_PATH}/Album_{album_id}")
 
     tracks_list = ",".join(tracks)
-
     album = Albums(
         id=album_id,
         title=album_name,
