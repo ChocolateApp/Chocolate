@@ -5,6 +5,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from chocolate_app import DB
 
+
 class Users(DB.Model, UserMixin):  # type: ignore
     """
     Users model
@@ -260,7 +261,7 @@ class RecurringContent(DB.Model):  # type: ignore
 
 
 class Games(DB.Model):  # type: ignore
-    #TODO: Rework this model to have a better structure
+    # TODO: Rework this model to have a better structure
     """
     Games model
 
@@ -570,6 +571,7 @@ class MusicPlayed(DB.Model):  # type: ignore
     music_id : int
     play_count : int
     """
+
     user_id = DB.Column(DB.Integer, primary_key=True)
     music_id = DB.Column(DB.Integer, primary_key=True)
     play_count = DB.Column(DB.Integer)
@@ -605,8 +607,8 @@ class MediaPlayed(DB.Model):  # type: ignore
     """
     MediaPlayed model
 
-    This table is used to store the media played by the users, 
-    to have a history of the media played, 
+    This table is used to store the media played by the users,
+    to have a history of the media played,
     be able to continue the media where the user stopped,
     and to have statistics on the media
 
@@ -620,8 +622,7 @@ class MediaPlayed(DB.Model):  # type: ignore
     media_id : int
     season_id : int | None
     serie_id : int | None
-    date : datetime
-    time : int
+    datetime : datetime
     duration : int
     """
 
@@ -631,8 +632,7 @@ class MediaPlayed(DB.Model):  # type: ignore
     media_id = DB.Column(DB.Integer)
     season_id = DB.Column(DB.Integer, nullable=True)
     serie_id = DB.Column(DB.Integer, nullable=True)
-    date = DB.Column(DB.Date)
-    time = DB.Column(DB.Integer)
+    datetime = DB.Column(DB.Text)
     duration = DB.Column(DB.Integer)
 
     def __repr__(self) -> str:
