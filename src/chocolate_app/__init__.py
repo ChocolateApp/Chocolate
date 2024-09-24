@@ -164,8 +164,8 @@ except PermissionError:
     LOG_PATH = replace_path(LOG_PATH)
     IMAGES_PATH = replace_path(IMAGES_PATH)
 
-VIDEO_CHUNK_LENGTH = 12
-AUDIO_CHUNK_LENGTH = 12
+VIDEO_CHUNK_LENGTH = 45
+AUDIO_CHUNK_LENGTH = 45
 
 if os.getenv("NO_SCANS") == "true":
     ARGUMENTS.no_scans = True
