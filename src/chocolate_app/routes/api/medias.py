@@ -1,10 +1,9 @@
 import os
+import base64
 import random
-import re
 import natsort
 import datetime
 import requests
-import base64
 
 from PIL import Image
 from io import BytesIO
@@ -38,7 +37,9 @@ medias_bp = Blueprint("medias", __name__, url_prefix="/medias")
 LANGUAGE_FILE = get_language_file()
 
 
-def episode_to_media(user_id, episode_id) -> Dict[str, Any] | None:
+def episode_to_media(
+    user_id, episode_id, have_serie_repr=True
+) -> Dict[str, Any] | None:
     episode = Episodes.query.filter_by(id=episode_id).first()
     if not episode:
         return None
@@ -55,7 +56,7 @@ def episode_to_media(user_id, episode_id) -> Dict[str, Any] | None:
 
     # TODO: Don't select the first one, select the last you watched
 
-    banner_b64 = serie.banner_b64
+    banner_b64 = episode.cover_b64
     logo_b64 = serie.logo_b64
     cover_b64 = serie.cover_b64
 
@@ -69,34 +70,24 @@ def episode_to_media(user_id, episode_id) -> Dict[str, Any] | None:
 
     serie_representation = []
 
-    for season in seasons:
-        episodes = natsort.natsorted(
-            Episodes.query.filter_by(season_id=season.tmdb_id).all(),
-            key=lambda x: x.release_date,
-        )
-        eps = []
+    if have_serie_repr:
+        for season in seasons:
+            episodes = natsort.natsorted(
+                Episodes.query.filter_by(season_id=season.tmdb_id).all(),
+                key=lambda x: x.release_date,
+            )
+            eps = []
 
-        for ep in episodes:
-            eps.append(
+            for ep in episodes:
+                eps.append(episode_to_media(user_id, ep.id, False))
+
+            serie_representation.append(
                 {
-                    "id": ep.id,
-                    "number": ep.number,
-                    "title": ep.title,
-                    "release_date": ep.release_date,
-                    "file_date": datetime.datetime.fromtimestamp(
-                        os.path.getmtime(ep.slug)
-                    ),
-                    "banner_b64": ep.cover_b64,
+                    "season_id": season.id,
+                    "season_number": season.number,
+                    "episodes": eps,
                 }
             )
-
-        serie_representation.append(
-            {
-                "season_id": season.id,
-                "season_number": season.number,
-                "episodes": eps,
-            }
-        )
 
     last_duration = 0
     try:
@@ -110,7 +101,8 @@ def episode_to_media(user_id, episode_id) -> Dict[str, Any] | None:
 
     media = {
         "id": episode_id,
-        "title": serie.title,
+        "title": episode.title,
+        "serie_title": serie.title,
         "alternatives_titles": [serie.title],
         "banner_id": serie.id,
         "description": serie.description,
@@ -123,6 +115,7 @@ def episode_to_media(user_id, episode_id) -> Dict[str, Any] | None:
         "file_date": datetime.datetime.fromtimestamp(os.path.getmtime(episode.slug)),
         "serie_representation": serie_representation,
         "last_duration": last_duration,
+        "number": episode.number,
         "images": {
             "banner": banner_b64,
             "logo": logo_b64,
@@ -149,15 +142,16 @@ def serie_to_media(user_id, serie_id) -> Dict[str, Any] | None:
                 Episodes.query.filter_by(serie_id=serie.tmdb_id).all(),
                 key=lambda x: x.release_date,
             )[0].id,
+            False,
         )
 
     serie_media_played = [media.__dict__ for media in serie_media_played]
 
     serie_media_played = natsort.natsorted(
-        serie_media_played, key=itemgetter(*["date", "time"]), reverse=True
+        serie_media_played, key=itemgetter(*["datetime"]), reverse=True
     )
 
-    return episode_to_media(user_id, serie_media_played[0]["media_id"])
+    return episode_to_media(user_id, serie_media_played[0]["media_id"], False)
 
 
 def movie_to_media(user_id, movie_id) -> Dict[str, Any] | None:
@@ -360,7 +354,7 @@ def get_continue_watching(user: Users) -> List[Dict[str, Any]]:
 
     # sort by date, and then by time
     continue_watching_list = natsort.natsorted(
-        continue_watching_list, key=itemgetter(*["date", "time"]), reverse=True
+        continue_watching_list, key=itemgetter(*["datetime"]), reverse=True
     )
     continue_watching_list_to_return = []
 
@@ -379,9 +373,15 @@ def get_continue_watching(user: Users) -> List[Dict[str, Any]]:
             continue
         if watching["media_type"] == "show":
             serie_ids_in_continue.append(watching["serie_id"])
-        continue_watching_list_to_return.append(
-            type_to_function[watching["media_type"]](user_id, watching["media_id"])
-        )
+        media_type = watching["media_type"]
+        if media_type == "show":
+            continue_watching_list_to_return.append(
+                episode_to_media(user_id, watching["media_id"], False)
+            )
+        else:
+            continue_watching_list_to_return.append(
+                type_to_function[watching["media_type"]](user_id, watching["media_id"])
+            )
 
     return continue_watching_list_to_return
 
