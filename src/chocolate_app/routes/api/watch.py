@@ -58,8 +58,13 @@ AUDIO_PREVIOUS_LAG: Dict[str, PreviousLagInfo] = {}
 
 
 def set_media_played(
-    media_type: str, media_id: int, user_id: int, duration: int = 0
+    media_type: str, media_id: int, user_id: int, duration: str | float | int
 ) -> None:
+    if isinstance(duration, str):
+        duration = round(float(duration))
+    elif isinstance(duration, float):
+        duration = round(duration)
+
     media_played = MediaPlayed.query.filter_by(
         media_id=media_id, media_type=media_type, user_id=user_id
     ).first()
@@ -69,9 +74,8 @@ def set_media_played(
         )
         DB.session.add(media_played)
 
-    media_played.date = datetime.datetime.now().date()
-    media_played.hour = datetime.datetime.now().time()
-    media_played.time = int(datetime.datetime.now().timestamp())
+    # get the current date as a Date object
+    media_played.datetime = datetime.datetime.now()
     media_played.duration = duration
 
     if media_type == "show":
@@ -84,11 +88,46 @@ def set_media_played(
         media_played.serie_id = (
             Series.query.filter_by(tmdb_id=episode_data.serie_id).first().id
         )
-    print(f"La durée de l'épisode {media_id} est de {duration} secondes")
+        media_duration = length_video(episode_data.slug)
+        if duration > media_duration * 0.9:
+            # create a new entry in the table MediaPlayed for the next episode
+            if not Episodes.query.filter_by(
+                season_id=episode_data.season_id,
+                number=episode_data.number + 1,
+            ).first():
+                print("There's no next episodes")
+                return
+
+            print("There's a next episodes")
+            print(
+                f"season_id: {episode_data.season_id} number: {episode_data.number+1}"
+            )
+            next_episode = Episodes.query.filter_by(
+                season_id=episode_data.season_id,
+                number=int(episode_data.number) + 1,
+            ).first()
+
+            if MediaPlayed.query.filter_by(
+                media_id=next_episode.id, media_type="show", user_id=user_id
+            ).first():
+                return
+
+            media_played_next = MediaPlayed(
+                media_id=next_episode.id, media_type="show", user_id=user_id
+            )
+            media_played_next.datetime = datetime.datetime.now()
+            media_played_next.duration = 0
+            media_played_next.serie_id = media_played.serie_id
+            media_played_next.season_id = media_played.season_id
+            media_played.datetime = media_played.datetime - datetime.timedelta(
+                seconds=5
+            )
+            DB.session.add(media_played_next)
+
     DB.session.commit()
 
 
-def get_media_slug(media_id: int, media_type: str) -> str:
+def get_media_slug(media_id: int, media_type: str) -> str | None:
     if media_type == "show":
         return Episodes.query.filter_by(id=media_id).first().slug
     elif media_type == "movie":
@@ -217,7 +256,7 @@ def generate_caption_media(
                     "index": index,
                     "languageCode": language,
                     "language": new_language,
-                    "url": f"/caption/{media_id}_{media_type}_{index}.m3u8",
+                    "url": f"/api/watch/caption/{media_id}_{media_type}_{index}.m3u8",
                     "name": title_name,
                 }
             )
@@ -227,6 +266,67 @@ def generate_caption_media(
         string += f'#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",NAME="{caption["language"]}",DEFAULT=NO,FORCED=NO,URI="{caption["url"]}",LANGUAGE="{caption["languageCode"]}"\n'
 
     return string
+
+
+@watch_bp.route("/caption/<media_id>_<media_type>_<id>.m3u8", methods=["GET"])
+def caption(media_id: int, media_type: str, id: int) -> Response:
+    video_path = get_media_slug(media_id, media_type)
+
+    movie_duration = length_video(video_path) + 1
+
+    m3u8_content = f"#EXTM3U\n#EXT-X-TARGETDURATION:{movie_duration}\n#EXT-X-VERSION:3\n\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXTINF:{movie_duration},\n/api/watch/chunk_caption/{media_id}_{media_type}_{id}.vtt\n#EXT-X-ENDLIST"
+
+    response = make_response(m3u8_content)
+    response.headers.set("Content-Type", "vnd.apple.mpegURL")
+    response.headers.set("Range", "bytes=0-4095")
+    response.headers.set("Accept-Encoding", "*")
+    response.headers.set("Access-Control-Allow-Origin", "*")
+    response.headers.set(
+        "Content-Disposition",
+        "attachment",
+        filename=f"{media_id}_{media_type}_{id}.m3u8",
+    )
+
+    return response
+
+
+@watch_bp.route("/chunk_caption/<media_id>_<media_type>_<id>.vtt", methods=["GET"])
+def chunk_caption(media_id: int, media_type: str, id: int) -> Response:
+    video_path = get_media_slug(media_id, media_type)
+
+    command = [
+        "ffmpeg",
+        "-hide_banner",
+        "-loglevel",
+        LOG_LEVEL,
+        "-i",
+        video_path,
+        "-map",
+        f"0:{id}",
+        "-f",
+        "webvtt",
+        "-",
+    ]
+
+    pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
+
+    if not pipe or not pipe.stdout:
+        abort(404)
+
+    data = pipe.stdout.read()
+
+    response = make_response(data)
+    response.headers.set("Content-Type", "text/vtt")
+    response.headers.set("Range", "bytes=0-4095")
+    response.headers.set("Accept-Encoding", "*")
+    response.headers.set("Access-Control-Allow-Origin", "*")
+    response.headers.set(
+        "Content-Disposition",
+        "attachment",
+        filename=f"{media_id}_{media_type}_{id}.vtt",
+    )
+
+    return response
 
 
 def generate_audio_streams_media(
@@ -568,6 +668,27 @@ def audio_chunk(media_type: str, media_id: int, audio_idx: int, idx: int) -> Res
     )
 
     return response
+
+
+@watch_bp.route("/media_played", methods=["POST"])
+@token_required
+def media_played(current_user) -> Response:
+    """Set media as played"""
+    data = request.json()
+
+    if not data:
+        return generate_response(Codes.MISSING_DATA, True)
+
+    media_id = data.get("media_id")
+    media_type = data.get("media_type")
+    duration = data.get("duration")
+
+    if not media_id or not media_type:
+        return generate_response(Codes.MISSING_DATA, True)
+
+    set_media_played(media_type, media_id, current_user.id, duration)
+
+    return generate_response(Codes.SUCCESS, False)
 
 
 @watch_bp.route("/<media_type>/<int:media_id>", methods=["GET"])
