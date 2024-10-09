@@ -178,7 +178,7 @@ def create_app() -> Flask:
     Returns:
         Flask: The Flask app
     """
-    dir_path = pathlib.Path(__package__).parent
+    dir_path = pathlib.Path(__package__).parent  # type: ignore
     TEMPLATE_FOLDER = f"{dir_path}/templates"
 
     if not os.path.isdir(IMAGES_PATH):
@@ -352,7 +352,26 @@ def get_language_file() -> Dict:
     return language_dict
 
 
+def create_directories() -> None:
+    """
+    Create the directories
+    """
+    parent = os.path.dirname(PLUGINS_PATH)
+    if not os.path.isdir(parent):
+        os.mkdir(parent)
+
+    if not os.path.isdir(PLUGINS_PATH):
+        os.mkdir(PLUGINS_PATH)
+
+    if not os.path.isdir(IMAGES_PATH):
+        os.mkdir(IMAGES_PATH)
+
+    if not os.path.isdir(ARTEFACTS_PATH):
+        os.mkdir(ARTEFACTS_PATH)
+
+
 check_dependencies()
+create_directories()
 
 config = get_config()
 tmdb: TMDb = create_tmdb()
