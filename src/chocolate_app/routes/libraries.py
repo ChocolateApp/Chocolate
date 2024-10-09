@@ -48,9 +48,7 @@ def get_all_libraries():
     libraries = sorted(libraries_list, key=lambda k: k["type"].lower())
 
     for library in libraries:
-        child_libs = LibrariesMerge.query.filter_by(
-            parent_lib=library["name"]
-        ).all()
+        child_libs = LibrariesMerge.query.filter_by(parent_lib=library["name"]).all()
         if child_libs is []:
             continue
         child_libs_bis = []
@@ -92,9 +90,7 @@ def get_all_libraries_created():
             library_type = library["type"]
             # for all lib of the same type, remove the actual lib, and add all the lib to "possible_merge_parent"
             for lib in libraries_list:
-                is_child = LibrariesMerge.query.filter_by(
-                    child_lib=lib["name"]
-                ).first()
+                is_child = LibrariesMerge.query.filter_by(child_lib=lib["name"]).first()
                 if (
                     lib["type"] == library_type
                     and lib["name"] != library["name"]
@@ -111,8 +107,6 @@ def get_all_libraries_created():
                 available_for = str(library["available_for"]).split(",")
                 if str(user.id) not in available_for:
                     libraries_list.remove(library)
-
-
 
     generate_log(request, "SERVER")
 
@@ -253,17 +247,20 @@ def delete_lib():
 
     return jsonify({"error": "worked"})
 
+
 @libraries_bp.route("/start_intro_detection", methods=["POST"])
 def start_intro_detection():
     from multiprocessing import Process
     from chocolate_app.intro import intro_detection
+
     check_authorization(request, request.headers.get("Authorization"))
     check_admin(request, request.headers.get("Authorization"))
 
     process = Process(target=intro_detection.start)
     process.start()
-    
+
     return jsonify(True)
+
 
 @libraries_bp.route("/rescan_all", methods=["POST"])
 def rescan_all():
@@ -275,7 +272,6 @@ def rescan_all():
 
     type_to_call = {
         "series": scans.getSeries,
-        "movies": scans.getMovies,
         "consoles": scans.getGames,
         "others": scans.getOthersVideos,
         "books": scans.getBooks,
