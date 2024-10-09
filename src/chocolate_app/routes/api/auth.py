@@ -15,6 +15,9 @@ from chocolate_app.utils.utils import generate_response, Codes
 dir_path = get_dir_path()
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
+ACCESS_TOKEN_EXPIRATION = 24 * 30  # 30 days
+REFRESH_TOKEN_EXPIRATION = 24 * 30 * 6  # approximatively 6 months
+
 
 def image_to_base64(
     image_path: str, width: int | None = None, height: int | None = None
@@ -106,13 +109,18 @@ def login():
     access_token = jwt.encode(
         {
             "id": user.id,
-            "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=3),
+            "exp": datetime.datetime.utcnow()
+            + datetime.timedelta(hours=ACCESS_TOKEN_EXPIRATION),
         },
         current_app.config["SECRET_KEY"],
     )
 
     refresh_token = jwt.encode(
-        {"id": user.id, "exp": datetime.datetime.utcnow() + datetime.timedelta(days=2)},
+        {
+            "id": user.id,
+            "exp": datetime.datetime.utcnow()
+            + datetime.timedelta(days=REFRESH_TOKEN_EXPIRATION),
+        },
         current_app.config["SECRET_KEY"],
     )
 
@@ -148,7 +156,8 @@ def refresh():
     access_token = jwt.encode(
         {
             "id": current_user.id,
-            "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=3),
+            "exp": datetime.datetime.utcnow()
+            + datetime.timedelta(hours=ACCESS_TOKEN_EXPIRATION),
         },
         current_app.config["SECRET_KEY"],
     )
