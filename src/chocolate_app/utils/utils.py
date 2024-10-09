@@ -227,7 +227,7 @@ def user_in_lib(user_id, lib):
     return False
 
 
-def save_image(url, path):
+def save_image(url, path) -> str | None:
     image_requests = requests.Session()
     if not os.path.exists(f"{path}.webp"):
         with open(f"{path}.png", "wb") as f:
