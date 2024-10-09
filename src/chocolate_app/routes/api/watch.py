@@ -178,11 +178,11 @@ def generate_m3u8(media: Any) -> Response:
             new_width = int(quality)
             new_height = int(float(width) / float(height) * new_width)
             new_height += new_height % 2
-            m3u8_line = f"#EXT-X-STREAM-INF:BANDWIDTH={int(new_width*new_height*4)},"
+            m3u8_line = f"#EXT-X-STREAM-INF:BANDWIDTH={int((new_width*new_height)/4)},"
 
             m3u8_line += f'CODECS="{quality_to_codec[int(quality)]}",RESOLUTION={new_height}x{new_width},SUBTITLES="subs",AUDIO="audio"\n/api/watch/video_media/{quality}/{media_type}/{media_id}.m3u8\n'
             file.append(m3u8_line)
-    last_line = f"#EXT-X-STREAM-INF:BANDWIDTH={int(width*height*2.75)},"
+    last_line = f"#EXT-X-STREAM-INF:BANDWIDTH={int((width*height)/4)},"
 
     codec = "avc1.6e0033"
 
