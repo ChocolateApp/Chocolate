@@ -72,10 +72,9 @@ class Movies(DB.Model):  # type: ignore
     genre : str
     duration : str
     cast : str
-    trailer_url : str
     adult : str
     library_name : str
-    alternatives_names : str
+    alternative_title : str
     file_date : float
     """
 
@@ -95,10 +94,9 @@ class Movies(DB.Model):  # type: ignore
     genre = DB.Column(DB.String(255))
     duration = DB.Column(DB.String(255))
     cast = DB.Column(DB.String(255))
-    trailer_url = DB.Column(DB.String(255))
     adult = DB.Column(DB.String(255))
     library_name = DB.Column(DB.String(255))
-    alternatives_names = DB.Column(DB.Text)
+    alternative_title = DB.Column(DB.Text)
     file_date = DB.Column(DB.Float)
 
     def __repr__(self) -> str:
