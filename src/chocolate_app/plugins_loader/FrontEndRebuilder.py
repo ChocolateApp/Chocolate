@@ -1,4 +1,3 @@
-from genericpath import isdir
 import pathlib
 import os
 import hashlib
@@ -312,6 +311,7 @@ def handle_new(new_folder: str, frontend_path: str, plugin_hash: str):
 
     return required_libs
 
+
 def handle_append(append_folder: str, frontend_path: str, plugin_hash: str):
     """
     Handle the append folder (WIP - Not implemented yet)
@@ -338,7 +338,7 @@ def handle_append(append_folder: str, frontend_path: str, plugin_hash: str):
 
             if not description:
                 raise ChocolateException("Description not found in the file")
-            
+
             description_lines = description.split("\n")
             description_lines = description_lines[1:]
             while description_lines[-1] == "":
@@ -357,19 +357,21 @@ def handle_append(append_folder: str, frontend_path: str, plugin_hash: str):
                     parent = clean_line.split(":")[1].strip()
                 elif clean_line.startswith("requirements"):
                     required_libs.extend(clean_line.split(":")[1].strip().split(","))
-                    
+
             if not folder:
                 raise ChocolateException("Folder not found in the Append file")
 
             if not file:
                 raise ChocolateException("File not found in the Append file")
-            
+
             if not parent:
                 raise ChocolateException("Parent not found in the Append file")
-            
+
             if not parent.startswith(".") and not parent.startswith("#"):
-                raise ChocolateException("Parent should start with a dot or a hash (class or id)")
-            
+                raise ChocolateException(
+                    "Parent should start with a dot or a hash (class or id)"
+                )
+
             import_start_index = 0
             import_end_index = 0
             functions_start_index = 0
@@ -380,10 +382,10 @@ def handle_append(append_folder: str, frontend_path: str, plugin_hash: str):
 
             if "/* Imports */" not in content:
                 raise ChocolateException("Imports section not found in the file")
-            
+
             if "/* Functions */" not in content:
                 raise ChocolateException("Functions section not found in the file")
-            
+
             if "/* Component */" not in content:
                 raise ChocolateException("Component section not found in the file")
 
@@ -409,9 +411,15 @@ def handle_append(append_folder: str, frontend_path: str, plugin_hash: str):
             component_start_index = functions_end_index
             component_end_index = len(content)
 
-            import_string = "\n".join(content[import_start_index + 1: import_end_index])
-            functions_string = "\n".join(content[functions_start_index + 1: functions_end_index])
-            component_string = "\n".join(content[component_start_index + 1: component_end_index])
+            import_string = "\n".join(
+                content[import_start_index + 1 : import_end_index]
+            )
+            functions_string = "\n".join(
+                content[functions_start_index + 1 : functions_end_index]
+            )
+            component_string = "\n".join(
+                content[component_start_index + 1 : component_end_index]
+            )
 
             with open(f"{frontend_path}/src/{folder}/{file}", "r") as f:
                 contenu = f.read()
@@ -419,12 +427,12 @@ def handle_append(append_folder: str, frontend_path: str, plugin_hash: str):
             new_file_code = contenu
             new_file_code = import_string + new_file_code
 
-            #only the last return statement is replaced
+            # only the last return statement is replaced
             new_file_code = re.sub(
                 r"return (.*?)\(.*?\);",
                 f"return \\1_{plugin_hash}();",
                 new_file_code,
-                count=1
+                count=1,
             )
 
             # the component is added based on the parent query
@@ -462,6 +470,7 @@ def create_jsx_file(path: str, content: str) -> None:
     """
     with open(path, "w") as file:
         file.write(content)
+
 
 def rewrite_jsx_file(path: str, content: str) -> None:
     """
