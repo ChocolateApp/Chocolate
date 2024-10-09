@@ -131,11 +131,17 @@ def serie_to_media(user_id, serie_id) -> Dict[str, Any] | None:
     serie = Series.query.filter_by(id=serie_id).first()
     if not serie:
         return None
+
     serie_media_played = MediaPlayed.query.filter_by(
         user_id=user_id, serie_id=serie_id, media_type="show"
     ).all()
 
-    if not serie_media_played:
+    episode_exists = Episodes.query.filter_by(serie_id=serie.tmdb_id).first()
+
+    if not serie_media_played or not episode_exists:
+        if not episode_exists:
+            for media in serie_media_played:
+                MediaPlayed.query.filter_by(id=media.id).delete()
         return episode_to_media(
             user_id,
             natsort.natsorted(
@@ -151,7 +157,22 @@ def serie_to_media(user_id, serie_id) -> Dict[str, Any] | None:
         serie_media_played, key=itemgetter(*["datetime"]), reverse=True
     )
 
-    return episode_to_media(user_id, serie_media_played[0]["media_id"], False)
+    episode_id = serie_media_played[0]["media_id"]
+    episode_exists = Episodes.query.filter_by(id=episode_id).first()
+
+    if not episode_exists:
+        for media in serie_media_played:
+            MediaPlayed.query.filter_by(id=media["id"]).delete()
+        return episode_to_media(
+            user_id,
+            natsort.natsorted(
+                Episodes.query.filter_by(serie_id=serie.tmdb_id).all(),
+                key=lambda x: x.release_date,
+            )[0].id,
+            False,
+        )
+
+    return episode_to_media(user_id, episode_id, False)
 
 
 def movie_to_media(user_id, movie_id) -> Dict[str, Any] | None:
@@ -183,7 +204,7 @@ def movie_to_media(user_id, movie_id) -> Dict[str, Any] | None:
     media = {
         "id": movie.id,
         "title": movie.title,
-        "alternatives_titles": movie.alternatives_names.split(","),
+        "alternatives_titles": movie.alternative_title.split(","),
         "banner_id": movie.id,
         "description": movie.description,
         "have_logo": True if movie.logo else False,
@@ -340,12 +361,35 @@ def parse_tv_folder(tv_path) -> Any:
     return channels
 
 
+def check_usability(media_list: List[Dict[str, Any]]) -> None:
+    # for all media, check if the id is in the database
+    for media in media_list:
+        if media["media_type"] == "movie":
+            movie = Movies.query.filter_by(id=media["id"]).first()
+            if not movie:
+                media_list.remove(media)
+        elif media["media_type"] == "show":
+            serie = Series.query.filter_by(id=media["id"]).first()
+            if not serie:
+                media_list.remove(media)
+        elif media["media_type"] == "album":
+            album = Albums.query.filter_by(id=media["id"]).first()
+            if not album:
+                media_list.remove(media)
+        elif media["media_type"] == "other":
+            other = OthersVideos.query.filter_by(video_hash=media["id"]).first()
+            if not other:
+                media_list.remove(media)
+
+
 def get_continue_watching(user: Users) -> List[Dict[str, Any]]:
     # TODO: Implement real continue watching system, for Movies, Series and Others
     user_id = user.id
     # TODO: Impletement continue watching
     continue_watching = MediaPlayed.query.filter_by(user_id=user_id).all()
     continue_watching_list = [media.__dict__ for media in continue_watching]
+
+    check_usability(continue_watching_list)
 
     for watching in continue_watching_list:
         del watching["_sa_instance_state"]
@@ -844,14 +888,12 @@ def search_medias(
         if not media:
             continue
         count = 0.0
-        try:
-            title = media["title"].lower()
-            alternative_titles = media["alternatives_titles"]
-            description = media["description"].lower().split(" ")
-            genres = [genre_id_to_name(genre) for genre in media["genres"]]
-            people = media["peoples"]
-        except Exception:
-            continue
+
+        title = media["title"].lower()
+        alternative_titles = media["alternatives_titles"]
+        description = media["description"].lower().split(" ")
+        genres = media["genres"]
+        people = media["peoples"]
 
         for term in search_terms:
             term = term.lower()
@@ -942,8 +984,6 @@ def search_medias_route(current_user, type: str) -> Response:
         data = {"main_media": search_results[0], "medias": []}  # type: ignore
     else:
         data = {"main_media": None, "medias": []}
-
-    print(data)
 
     return generate_response(Codes.SUCCESS, False, data)
 
