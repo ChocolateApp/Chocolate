@@ -2,20 +2,28 @@ import os
 import base64
 import random
 import natsort
+import guessit
 import datetime
+import dateutil
 import requests
+
 
 from PIL import Image
 from io import BytesIO
 from operator import itemgetter
 from m3u_parser import M3uParser
 from typing import Any, Dict, List
+import xml.etree.ElementTree as ET
 from flask import Blueprint, request, Response, abort, send_file
 
 from chocolate_app import get_language_file
 from chocolate_app.routes.api.auth import token_required
 from chocolate_app.utils.utils import generate_response, Codes, translate
+from PIL import Image, ImageDraw
+import io
 from chocolate_app.tables import (
+    TVChannels,
+    TVPrograms,
     Users,
     Series,
     Movies,
@@ -301,28 +309,30 @@ def album_to_media(user_id, album_id) -> Dict[str, Any] | None:
     return media
 
 
-def tv_to_media(tv_path, channel) -> Dict[str, Any]:
-    logo_url = channel["logo"]
+def get_current_program(channel_id) -> TVPrograms | None:
+    now = datetime.datetime.now(datetime.timezone.utc)
+    programs = TVPrograms.query.filter_by(channel_id=channel_id).all()
+    for program in programs:
+        start = dateutil.parser.parse(program.start_time)
+        end = dateutil.parser.parse(program.end_time)
+        if start <= now <= end:
+            return program
+    return None
 
-    logo = requests.get(logo_url).content
 
-    banner_b64 = None
+def tv_to_media(channel_id) -> Dict[str, Any] | None:
+    channel = TVChannels.query.filter_by(id=channel_id).first()
 
-    image = Image.open(logo)
-    width, height = image.size
-    new_width = 300
-    new_height = int((new_width / width) * height)
-    image = image.resize((new_width, new_height))
-    image.save(logo, "webp")
-
-    with open(logo, "rb") as image_file:
-        banner_b64 = base64.b64encode(image_file.read()).decode("utf-8")
+    if not channel:
+        return None
 
     media = {
-        "id": channel["tvg"]["id"],
-        "title": channel["name"],
-        "alternatives_titles": [channel["tvg"]["name"]],
-        "banner_id": channel["tvg"]["id"],
+        "id": f"{channel.id}",
+        "_source": channel.slug,
+        "_epg": get_current_program(channel_id),
+        "title": channel.name,
+        "alternatives_titles": [channel.name],
+        "banner_id": channel.id,
         "description": "",
         "have_logo": True,
         "type": "live-tv",
@@ -332,33 +342,14 @@ def tv_to_media(tv_path, channel) -> Dict[str, Any]:
         "release_date": "N/A",
         "file_date": "N/A",
         "images": {
-            "banner": banner_b64,
-            "logo": None,
-            "cover": banner_b64,
+            "banner": channel.logo,
+            "logo": channel.logo,
+            "cover": channel.logo,
         },
         "peoples": [],
     }
 
-    return {"temp": "todo"}
-
-
-def parse_tv_folder(tv_path) -> Any:
-    # it's a m3u file, either on http or local
-    raw_file = None
-    if tv_path.startswith("http"):
-        raw_file = requests.get(tv_path).text
-    else:
-        if not os.path.exists(tv_path):
-            return []
-        with open(tv_path, "r") as file:
-            raw_file = file.read()
-
-    channels = []
-    parser = M3uParser()
-    file = parser.parse(raw_file)  # type: ignore
-    channels = file._streams_info
-
-    return channels
+    return media
 
 
 def check_usability(media_list: List[Dict[str, Any]]) -> None:
@@ -731,17 +722,20 @@ def get_shows_media(current_user) -> Response:
     return generate_response(Codes.SUCCESS, False, data)
 
 
+@medias_bp.route("tv", methods=["GET"])
+@token_required
 def get_tv_media(current_user) -> Response:
     data = {"medias": []}
 
-    all_tv_path = [lib.folder for lib in Libraries.query.filter_by(type="tv").all()]
+    data["medias"] = [tv_to_media(channel.id) for channel in TVChannels.query.all()]
 
-    channels = []
-
-    for tv_path in all_tv_path:
-        channels = channels + parse_tv_folder(tv_path)
-
-    all_medias = [tv_to_media(tv_path, channel) for channel in channels]  # type: ignore
+    # on trie par ordre alphabétique
+    data["medias"] = natsort.natsorted(data["medias"], key=lambda x: x["title"])
+    # puis on trie pour mettre en premier, les chaines qui ont une image d'epg qui n'est pas générée
+    # donc ceux qui ont "data:image/png;base64," dans l'url sont en dernier
+    data["medias"] = natsort.natsorted(
+        data["medias"], key=lambda x: "data:image/png;base64," in x["_epg"]["icon"]
+    )
 
     return generate_response(Codes.SUCCESS, False, data)
 
@@ -991,6 +985,7 @@ def search_medias_route(current_user, type: str) -> Response:
 @medias_bp.route("/media/<media_type>/<media_id>", methods=["GET"])
 @token_required
 def get_media(current_user, media_type: str, media_id: int) -> Response:
+    media = None
     if media_type == "movie":
         media = movie_to_media(current_user.id, media_id)
     elif media_type == "show":
@@ -999,6 +994,8 @@ def get_media(current_user, media_type: str, media_id: int) -> Response:
         media = album_to_media(current_user.id, media_id)
     elif media_type == "other":
         media = other_to_media(current_user.id, media_id)
+    elif media_type == "live-tv":
+        media = tv_to_media(media_id)
     else:
         abort(404)
 

@@ -258,6 +258,58 @@ class RecurringContent(DB.Model):  # type: ignore
         return f"<RecurringContent {self.episode_id} {self.type}>"
 
 
+class TVChannels(DB.Model):  # type: ignore
+    """
+    TVChannels model
+
+    ...
+
+    Attributes
+    ----------
+    id : int
+    lib_id : int
+    name : str
+    logo : str
+    slug : str
+    """
+
+    id = DB.Column(DB.Integer, autoincrement=True, primary_key=True)
+    lib_id = DB.Column(DB.Integer)
+    name = DB.Column(DB.String(255))
+    logo = DB.Column(DB.String(255))
+    slug = DB.Column(DB.String(255))
+
+    def __repr__(self) -> str:
+        return f"<TVChannels {self.name}>"
+
+
+class TVPrograms(DB.Model):  # type: ignore
+    """
+    TVPrograms model
+
+    ...
+
+    Attributes
+    ----------
+    id : int
+    channel_id : int
+    title : str
+    start_time : datetime
+    end_time : datetime
+    cover : str
+    """
+
+    id = DB.Column(DB.Integer, autoincrement=True, primary_key=True)
+    channel_id = DB.Column(DB.Integer)
+    title = DB.Column(DB.String(255))
+    start_time = DB.Column(DB.String(255))
+    end_time = DB.Column(DB.String(255))
+    cover = DB.Column(DB.String(255))
+
+    def __repr__(self) -> str:
+        return f"<TVPrograms {self.title}>"
+
+
 class Games(DB.Model):  # type: ignore
     # TODO: Rework this model to have a better structure
     """

@@ -1,4 +1,5 @@
 # Copyright (C) 2024 Impre_visible
+import base64
 import re
 import io
 import os
@@ -6,7 +7,6 @@ import ast
 import zlib
 import uuid
 import fitz
-from flask.cli import F
 import rarfile
 import zipfile
 import datetime
@@ -15,13 +15,14 @@ import subprocess
 import sqlalchemy
 import deezer as deezer_main
 
-from PIL import Image
 from tinytag import TinyTag
 from guessit import guessit
 from typing import Tuple, Dict
+from m3u_parser import M3uParser
+from PIL import Image, ImageDraw
 from tmdbv3api.as_obj import AsObj
+import xml.etree.ElementTree as ET
 from Levenshtein import distance as lev
-from deep_translator import GoogleTranslator
 from tmdbv3api.exceptions import TMDbException
 from tmdbv3api import TV, Episode, Movie, Person, Search, Group
 
@@ -33,6 +34,8 @@ from chocolate_app.tables import (
     Series,
     Artists,
     Albums,
+    TVChannels,
+    TVPrograms,
     Tracks,
     Episodes,
     Seasons,
@@ -93,7 +96,7 @@ class Scanner:
             title = f"{title} Part {guessed_data['part']}"
 
         return title
-    
+
     def get_alternative_title(self, guessed_data: dict) -> str:
         if "title" in guessed_data and "alternative_title" in guessed_data:
             return f"{guessed_data['title']} - {guessed_data['alternative_title']}"
@@ -318,6 +321,163 @@ class MovieScanner(Scanner):
                 DB.session.delete(movie)
                 DB.session.commit()
 
+
+class LiveTVScanner(Scanner):
+
+    def load_epg(self, epg_source):
+        if epg_source.startswith("http://") or epg_source.startswith("https://"):
+            response = requests.get(epg_source)
+            response.raise_for_status()
+            epg_data = io.BytesIO(response.content)
+        else:
+            epg_data = epg_source
+        return epg_data
+
+    def parse_tv_folder(self, tv_path) -> list:
+        channels = []
+        parser = M3uParser()
+        file = parser.parse_m3u(tv_path)
+        channels = file._streams_info
+
+        return channels
+
+    def scan(self) -> None:
+        library = self.get_library()
+        if library is None:
+            return
+        self.clean_db()
+
+        m3u_path, epg_path = library.folder.split("+")
+
+        epg_raw = self.load_epg(epg_path)
+        channels = self.parse_tv_folder(m3u_path)
+
+        for channel in channels:
+            self.scan_channel(channel, epg_raw)
+
+    def generate_channel_image(self, title):
+        # Define image size and background color
+        width = int(400 * 0.75)
+        height = int(225 * 0.75)
+        background_color = "#404040"
+
+        # Create a new image with the specified size and background color
+        image = Image.new("RGB", (width, height), background_color)
+
+        # Create a draw object
+        draw = ImageDraw.Draw(image)
+
+        # Define text color and font
+        text_color = "#FFFFFF"
+        # Calculate the size of the text
+        title = title.encode("latin1", "ignore").decode("latin1")
+        text_width, text_height = draw.textsize(title)
+
+        # Calculate the position to center the text
+        x = (width - text_width) // 2
+        y = (height - text_height) // 2
+
+        # Draw the text on the image
+        draw.text((x, y), title, fill=text_color)
+
+        # Convert the image to base64
+        buffer = io.BytesIO()
+        image.save(buffer, format="PNG")
+        base64_image = base64.b64encode(buffer.getvalue()).decode()
+        base64_image = f"data:image/png;base64,{base64_image}"
+        return base64_image
+
+    def scan_channel(self, channel, epg_raw) -> None:
+        channel_already_exists = (
+            TVChannels.query.filter_by(slug=channel["url"]).first() is not None
+        )
+        if channel_already_exists:
+            return
+
+        print(f"Scanning {channel['name']}")
+
+        try:
+            epg_data = ET.parse(epg_raw)
+        except ET.ParseError as e:
+            return
+        if not epg_data:
+            return
+
+        channel_name = guessit(channel["name"])["title"]
+
+        channel_id = None
+        channel_url = channel["url"]
+        channel_logo = channel["logo"]
+        # search in <channel> tags
+        root = epg_data.getroot()
+        for channel in root.findall(".//channel"):
+            if (
+                channel.find("display-name") is not None
+                and channel.find("display-name").text == channel_name
+            ):
+                channel_id = channel.get("id")
+                break
+            elif (
+                channel.find("name") is not None
+                and channel.find("name").text.lower() == channel_name.lower()
+            ):
+                channel_id = channel.get("id")
+                break
+
+        if channel_id is None:
+            return None
+
+        channel_object = TVChannels(
+            name=channel_name,
+            slug=channel_url,
+            logo=channel_logo,
+            lib_id=Libraries.query.filter_by(name=self.library_name).first().id,
+        )
+
+        DB.session.add(channel_object)
+        DB.session.commit()
+
+        self.generate_programs(channel_object.id, channel_id, epg_data)
+
+    def generate_programs(self, channel_id, channel_name, epg_data) -> None:
+        import dateutil
+
+        root = epg_data.getroot()
+        for program in root.findall(".//programme"):
+            if program.get("channel").lower() == channel_name.lower():
+                title = program.find("title").text
+                start = program.get("start")
+                stop = program.get("stop")
+
+                icon = program.find("icon")
+                if icon is not None:
+                    icon = icon.get("src")
+                else:
+                    icon = self.generate_channel_image(title)
+
+                program_object = TVPrograms(
+                    channel_id=channel_id,
+                    title=title,
+                    start_time=dateutil.parser.parse(start),
+                    end_time=dateutil.parser.parse(stop),
+                    cover=icon,
+                )
+
+                DB.session.add(program_object)
+                DB.session.commit()
+
+    def clean_db(self) -> None:
+        channels = TVChannels.query.filter_by(
+            lib_id=Libraries.query.filter_by(name=self.library_name).first().id
+        ).all()
+        for channel in channels:
+            programs = TVPrograms.query.filter_by(channel_id=channel.id).all()
+            for program in programs:
+                DB.session.delete(program)
+            DB.session.delete(channel)
+        DB.session.commit()
+
+
 class SerieScanner(Scanner):
     pass
 
@@ -487,7 +647,6 @@ def getArtistImage(artist_name: str, path: str) -> str:
 
 
 def generateImage(title: str, librairie: str, banner: str) -> None:
-    from PIL import Image, ImageDraw, ImageFont
 
     largeur = 1280
     hauteur = 720
@@ -495,12 +654,8 @@ def generateImage(title: str, librairie: str, banner: str) -> None:
 
     draw = ImageDraw.Draw(image)
 
-    font_path = f"{dir_path}/static/fonts/Poppins-Medium.ttf"
-    font_title = ImageFont.truetype(font_path, size=70)
-    font_librairie = ImageFont.truetype(font_path, size=50)
-
-    titre_larg, titre_haut = draw.textsize(title, font=font_title)
-    librairie_larg, librairie_haut = draw.textsize(librairie, font=font_librairie)
+    titre_larg, titre_haut = draw.textsize(title)
+    librairie_larg, librairie_haut = draw.textsize(librairie)
     x_title = int((largeur - titre_larg) / 2)
     y_title = int((hauteur - titre_haut - librairie_haut - 50) / 2)
     x_librairie = int((largeur - librairie_larg) / 2)
