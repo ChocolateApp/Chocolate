@@ -309,12 +309,14 @@ def album_to_media(user_id, album_id) -> Dict[str, Any] | None:
     return media
 
 
-def get_current_program(channel_id) -> TVPrograms | None:
+def get_current_program(channel_id) -> Any | None:
     now = datetime.datetime.now(datetime.timezone.utc)
     programs = TVPrograms.query.filter_by(channel_id=channel_id).all()
     for program in programs:
         start = dateutil.parser.parse(program.start_time)
         end = dateutil.parser.parse(program.end_time)
+        program = program.__dict__
+        del program["_sa_instance_state"]
         if start <= now <= end:
             return program
     return None
@@ -731,11 +733,6 @@ def get_tv_media(current_user) -> Response:
 
     # on trie par ordre alphabétique
     data["medias"] = natsort.natsorted(data["medias"], key=lambda x: x["title"])
-    # puis on trie pour mettre en premier, les chaines qui ont une image d'epg qui n'est pas générée
-    # donc ceux qui ont "data:image/png;base64," dans l'url sont en dernier
-    data["medias"] = natsort.natsorted(
-        data["medias"], key=lambda x: "data:image/png;base64," in x["_epg"]["icon"]
-    )
 
     return generate_response(Codes.SUCCESS, False, data)
 
