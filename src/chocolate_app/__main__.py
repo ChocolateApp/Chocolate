@@ -2804,9 +2804,6 @@ def user_image(id: int) -> Response:
 
 
 def start_chocolate() -> None:
-    from chocolate_app.plugins_loader import FrontEndRebuilder
-
-    FrontEndRebuilder.rebuild_frontend()
     events.execute_event(events.Events.BEFORE_START)
 
     with app.app_context():
@@ -2829,11 +2826,14 @@ def start_chocolate() -> None:
             for library in libraries:
                 scanner = None
                 if library["type"] == "movies":
+                    continue
                     scanner = scans.MovieScanner()
                     scanner.set_library_name(library["name"])
                     scanner.scan()
-                if library["type"] in type_to_call:
-                    type_to_call[library["type"]](library["name"])
+                elif library["type"] == "tv":
+                    scanner = scans.LiveTVScanner()
+                    scanner.set_library_name(library["name"])
+                    scanner.scan()
 
             print()
     print("\033[?25h", end="")
