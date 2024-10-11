@@ -357,18 +357,38 @@ def create_directories() -> None:
     Create the directories
     """
     parent = os.path.dirname(PLUGINS_PATH)
-    if not os.path.isdir(parent):
-        os.mkdir(parent)
+    print(parent)
+    if not os.path.exists(parent):
+        try:
+            os.mkdir(parent)
+        except PermissionError:
+            print(
+                "Permission denied to create parent folder. Please run Chocolate as an administrator or use the arguments to specify the folders you have access to."
+            )
+        
+    if not os.path.exists(PLUGINS_PATH):
+        try:
+            os.mkdir(PLUGINS_PATH)
+        except PermissionError:
+            print(
+                "Permission denied to create plugins folder. Please run Chocolate as an administrator or use the --plugins argument to specify a folder you have access to."
+            )
 
-    if not os.path.isdir(PLUGINS_PATH):
-        os.mkdir(PLUGINS_PATH)
+    if not os.path.exists(IMAGES_PATH):
+        try:
+            os.mkdir(IMAGES_PATH)
+        except PermissionError:
+            print(
+                "Permission denied to create images folder. Please run Chocolate as an administrator or use the --images argument to specify a folder you have access to."
+            )
 
-    if not os.path.isdir(IMAGES_PATH):
-        os.mkdir(IMAGES_PATH)
-
-    if not os.path.isdir(ARTEFACTS_PATH):
-        os.mkdir(ARTEFACTS_PATH)
-
+    if not os.path.exists(ARTEFACTS_PATH):
+        try:
+            os.mkdir(ARTEFACTS_PATH)
+        except PermissionError:
+            print(
+                "Permission denied to create artefacts folder. Please run Chocolate as an administrator or use the --artefacts argument to specify a folder you have access to."
+            )
 
 check_dependencies()
 create_directories()

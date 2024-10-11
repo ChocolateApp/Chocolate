@@ -24,7 +24,6 @@ from sqlalchemy.sql import text
 from tmdbv3api.as_obj import AsObj
 from typing import Any, Dict, List
 from time import localtime, mktime, time
-from deep_translator import GoogleTranslator
 from tmdbv3api import TV, Movie, Person, TMDb, Search
 
 from flask import (
@@ -101,8 +100,6 @@ start_time = mktime(localtime())
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", category=sqlalchemy.exc.SAWarning)
 
-langs_dict = GoogleTranslator().get_supported_languages(as_dict=True)
-
 
 @LOGIN_MANAGER.user_loader
 def load_user(id: int) -> Users | None:
@@ -117,15 +114,6 @@ def load_user(id: int) -> Users | None:
     """
     return Users.query.get(int(id))
 
-
-def translate(string: str) -> str:
-    language = config["ChocolateSettings"]["language"]
-    if language == "EN":
-        return string
-    translated = GoogleTranslator(source="english", target=language.lower()).translate(
-        string
-    )
-    return translated
 
 
 tmdb.language = config["ChocolateSettings"]["language"].lower()
