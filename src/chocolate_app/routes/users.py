@@ -10,7 +10,7 @@ from werkzeug.security import generate_password_hash
 from chocolate_app import DB, get_dir_path, all_auth_tokens, IMAGES_PATH
 from chocolate_app.tables import Users, InviteCodes
 from chocolate_app.utils.utils import check_authorization, generate_log
-from chocolate_app.plugins_loader import events
+from chocolate_app.plugins_loader.events import Events, execute_event
 
 dir_path = get_dir_path()
 users_bp = Blueprint("users", __name__)
@@ -68,13 +68,13 @@ def login():
 
         if user.account_type == "Kid":
             generate_log(request, "LOGIN")
-            events.execute_event(events.LOGIN, user)
+            execute_event(Events.LOGIN, user)
             return jsonify(
                 {"id": user.id, "name": user.name, "error": "None", "token": auth_token, "user": user_object}
             )
         elif user.verify_password(account_password):
             generate_log(request, "LOGIN")
-            events.execute_event(events.LOGIN, user)
+            execute_event(Events.LOGIN, user)
             return jsonify(
                 {"id": user.id, "name": user.name, "error": "None", "token": auth_token, "user": user_object}
             )
@@ -82,13 +82,13 @@ def login():
             generate_log(request, "ERROR")
             user = user.__dict__
             user["error"] = "Unauthorized"
-            events.execute_event(events.LOGIN, user)
+            execute_event(Events.LOGIN, user)
             return jsonify({"error": "Unauthorized"})
     else:
         generate_log(request, "ERROR")
         user = user.__dict__
         user["error"] = "Unauthorized"
-        events.execute_event(events.LOGIN, user)
+        execute_event(Events.LOGIN, user)
         return jsonify({"error": "Unauthorized"})
 
 
@@ -238,7 +238,7 @@ def delete_account() -> Response:
     DB.session.delete(user)
     DB.session.commit()
 
-    events.execute_event(events.USER_DELETE, user)
+    execute_event(Events.USER_DELETE, user)
 
     return jsonify(
         {
