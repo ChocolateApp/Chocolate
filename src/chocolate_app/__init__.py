@@ -357,7 +357,7 @@ def create_directories() -> None:
     Create the directories
     """
     parent = os.path.dirname(PLUGINS_PATH)
-    print(parent)
+    
     if not os.path.exists(parent):
         try:
             os.mkdir(parent)
