@@ -45,6 +45,46 @@ medias_bp = Blueprint("medias", __name__, url_prefix="/medias")
 LANGUAGE_FILE = get_language_file()
 
 
+def extract_sibling_episodes(episode, main_season):
+    previous = None
+    next = None
+    episodes = natsort.natsorted(
+        Episodes.query.filter_by(season_id=main_season.tmdb_id).all(),
+        key=lambda x: x.release_date,
+    )
+    for i, ep in enumerate(episodes):
+        if ep.id == episode.id:
+            if i != 0:
+                previous = episodes[i - 1]
+            else:
+                previous_season = Seasons.query.filter_by(
+                    tmdb_id=main_season.serie_id, number=main_season.number - 1
+                ).first()
+                if previous_season:
+                    previous_episodes = natsort.natsorted(
+                        Episodes.query.filter_by(
+                            season_id=previous_season.tmdb_id
+                        ).all(),
+                        key=lambda x: x.release_date,
+                    )
+                    previous = previous_episodes[-1]
+            if i != len(episodes) - 1:
+                next = episodes[i + 1]
+            else:
+                next_season = Seasons.query.filter_by(
+                    tmdb_id=main_season.serie_id, number=main_season.number + 1
+                ).first()
+                if next_season:
+                    next_episodes = natsort.natsorted(
+                        Episodes.query.filter_by(season_id=next_season.tmdb_id).all(),
+                        key=lambda x: x.release_date,
+                    )
+                    next = next_episodes[0]
+            break
+
+    return previous, next
+
+
 def episode_to_media(
     user_id, episode_id, have_serie_repr=True
 ) -> Dict[str, Any] | None:
@@ -97,6 +137,8 @@ def episode_to_media(
                 }
             )
 
+    previous, next = extract_sibling_episodes(episode, main_season)
+
     last_duration = 0
     try:
         media_played = MediaPlayed.query.filter_by(
@@ -130,6 +172,8 @@ def episode_to_media(
             "cover": cover_b64,
         },
         "peoples": actor_list,
+        "_previous": previous.id if previous else None,
+        "_next": next.id if next else None,
     }
 
     return media
@@ -322,11 +366,35 @@ def get_current_program(channel_id) -> Any | None:
     return None
 
 
+def get_sibling_channels(channel_id) -> Any:
+    channel = TVChannels.query.filter_by(id=channel_id).first()
+    if not channel:
+        return None, None
+
+    # get the first channel with an id lower than the current channel
+    previous = (
+        TVChannels.query.filter(TVChannels.id < channel_id)
+        .order_by(TVChannels.id.desc())
+        .first()
+    )
+
+    # get the first channel with an id higher than the current channel
+    next = (
+        TVChannels.query.filter(TVChannels.id > channel_id)
+        .order_by(TVChannels.id.asc())
+        .first()
+    )
+
+    return previous, next
+
+
 def tv_to_media(channel_id) -> Dict[str, Any] | None:
     channel = TVChannels.query.filter_by(id=channel_id).first()
 
     if not channel:
         return None
+
+    previous, next = get_sibling_channels(channel_id)
 
     media = {
         "id": f"{channel.id}",
@@ -349,6 +417,8 @@ def tv_to_media(channel_id) -> Dict[str, Any] | None:
             "cover": channel.logo,
         },
         "peoples": [],
+        "_previous": previous.id if previous else None,
+        "_next": next.id if next else None,
     }
 
     return media
