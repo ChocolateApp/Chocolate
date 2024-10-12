@@ -1,5 +1,6 @@
 import os
 import datetime
+import requests
 import pycountry
 import subprocess
 
@@ -18,6 +19,7 @@ from chocolate_app.tables import (
     MediaPlayed,
     Series,
     Seasons,
+    TVChannels,
 )
 from chocolate_app import (
     DB,
@@ -201,6 +203,27 @@ def generate_m3u8(media: Any) -> Response:
     response.headers.set("Access-Control-Allow-Origin", "*")
     response.headers.set(
         "Content-Disposition", "attachment", filename=f"{media_id}_{media_type}.m3u8"
+    )
+
+    return response
+
+
+def generate_m3u8_live_tv(media: TVChannels) -> Response:
+    source = media.slug
+
+    try:
+        m3u8_file = requests.get(source).text
+    except Exception:
+        return generate_response(Codes.MEDIA_NOT_FOUND, True)
+
+    response = make_response(m3u8_file)
+
+    response.headers.set("Content-Type", "vnd.apple.mpegURL")
+    response.headers.set("Range", "bytes=0-4095")
+    response.headers.set("Accept-Encoding", "*")
+    response.headers.set("Access-Control-Allow-Origin", "*")
+    response.headers.set(
+        "Content-Disposition", "attachment", filename=f"{media.id}_live-tv.m3u8"
     )
 
     return response
@@ -695,7 +718,15 @@ def media_played(current_user) -> Response:
 @token_required
 def watch_media(current_user, media_type: str, media_id: int) -> Response:
     """Watch a media"""
-    if media_type not in ["show", "movie", "album", "artist", "game", "book"]:
+    if media_type not in [
+        "show",
+        "movie",
+        "album",
+        "artist",
+        "game",
+        "book",
+        "live-tv",
+    ]:
         return generate_response(Codes.INVALID_MEDIA_TYPE, True)
     media = None
     if media_type == "show":
@@ -710,11 +741,15 @@ def watch_media(current_user, media_type: str, media_id: int) -> Response:
         media = Games.query.filter_by(id=media_id).first()
     elif media_type == "book":
         media = Books.query.filter_by(id=media_id).first()
+    elif media_type == "live-tv":
+        media = TVChannels.query.filter_by(id=media_id).first()
 
     if not media:
         return generate_response(Codes.MEDIA_NOT_FOUND, True)
 
     if media_type == "show" or media_type == "movie" or media_type == "other":
         return generate_m3u8(media)
+    elif media_type == "live-tv":
+        return generate_m3u8_live_tv(media)
 
     return generate_response(Codes.INVALID_MEDIA_TYPE, True)
