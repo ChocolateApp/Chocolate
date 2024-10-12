@@ -2452,6 +2452,9 @@ def start_chocolate() -> None:
                     scanner = scans.LiveTVScanner()
                     scanner.set_library_name(library["name"])
                     scanner.scan()
+                else:
+                    scanner = type_to_call[library["type"]]
+                    scanner(library["name"])
 
             print()
     print("\033[?25h", end="")
