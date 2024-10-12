@@ -1,6 +1,5 @@
 import os
 import datetime
-import requests
 import pycountry
 import subprocess
 
@@ -50,7 +49,7 @@ LOG_LEVEL = "error"
 
 
 class PreviousLagInfo:
-    def __init__(self, lag: int, lag_id: int):
+    def __init__(self, lag: float | int, lag_id: int) -> None:
         self.lag = lag
         self.lag_id = lag_id
 
@@ -224,6 +223,10 @@ def generate_caption_media(
         video_path,
     ]
     caption_pipe = subprocess.Popen(caption_command, stdout=subprocess.PIPE)
+
+    if not caption_pipe or not caption_pipe.stdout:
+        abort(404)
+
     caption_response = caption_pipe.stdout.read().decode("utf-8")
     caption_response = caption_response.split("\n")
 
@@ -273,6 +276,9 @@ def generate_caption_media(
 @watch_bp.route("/caption/<media_id>_<media_type>_<id>.m3u8", methods=["GET"])
 def caption(media_id: int, media_type: str, id: int) -> Response:
     video_path = get_media_slug(media_id, media_type)
+
+    if not video_path:
+        return generate_response(Codes.MEDIA_NOT_FOUND, True)
 
     movie_duration = length_video(video_path) + 1
 
@@ -349,6 +355,10 @@ def generate_audio_streams_media(
     ]
 
     audio_stream_pipe = subprocess.Popen(caption_command, stdout=subprocess.PIPE)
+
+    if not audio_stream_pipe or not audio_stream_pipe.stdout:
+        abort(404)
+
     audio_stream_response = audio_stream_pipe.stdout.read().decode("utf-8")
     audio_stream_response = audio_stream_response.split("\n")
     audio_stream_response.pop()
@@ -397,6 +407,9 @@ def generate_audio_streams_media(
 def video_media(quality: str, media_type: str, media_id: int) -> Response:
     video_path = get_media_slug(media_id, media_type)
 
+    if not video_path:
+        return generate_response(Codes.MEDIA_NOT_FOUND, True)
+
     duration = length_video(video_path)
 
     file = f"#EXTM3U\n#EXT-X-VERSION:3\n\n#EXT-X-TARGETDURATION:{VIDEO_CHUNK_LENGTH}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXT-X-PLAYLIST-TYPE:VOD\n"
@@ -431,6 +444,9 @@ def video_media(quality: str, media_type: str, media_id: int) -> Response:
 )
 def audio_media(audio_id: int, media_type: str, media_id: int) -> Response:
     video_path = get_media_slug(media_id, media_type)
+
+    if not video_path:
+        return generate_response(Codes.MEDIA_NOT_FOUND, True)
 
     duration = length_video(video_path)
 
@@ -468,6 +484,11 @@ def audio_media(audio_id: int, media_type: str, media_id: int) -> Response:
 def video_chunk(
     current_user, quality: str, media_type: str, media_id: int, idx: int
 ) -> Response:
+    video_path = get_media_slug(media_id, media_type)
+
+    if not video_path:
+        return generate_response(Codes.MEDIA_NOT_FOUND, True)
+
     seconds = (idx - 1) * VIDEO_CHUNK_LENGTH
 
     token = get_chunk_user_token(request)
@@ -478,8 +499,6 @@ def video_chunk(
 
     if VIDEO_PREVIOUS_LAG.get(key) is None:
         VIDEO_PREVIOUS_LAG[key] = PreviousLagInfo(0, 0)
-
-    video_path = get_media_slug(media_id, media_type)
 
     time_start = str(datetime.timedelta(seconds=seconds + VIDEO_PREVIOUS_LAG[key].lag))
     if seconds + VIDEO_PREVIOUS_LAG[key].lag < 0:
@@ -559,7 +578,7 @@ def video_chunk(
         VIDEO_CHUNK_LENGTH - VIDEO_PREVIOUS_LAG[key].lag
     )
     if VIDEO_PREVIOUS_LAG[key].lag_id == idx - 1:
-        VIDEO_PREVIOUS_LAG[key].lag = (duration) - (
+        VIDEO_PREVIOUS_LAG[key].lag = duration - (
             VIDEO_CHUNK_LENGTH - VIDEO_PREVIOUS_LAG[key].lag
         )
     else:
@@ -634,7 +653,7 @@ def audio_chunk(media_type: str, media_id: int, audio_idx: int, idx: int) -> Res
 
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    if pipe is None:
+    if pipe is None or pipe.stdout is None:
         abort(404)
 
     data = pipe.stdout.read()
@@ -650,9 +669,10 @@ def audio_chunk(media_type: str, media_id: int, audio_idx: int, idx: int) -> Res
         os.remove(temp_path)
 
     if AUDIO_PREVIOUS_LAG[key].lag < 0:
-        AUDIO_PREVIOUS_LAG[key].lag = (duration) - (
+        AUDIO_PREVIOUS_LAG[key].lag = duration - (
             VIDEO_CHUNK_LENGTH - AUDIO_PREVIOUS_LAG[key].lag
         )
+
     else:
         AUDIO_PREVIOUS_LAG[key].lag = 0
 
@@ -676,7 +696,7 @@ def audio_chunk(media_type: str, media_id: int, audio_idx: int, idx: int) -> Res
 @token_required
 def media_played(current_user) -> Response:
     """Set media as played"""
-    data = request.json()
+    data = request.get_json()
 
     if not data:
         return generate_response(Codes.MISSING_DATA, True)
