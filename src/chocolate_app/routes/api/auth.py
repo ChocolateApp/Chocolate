@@ -60,7 +60,7 @@ def token_required(f):
                 access_token, current_app.config["SECRET_KEY"], algorithms=["HS256"]
             )
             current_user = Users.query.filter_by(id=data["id"]).first()
-        except Exception as e:
+        except Exception:
             return generate_response(Codes.INVALID_TOKEN, True)
 
         if "current_user" in f.__code__.co_varnames:
@@ -90,7 +90,7 @@ def check_auth(current_user):
 @auth_bp.route("/login", methods=["POST"])
 def login():
     account_name = ""
-    if "name" not in request.get_json() and not "username" in request.get_json():
+    if "name" not in request.get_json() and "username" not in request.get_json():
         return generate_response(Codes.MISSING_DATA, True)
     elif "name" not in request.get_json():
         account_name = request.get_json()["username"]
@@ -150,7 +150,7 @@ def refresh():
     try:
         data = jwt.decode(token, current_app.config["SECRET_KEY"], algorithms=["HS256"])
         current_user = Users.query.filter_by(id=data["id"]).first()
-    except:
+    except Exception:
         return generate_response(Codes.INVALID_TOKEN, True)
 
     access_token = jwt.encode(
