@@ -9,12 +9,11 @@ from PIL import Image
 from io import BytesIO
 from operator import itemgetter
 from typing import Any, Dict, List
-from flask import Blueprint, request, Response, abort, send_file
-
 from chocolate_app import get_language_file
 from chocolate_app.routes.api.auth import token_required
+from flask import Blueprint, request, Response, abort, send_file
 from chocolate_app.utils.utils import generate_response, Codes, translate
-from PIL import Image
+
 from chocolate_app.tables import (
     TVChannels,
     TVPrograms,
