@@ -420,7 +420,7 @@ def video_media(quality: str, media_type: str, media_id: int) -> Response:
         if (duration - i) < VIDEO_CHUNK_LENGTH:
             extinf = duration - i
 
-        file += f"#EXT-X-DISCONTINUITY\n"
+        file += "#EXT-X-DISCONTINUITY\n"
         file += f"#EXTINF:{extinf},\n/api/watch/video_chunk/{quality}/{media_type}/{media_id}/{(i // VIDEO_CHUNK_LENGTH) + 1}.ts\n"
 
     file += "#EXT-X-ENDLIST"
@@ -458,7 +458,7 @@ def audio_media(audio_id: int, media_type: str, media_id: int) -> Response:
         if (duration - i) < AUDIO_CHUNK_LENGTH:
             extinf = duration - i
 
-        file += f"#EXT-X-DISCONTINUITY\n"
+        file += "#EXT-X-DISCONTINUITY\n"
         file += f"#EXTINF:{extinf},\n/api/watch/audio_chunk/{media_type}/{media_id}/{audio_id}/{(i // AUDIO_CHUNK_LENGTH) + 1}.ts\n"
 
     file += "#EXT-X-ENDLIST"
