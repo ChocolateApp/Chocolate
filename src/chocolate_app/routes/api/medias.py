@@ -1,26 +1,20 @@
 import os
-import base64
 import random
 import natsort
-import guessit
 import datetime
 import dateutil
-import requests
 
 
 from PIL import Image
 from io import BytesIO
 from operator import itemgetter
-from m3u_parser import M3uParser
 from typing import Any, Dict, List
-import xml.etree.ElementTree as ET
 from flask import Blueprint, request, Response, abort, send_file
 
 from chocolate_app import get_language_file
 from chocolate_app.routes.api.auth import token_required
 from chocolate_app.utils.utils import generate_response, Codes, translate
-from PIL import Image, ImageDraw
-import io
+from PIL import Image
 from chocolate_app.tables import (
     TVChannels,
     TVPrograms,
@@ -36,7 +30,6 @@ from chocolate_app.tables import (
     Games,
     Books,
     OthersVideos,
-    Libraries,
     MediaPlayed,
 )
 
