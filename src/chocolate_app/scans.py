@@ -398,7 +398,7 @@ class LiveTVScanner(Scanner):
 
         try:
             epg_data = ET.parse(epg_raw)
-        except ET.ParseError as e:
+        except ET.ParseError:
             return
         if not epg_data:
             return
@@ -648,7 +648,6 @@ def getArtistImage(artist_name: str, path: str) -> str:
 
 
 def generateImage(title: str, librairie: str, banner: str) -> None:
-
     largeur = 1280
     hauteur = 720
     image = Image.new("RGB", (largeur, hauteur), color="#1d1d1d")
@@ -663,13 +662,12 @@ def generateImage(title: str, librairie: str, banner: str) -> None:
     y_librairie = y_title + titre_haut + 50
 
     # Ajouter le texte du titre
-    draw.text((x_title, y_title), title, font=font_title, fill="white", align="center")
+    draw.text((x_title, y_title), title, fill="white", align="center")
 
     # Ajouter le texte de la librairie
     draw.text(
         (x_librairie, y_librairie),
         librairie,
-        font=font_librairie,
         fill="white",
         align="center",
     )
@@ -2195,7 +2193,7 @@ def getMusics(library: str) -> None:
             allTracks = [track for track in allTracks if is_music_file(track)]
             try:
                 album_data = createAlbum(albumName, artist_id, allTracks, library)
-            except deezer_main.exceptions.DeezerErrorResponse as e:
+            except deezer_main.exceptions.DeezerErrorResponse:
                 continue
 
             album_id = album_data.id
