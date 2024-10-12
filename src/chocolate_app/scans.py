@@ -323,9 +323,11 @@ class MovieScanner(Scanner):
 
 
 class LiveTVScanner(Scanner):
-
     def load_epg(self, epg_source):
-        if epg_source.startswith("http://") or epg_source.startswith("https://"):
+        regex_url = re.compile(
+            r"^http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+$"
+        )
+        if regex_url.match(epg_source):
             response = requests.get(epg_source)
             response.raise_for_status()
             epg_data = io.BytesIO(response.content)
@@ -393,8 +395,6 @@ class LiveTVScanner(Scanner):
         )
         if channel_already_exists:
             return
-
-        print(f"Scanning {channel['name']}")
 
         try:
             epg_data = ET.parse(epg_raw)
@@ -474,7 +474,8 @@ class LiveTVScanner(Scanner):
             programs = TVPrograms.query.filter_by(channel_id=channel.id).all()
             for program in programs:
                 DB.session.delete(program)
-            DB.session.delete(channel)
+            if len(programs) == 0:
+                DB.session.delete(channel)
         DB.session.commit()
 
 
