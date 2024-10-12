@@ -208,27 +208,6 @@ def generate_m3u8(media: Any) -> Response:
     return response
 
 
-def generate_m3u8_live_tv(media: TVChannels) -> Response:
-    source = media.slug
-
-    try:
-        m3u8_file = requests.get(source).text
-    except Exception:
-        return generate_response(Codes.MEDIA_NOT_FOUND, True)
-
-    response = make_response(m3u8_file)
-
-    response.headers.set("Content-Type", "vnd.apple.mpegURL")
-    response.headers.set("Range", "bytes=0-4095")
-    response.headers.set("Accept-Encoding", "*")
-    response.headers.set("Access-Control-Allow-Origin", "*")
-    response.headers.set(
-        "Content-Disposition", "attachment", filename=f"{media.id}_live-tv.m3u8"
-    )
-
-    return response
-
-
 def generate_caption_media(
     video_path: str, media_id: int | str, media_type: str
 ) -> str:
@@ -749,7 +728,5 @@ def watch_media(current_user, media_type: str, media_id: int) -> Response:
 
     if media_type == "show" or media_type == "movie" or media_type == "other":
         return generate_m3u8(media)
-    elif media_type == "live-tv":
-        return generate_m3u8_live_tv(media)
 
     return generate_response(Codes.INVALID_MEDIA_TYPE, True)
