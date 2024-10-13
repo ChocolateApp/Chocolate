@@ -437,11 +437,14 @@ def check_usability(media_list: List[Dict[str, Any]]) -> None:
                 media_list.remove(media)
 
 
-def get_continue_watching(user: Users) -> List[Dict[str, Any]]:
-    # TODO: Implement real continue watching system, for Movies, Series and Others
+def get_continue_watching(user: Users, media_type) -> List[Dict[str, Any]]:
     user_id = user.id
-    # TODO: Impletement continue watching
-    continue_watching = MediaPlayed.query.filter_by(user_id=user_id).all()
+    if media_type == "all":
+        continue_watching = MediaPlayed.query.filter_by(user_id=user_id).all()
+    else:
+        continue_watching = MediaPlayed.query.filter_by(
+            user_id=user_id, media_type=media_type
+        ).all()
     continue_watching_list = [media.__dict__ for media in continue_watching]
 
     check_usability(continue_watching_list)
@@ -563,7 +566,7 @@ def get_home_medias(current_user) -> Response:
     albums = [album_to_media(current_user.id, album.id) for album in Albums.query.all()]
     albums = [album for album in albums if album is not None]
 
-    continue_watching = get_continue_watching(current_user)
+    continue_watching = get_continue_watching(current_user, "all")
     data["continue_watching"] = continue_watching
 
     latest = get_latest_medias(all_medias + albums)  # type: ignore
@@ -643,6 +646,9 @@ def get_movies_media(current_user) -> Response:
         movie_to_media(current_user.id, movie.id) for movie in Movies.query.all()
     ]
     all_medias: Any = [media for media in all_medias if media is not None]
+
+    continue_watching = get_continue_watching(current_user, "movie")
+    data["continue_watching"] = continue_watching
 
     latest = get_latest_medias(all_medias)
     data["latest"] = latest
@@ -726,7 +732,7 @@ def get_shows_media(current_user) -> Response:
     ]
     all_medias = [media for media in all_medias if media is not None]
 
-    continue_watching = get_continue_watching(current_user)
+    continue_watching = get_continue_watching(current_user, "show")
     data["continue_watching"] = continue_watching
 
     latest = get_latest_medias(all_medias)
