@@ -24,6 +24,7 @@ from tmdbv3api.as_obj import AsObj
 import xml.etree.ElementTree as ET
 from Levenshtein import distance as lev
 from tmdbv3api.exceptions import TMDbException
+from concurrent.futures import ThreadPoolExecutor
 from tmdbv3api import TV, Episode, Movie, Person, Search, Group
 
 
@@ -352,15 +353,21 @@ class LiveTVScanner(Scanner):
         m3u_path, epg_path = library.folder.split("+")
 
         epg_raw = self.load_epg(epg_path)
-        channels = self.parse_tv_folder(m3u_path)
+        epg_data = ET.parse(epg_raw)
+        try:
+            channels = self.parse_tv_folder(m3u_path)
+        except Exception as e:
+            log_message = f"Error while parsing the M3U file: {e}"
+            log("ERROR", "TV SCAN", log_message)
+            return
 
-        for channel in channels:
-            self.scan_channel(channel, epg_raw)
+        with ThreadPoolExecutor() as executor:
+            executor.map(lambda channel: self.scan_channel(channel, epg_data), channels)
 
     def generate_channel_image(self, title):
         # Define image size and background color
-        width = int(400 * 0.75)
-        height = int(225 * 0.75)
+        width = 200
+        height = 300
         background_color = "#404040"
 
         # Create a new image with the specified size and background color
@@ -389,62 +396,126 @@ class LiveTVScanner(Scanner):
         base64_image = f"data:image/png;base64,{base64_image}"
         return base64_image
 
-    def scan_channel(self, channel, epg_raw) -> None:
-        channel_already_exists = (
-            TVChannels.query.filter_by(slug=channel["url"]).first() is not None
-        )
-        if channel_already_exists:
-            return
+    def scan_channel(self, channel, epg_data) -> None:
+        from chocolate_app import app
+        
+        with app.app_context():
+            channel_already_exists = (
+                TVChannels.query.filter_by(slug=channel["url"]).first() is not None
+            )
+            
+            if channel_already_exists:
+                return
 
-        try:
-            epg_data = ET.parse(epg_raw)
-        except ET.ParseError:
-            return
-        if not epg_data:
-            return
+            if not epg_data:
+                print("No EPG data")
+                return
 
-        channel_name = guessit(channel["name"])["title"]
+            channel_name = guessit(channel["name"])["title"]
 
-        channel_id = None
-        channel_url = channel["url"]
-        channel_logo = channel["logo"]
-        # search in <channel> tags
-        root = epg_data.getroot()
-        for channel in root.findall(".//channel"):
-            if (
-                channel.find("display-name") is not None
-                and channel.find("display-name").text == channel_name
-            ):
-                channel_id = channel.get("id")
-                break
-            elif (
-                channel.find("name") is not None
-                and channel.find("name").text.lower() == channel_name.lower()
-            ):
-                channel_id = channel.get("id")
-                break
+            exists = TVChannels.query.filter_by(name=channel_name).first() is not None
+            if exists and not self.compare_channel(
+                channel_name, channel["name"]
+            ):  # si la chaine existe déjà et que la qualité est inférieure
+                return
+            elif exists and self.compare_channel(
+                channel_name, channel["name"]
+            ):  # si la chaine existe déjà et que la qualité est supérieure
+                DB.session.delete(TVChannels.query.filter_by(name=channel_name).first())
+                DB.session.commit()
 
-        if channel_id is None:
-            return None
+            channel_id = channel["tvg"]["id"]
+            channel_url = channel["url"]
+            channel_logo = channel["logo"]
+            # search in <channel> tags
+            root = epg_data.getroot()
+            for channel in root.findall(".//channel"):
+                if (
+                    channel.find("display-name") is not None
+                    and channel.find("display-name").text == channel_name
+                ):
+                    channel_id = channel.get("id")
+                    break
+                elif (
+                    channel.find("name") is not None
+                    and channel.find("name").text.lower() == channel_name.lower()
+                ):
+                    channel_id = channel.get("id")
+                    break
 
-        channel_object = TVChannels(
-            name=channel_name,
-            slug=channel_url,
-            logo=channel_logo,
-            lib_id=Libraries.query.filter_by(name=self.library_name).first().id,
-        )
+            if channel_id is None:
+                return None
 
-        DB.session.add(channel_object)
-        DB.session.commit()
+            channel_object = TVChannels(
+                name=channel_name,
+                slug=channel_url,
+                logo=channel_logo,
+                lib_id=Libraries.query.filter_by(name=self.library_name).first().id,
+            )
+            DB.session.add(channel_object)
+            DB.session.commit()
+            
+            try:
+                count = self.generate_programs(
+                    channel_object.id, channel_id, channel_name, epg_data
+                )
+            except Exception as e:
+                count = 0
 
-        self.generate_programs(channel_object.id, channel_id, epg_data)
+            if count == 0:
+                DB.session.delete(channel_object)
+                DB.session.commit()
+            
 
-    def generate_programs(self, channel_id, channel_name, epg_data) -> None:
+    def get_quality(self, title: str) -> str:
+        keywords = {
+            "ᵁᴴᴰ": "UHD",
+            "ᴴᴰ": "HD",
+            "ᶠᵁᴸᴸ": "FHD",
+            "ˢᴰ": "SD",
+            "ᴷ": "4K",
+            "HD": "HD",
+            "SD": "SD",
+        }
+
+        words = title.split(" ")
+
+        for word in words:
+            if word in keywords:
+                return keywords[word]
+
+        return "SD"
+
+    def quality_to_int(self, quality: str) -> int:
+        quality = quality.upper()
+        if quality == "SD":
+            return 0
+        elif quality == "HD":
+            return 1
+        elif quality == "FHD":
+            return 2
+        elif quality == "UHD":
+            return 3
+        elif quality == "4K":
+            return 4
+        else:
+            return 0
+
+    def compare_channel(self, channel_1, channel_2) -> bool:
+        quality_1 = self.get_quality(channel_1)
+        quality_2 = self.get_quality(channel_2)
+
+        return self.quality_to_int(quality_1) > self.quality_to_int(quality_2)
+
+    def generate_programs(
+        self, channel_id, m3u_channel_id, channel_name, epg_data
+    ) -> None:
         import dateutil
 
+        programs = 0
         root = epg_data.getroot()
         for program in root.findall(".//programme"):
-            if program.get("channel").lower() == channel_name.lower():
+            if program.get("channel").lower() == m3u_channel_id.lower():
                 title = program.find("title").text
                 start = program.get("start")
                 stop = program.get("stop")
@@ -454,6 +525,25 @@ class LiveTVScanner(Scanner):
                     icon = icon.get("src")
                 else:
                     icon = self.generate_channel_image(title)
+
+                # check in TMDb if the program exists
+
+                # get the first result
+
+                # cherche si y a un programme avec le même nom
+                program_exists = (
+                    TVPrograms.query.filter_by(
+                        title=title, channel_id=channel_id
+                    ).first()
+                    is not None
+                )
+
+                if program_exists:
+                    icon = (
+                        TVPrograms.query.filter_by(title=title, channel_id=channel_id)
+                        .first()
+                        .cover
+                    )
 
                 program_object = TVPrograms(
                     channel_id=channel_id,
@@ -465,6 +555,28 @@ class LiveTVScanner(Scanner):
 
                 DB.session.add(program_object)
                 DB.session.commit()
+
+                if not program_exists:
+                    search = Search().multi(title)
+                    if len(search["results"]) > 0:
+                        result = search["results"][0]
+                        if isinstance(result, AsObj):
+                            result = result.__dict__
+                        if "poster_path" in result:
+                            cover = result["poster_path"]
+                            cover = f"https://image.tmdb.org/t/p/original{cover}"
+                            # convert the image to base64
+                            cover = save_image(
+                                cover, f"{IMAGES_PATH}/Program_{program_object.id}"
+                            )
+                            cover_b64 = generate_b64_image(cover, width=300)
+                            os.remove(cover)
+                            program_object.cover = cover_b64
+                            DB.session.commit()
+
+                programs += 1
+
+        return programs
 
     def clean_db(self) -> None:
         channels = TVChannels.query.filter_by(
