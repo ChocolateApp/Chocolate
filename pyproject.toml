@@ -38,6 +38,8 @@ dependencies = [
     "greenlet>=3.1.1",
     "PyYaml>=6.0.2",
     "Python-Levenshtein>=0.26.0",
+    "schedule>=1.2.2",
+    "watchdog>=5.0.3",
 ]
 requires-python = ">=3.9"
 readme = "README.md"

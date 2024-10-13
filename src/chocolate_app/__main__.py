@@ -9,8 +9,10 @@ import rarfile
 import hashlib
 import natsort
 import datetime
+import schedule
 import warnings
 import requests
+import threading
 import subprocess
 import sqlalchemy
 
@@ -23,7 +25,9 @@ from operator import itemgetter
 from sqlalchemy.sql import text
 from tmdbv3api.as_obj import AsObj
 from typing import Any, Dict, List
-from time import localtime, mktime, time
+from watchdog.observers import Observer
+from time import localtime, mktime, time, sleep
+from watchdog.events import FileSystemEventHandler
 from tmdbv3api import TV, Movie, Person, TMDb, Search
 
 from flask import (
@@ -2421,17 +2425,13 @@ def user_image(id: int) -> Response:
     return send_file(user_image, as_attachment=True)
 
 
-def start_chocolate() -> None:
-    events.execute_event(events.Events.BEFORE_START)
-
-    with app.app_context():
-        update_db_columns(DB.engine, DB)
-        if not ARGUMENTS.no_scans and config["APIKeys"]["TMDB"] != "Empty":
-            libraries = Libraries.query.all()
-            libraries = [library.__dict__ for library in libraries]
-
-            libraries = natsort.natsorted(libraries, key=itemgetter(*["name"]))
-            libraries = natsort.natsorted(libraries, key=itemgetter(*["type"]))
+def start_scanning_threads(app) -> None:
+    def scan(library: Libraries = None) -> None:
+        if library is None:
+            return
+        with app.app_context():
+            update_db_columns(DB.engine, DB)
+            library = library.__dict__
 
             type_to_call = {
                 "series": scans.getSeries,
@@ -2441,23 +2441,67 @@ def start_chocolate() -> None:
                 "musics": scans.getMusics,
             }
 
-            for library in libraries:
-                scanner = None
-                if library["type"] == "movies":
-                    continue
-                    scanner = scans.MovieScanner()
-                    scanner.set_library_name(library["name"])
-                    scanner.scan()
-                elif library["type"] == "tv":
-                    scanner = scans.LiveTVScanner()
-                    scanner.set_library_name(library["name"])
-                    scanner.scan()
-                else:
-                    scanner = type_to_call[library["type"]]
-                    scanner(library["name"])
+            scanner = None
+            if library["type"] == "movies":
+                scanner = scans.MovieScanner()
+                scanner.set_library_name(library["name"])
+                scanner.scan()
+            elif library["type"] == "tv":
+                scanner = scans.LiveTVScanner()
+                scanner.set_library_name(library["name"])
+                scanner.scan()
+            else:
+                scanner = type_to_call[library["type"]]
+                scanner(library["name"])
 
-            print()
-    print("\033[?25h", end="")
+    class ScanEventHandler(FileSystemEventHandler):
+        def on_any_event(self, event):
+            with app.app_context():
+                library = (
+                    Libraries.query.filter_by(folder=event.src_path).first()
+                    or Libraries.query.filter_by(folder=event.src_path + "/").first()
+                )
+                if library is None:
+                    return
+                scan(library)
+
+    # Launch the scan thread every 24 hours
+
+    with app.app_context():
+        # Setup watchdog for directory monitoring
+        def start_watchdog(path_to_watch):
+            event_handler = ScanEventHandler()
+            observer = Observer()
+            observer.schedule(event_handler, path=path_to_watch, recursive=True)
+            observer.start()
+            try:
+                while True:
+                    sleep(1)
+            except KeyboardInterrupt:
+                observer.stop()
+            observer.join()
+
+        # Launch watchdog thread for the directory to monitor
+        for library in Libraries.query.all():
+            if library.type == "tv":
+                scanner = scans.LiveTVScanner()
+                scanner.set_library_name(library.name)
+                scanner.scan()
+                continue
+
+            watchdog_thread = threading.Thread(
+                target=start_watchdog, args=(library.folder,)
+            )
+            watchdog_thread.daemon = True
+            watchdog_thread.start()
+
+    print("Scanning threads and watchdog initialized.")
+
+
+def start_chocolate() -> None:
+    events.execute_event(events.Events.BEFORE_START)
+    if not ARGUMENTS.no_scans and config["APIKeys"]["TMDB"] != "Empty":
+        start_scanning_threads(app)
 
     app.run(host="0.0.0.0", port=SERVER_PORT)
     events.execute_event(events.Events.AFTER_START)
