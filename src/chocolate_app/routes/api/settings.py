@@ -2,10 +2,10 @@ import os
 
 from iso639 import Lang
 
-from chocolate_app import CONFIG_PATH, DB, get_config, get_dir_path, write_config
+from chocolate_app import DB, get_config, get_dir_path, write_config
 from chocolate_app.routes.api.auth import token_required
 from flask import Blueprint, request, Response
-from chocolate_app.tables import Users
+from chocolate_app.tables import Libraries, Users
 from chocolate_app.utils.utils import generate_response, Codes
 
 
@@ -142,6 +142,103 @@ def handle_accounts_settings(method) -> Response:
         return generate_response(Codes.INVALID_METHOD)
 
 
+def handle_libraries_settings(method) -> Response:
+    def get() -> Response:
+        libraries = Libraries.query.all()
+        libraries_list = []
+        for library in libraries:
+            libraries_list.append(
+                {
+                    "id": library.id,
+                    "name": library.name,
+                    "path": library.folder,
+                    "type": library.type,
+                }
+            )
+
+        return generate_response(Codes.SUCCESS, data=libraries_list)
+
+    def post() -> Response:
+        if not request.json:
+            return generate_response(Codes.INVALID_MEDIA_TYPE)
+
+        data = request.json
+
+        if "id" not in data:
+            return generate_response(Codes.MISSING_DATA, True)
+
+        library = DB.session.query(Libraries).filter_by(id=data["id"]).first()
+
+        if "scan" in data and data["scan"]:
+            # TODO: Implement the scan function
+            return generate_response(Codes.SUCCESS)
+
+        if not library:
+            return generate_response(Codes.LIBRARY_NOT_FOUND, True)
+
+        if "name" in data:
+            library.name = data["name"]
+
+        if "path" in data:
+            library.folder = data["path"]
+
+        DB.session.commit()
+
+        return generate_response(Codes.SUCCESS)
+
+    def delete() -> Response:
+        if not request.json:
+            return generate_response(Codes.INVALID_MEDIA_TYPE)
+
+        data = request.json
+
+        if "id" not in data:
+            return generate_response(Codes.MISSING_DATA, True)
+
+        library = DB.session.query(Libraries).filter_by(id=data["id"]).first()
+
+        if not library:
+            return generate_response(Codes.LIBRARY_NOT_FOUND, True)
+
+        DB.session.delete(library)
+        DB.session.commit()
+
+        return generate_response(Codes.SUCCESS)
+
+    def put() -> Response:
+        if not request.json:
+            return generate_response(Codes.INVALID_MEDIA_TYPE)
+
+        data = request.json
+
+        if "name" not in data or "path" not in data:
+            return generate_response(Codes.MISSING_DATA, True)
+
+        library = Libraries(
+            name=data["name"],
+            folder=data["path"],
+            type=data["type"],
+            image="",
+            available_for=None,
+        )
+
+        DB.session.add(library)
+        DB.session.commit()
+
+        return generate_response(Codes.SUCCESS)
+
+    if method == "GET":
+        return get()
+    elif method == "POST":
+        return post()
+    elif method == "DELETE":
+        return delete()
+    elif method == "PUT":
+        return put()
+    else:
+        return generate_response(Codes.INVALID_METHOD)
+
+
 @settings_bp.route("/<section>", methods=["GET", "POST", "PUT", "DELETE"])
 @token_required
 def settings(section) -> Response:
@@ -149,6 +246,8 @@ def settings(section) -> Response:
         return handle_general_settings(request.method)
     elif section == "accounts":
         return handle_accounts_settings(request.method)
+    elif section == "libraries":
+        return handle_libraries_settings(request.method)
     else:
         return generate_response(Codes.MISSING_DATA, True)
 
