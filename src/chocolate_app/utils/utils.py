@@ -61,6 +61,8 @@ class Codes(Enum):
 
     MEDIA_NOT_FOUND = 251
 
+    INVALID_METHOD = 261
+
 
 def generate_log(request: Request, component: str) -> None:
     """
