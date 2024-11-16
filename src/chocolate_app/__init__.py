@@ -283,7 +283,7 @@ def get_config() -> configparser.ConfigParser:
     Returns:
         configparser.ConfigParser: The config file
     """
-    if not os.path.exists(CONFIG_PATH):
+    if not os.path.exists(CONFIG_PATH) or os.path.getsize(CONFIG_PATH) == 0:
         logging.warning(
             f"Config file not found at {CONFIG_PATH}. Creating a new one..."
         )
@@ -297,8 +297,22 @@ def get_config() -> configparser.ConfigParser:
 
     configParser = configparser.ConfigParser()
     configParser.read(CONFIG_PATH)
-    if configParser["ChocolateSettings"]["language"] == "Empty":
-        configParser["ChocolateSettings"]["language"] = "EN"
+    try:
+        if configParser["ChocolateSettings"]["language"] == "Empty":
+            configParser["ChocolateSettings"]["language"] = "en"
+    except KeyError:
+        configParser["ChocolateSettings"] = {
+            "language": "en",
+            "allowdownload": "false",
+        }
+
+        configParser["APIKeys"] = {
+            "tmdb": "Empty",
+            "igdbid": "Empty",
+            "igdbsecret": "Empty",
+        }
+
+        write_config(configParser)
 
     return configParser
 
