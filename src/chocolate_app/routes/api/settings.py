@@ -11,12 +11,6 @@ from chocolate_app.utils.utils import generate_response, Codes
 settings_bp = Blueprint("settings", __name__, url_prefix="/settings")
 
 
-def handle_get_settings() -> Response:
-    config = get_config()
-    print(config.__dict__)
-    return generate_response(Codes.SUCCESS, data=config.__dict__["_sections"])
-
-
 def clean_json_for_config(json: dict) -> dict:
     for key, value in json.items():
         if isinstance(value, dict):
@@ -32,28 +26,39 @@ def clean_json_for_config(json: dict) -> dict:
     return json
 
 
-def handle_update_settings() -> Response:
-    if not request.json:
-        return generate_response(Codes.INVALID_MEDIA_TYPE)
+def handle_general_settings(method) -> Response:
+    def get() -> Response:
+        config = get_config()
+        print(config.__dict__)
+        return generate_response(Codes.SUCCESS, data=config.__dict__["_sections"])
 
-    data = request.json
+    def post() -> Response:
+        if not request.json:
+            return generate_response(Codes.INVALID_MEDIA_TYPE)
 
-    cleaned_data = clean_json_for_config(data)
+        data = request.json
 
-    write_config(cleaned_data)
+        cleaned_data = clean_json_for_config(data)
 
-    return generate_response(Codes.SUCCESS)
+        write_config(cleaned_data)
 
+        return generate_response(Codes.SUCCESS)
 
-@settings_bp.route("", methods=["GET", "POST"])
-@token_required
-def settings() -> Response:
-    if request.method == "GET":
-        return handle_get_settings()
-    elif request.method == "POST":
-        return handle_update_settings()
+    if method == "GET":
+        return get()
+    elif method == "POST":
+        return post()
     else:
         return generate_response(Codes.INVALID_METHOD)
+
+
+@settings_bp.route("/<section>", methods=["GET", "POST"])
+@token_required
+def settings(section) -> Response:
+    if section == "general":
+        return handle_general_settings(request.method)
+    else:
+        return generate_response(Codes.MISSING_DATA, True)
 
 
 @settings_bp.route("/languages", methods=["GET"])
