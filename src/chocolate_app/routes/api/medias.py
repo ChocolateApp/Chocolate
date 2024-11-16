@@ -490,7 +490,17 @@ def get_continue_watching(user: Users, media_type) -> List[Dict[str, Any]]:
 
 def get_all_medias_without_albums(user_id) -> List[Dict[str, Any]]:
     all_movies = [movie_to_media(user_id, movie.id) for movie in Movies.query.all()]
-    all_series = [serie_to_media(user_id, serie.id) for serie in Series.query.all()]
+
+    all_series_db = Series.query.all()
+    all_series = []
+
+    for serie in all_series_db:
+        try:
+            media = serie_to_media(user_id, serie.id)
+        except Exception:
+            continue
+        if media:
+            all_series.append(media)
 
     all_medias = all_movies + all_series
 
