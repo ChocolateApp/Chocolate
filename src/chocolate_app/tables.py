@@ -605,6 +605,13 @@ class Libraries(DB.Model):  # type: ignore
     folder = DB.Column(DB.Text)
     available_for = DB.Column(DB.Text)
 
+    def __init__(self, name, image, type, folder, available_for):
+        self.name = name
+        self.image = image
+        self.type = type
+        self.folder = folder
+        self.available_for = available_for
+
     def __repr__(self) -> str:
         return f"<Libraries {self.name}>"
 
