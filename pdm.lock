@@ -5,7 +5,7 @@
 groups = ["default", "lint"]
 strategy = ["cross_platform"]
 lock_version = "4.5.0"
-content_hash = "sha256:46c53070f7b438702d8cdd290cb083e301da37fcac681ed5dee824fa93f423c7"
+content_hash = "sha256:a473d4738b0d22a35f0a37af5b09dfa108a165bdec7426abb4191d67e3b966f8"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -583,6 +583,19 @@ dependencies = [
 files = [
     {file = "importlib_metadata-7.1.0-py3-none-any.whl", hash = "sha256:30962b96c0c223483ed6cc7280e7f0199feb01a0e40cfae4d4450fc6fab1f570"},
     {file = "importlib_metadata-7.1.0.tar.gz", hash = "sha256:b78938b926ee8d5f020fc4772d487045805a55ddbad2ecf21c6d60938dc7fcd2"},
+]
+
+[[package]]
+name = "iso639-lang"
+version = "2.5.1"
+requires_python = ">=3.8"
+summary = "A fast, simple ISO 639 library."
+dependencies = [
+    "importlib-resources; python_version < \"3.9\"",
+]
+files = [
+    {file = "iso639_lang-2.5.1-py3-none-any.whl", hash = "sha256:ec24570fe0892c1a7ccdf1aad5ea4e5f0a745f9ac284c601d62d149c7a1943ce"},
+    {file = "iso639_lang-2.5.1.tar.gz", hash = "sha256:c9e311ec2b6f1005eb36d3a0a0f6bbf82898cb4d3cdf568b6aae4a0705a19dd5"},
 ]
 
 [[package]]

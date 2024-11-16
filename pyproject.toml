@@ -40,6 +40,7 @@ dependencies = [
     "Python-Levenshtein>=0.26.0",
     "schedule>=1.2.2",
     "watchdog>=5.0.3",
+    "iso639-lang>=2.5.1",
 ]
 requires-python = ">=3.9"
 readme = "README.md"
