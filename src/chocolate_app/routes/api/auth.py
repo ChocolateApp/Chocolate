@@ -233,23 +233,15 @@ def get_accounts():
     all_users_list = []
     for user in all_users:
         profile_picture = user.profile_picture
-        if not os.path.exists(dir_path + profile_picture):
-            profile_picture = "/static/img/avatars/defaultUserProfilePic.png"
-
-        image_base64 = None
-        with open(dir_path + profile_picture, "rb") as image_file:
-            image_base64 = base64.b64encode(image_file.read()).decode("utf-8")
-
-        image = Image.open(BytesIO(base64.b64decode(image_base64)))
-        image = image.resize((200, 200))
-        buffered = BytesIO()
-
-        image.save(buffered, format="JPEG")
+        if not profile_picture.startswith("data:image"):
+            if not os.path.exists(dir_path + profile_picture):
+                profile_picture = f"data:image/jpeg;base64,{image_to_base64(dir_path+'/static/img/avatars/defaultUserProfilePic.png', 200, 200)}"
+            else:
+                profile_picture = f"data:image/jpeg;base64,{image_to_base64(dir_path + profile_picture, 200, 200)}"
 
         user_dict = {
             "name": user.name,
-            "profile_picture": "data:image/jpeg;base64,"
-            + base64.b64encode(buffered.getvalue()).decode("utf-8"),
+            "profile_picture": profile_picture,
             "account_type": user.account_type,
             "password_empty": True if not user.password else False,
             "id": user.id,
