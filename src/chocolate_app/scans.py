@@ -1027,7 +1027,7 @@ def getSeries(library_name: str) -> None:
         if search == {}:
             continue
 
-        askForGoodSerie = config["ChocolateSettings"]["askWhichSerie"]
+        askForGoodSerie = "false"
         bestMatch = search[0]
         if askForGoodSerie == "false" or len(search) == 1:
             for i in range(len(search)):
