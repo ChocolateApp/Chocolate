@@ -8,7 +8,7 @@ from io import BytesIO
 from functools import wraps
 from flask import Blueprint, request, current_app
 
-from chocolate_app import get_dir_path
+from chocolate_app import DB, get_dir_path
 from chocolate_app.tables import Users
 from chocolate_app.utils.utils import generate_response, Codes
 
@@ -182,6 +182,36 @@ def refresh():
             "user": user_object,
         },
     )
+
+
+@auth_bp.route("/signup", methods=["POST"])
+def signup():
+    if "username" not in request.get_json() or "password" not in request.get_json():
+        return generate_response(Codes.MISSING_DATA, True)
+
+    account_name = request.get_json()["username"]
+    account_password = request.get_json()["password"]
+    account_type = request.get_json()["type"] if "type" in request.get_json() else "Kid"
+
+    if Users.query.filter_by(name=account_name).first():
+        return generate_response(Codes.USER_ALREADY_EXISTS, True)
+
+    if "code" not in request.get_json():
+        existing_users = Users.query.all()
+        if len(existing_users) > 0:
+            return generate_response(Codes.USER_ALREADY_EXISTS, True)
+
+    user = Users(
+        name=account_name,
+        password=account_password,
+        account_type=account_type,
+        profile_picture="static/images/default_profile_picture.jpg",
+    )
+
+    DB.session.add(user)
+    DB.session.commit()
+
+    return generate_response(Codes.SUCCESS)
 
 
 @auth_bp.route("/accounts", methods=["GET"])
