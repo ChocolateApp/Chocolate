@@ -127,7 +127,7 @@ def after_request(response: Response) -> Response:
         "TRACE",
     ],
 )
-def index(path=None) -> str:
+def index(path=None) -> str | Response:
     """
     The index route
 
@@ -137,10 +137,15 @@ def index(path=None) -> str:
     Returns:
         str: The rendered template
     """
+
+    if path and routes.have_static_file(path):
+        return routes.get_static_file(path)
+
     if path and routes.have_route(path):
         return routes.execute_route(path, request)
 
     return render_template("index.html")
+
 
 @app.route("/language_file")
 def route_language_file() -> Response:
