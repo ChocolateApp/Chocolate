@@ -219,6 +219,7 @@ def signup():
         existing_users = Users.query.all()
         if len(existing_users) > 0:
             return generate_response(Codes.USER_ALREADY_EXISTS, True)
+        account_type = "Admin"
 
     user = Users(
         name=account_name,
