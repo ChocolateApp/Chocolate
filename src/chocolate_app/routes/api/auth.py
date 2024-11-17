@@ -63,6 +63,9 @@ def token_required(f):
         except Exception:
             return generate_response(Codes.INVALID_TOKEN, True)
 
+        if not current_user:
+            return generate_response(Codes.USER_NOT_FOUND, True)
+
         if "current_user" in f.__code__.co_varnames:
             return f(current_user, *args, **kwargs)
         else:
