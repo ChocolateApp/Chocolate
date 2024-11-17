@@ -204,17 +204,8 @@ def create_app() -> Flask:
     app.config["DIR_PATH"] = dir_path
     app.config["JSON_AS_ASCII"] = False
 
-    from .routes.users import users_bp
-    from .routes.settings import settings_bp
-    from .routes.libraries import libraries_bp
-    from .routes.arr import arr_bp
-
     from .routes.api.index import api_bp
 
-    app.register_blueprint(users_bp)
-    app.register_blueprint(settings_bp)
-    app.register_blueprint(libraries_bp)
-    app.register_blueprint(arr_bp)
     app.register_blueprint(api_bp)
 
     DB.init_app(app)
