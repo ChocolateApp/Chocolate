@@ -71,7 +71,7 @@ def token_required(f):
     return decorated
 
 
-@auth_bp.route("/check", methods=["POST"])
+@auth_bp.route("/check", methods=["GET", "POST"])
 @token_required
 def check_auth(current_user):
     profile_picture = os.path.join(dir_path, current_user.profile_picture)
