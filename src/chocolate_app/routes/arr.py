@@ -1,10 +1,12 @@
+
+from tmdbv3api import Find  # type: ignore
 from flask import Blueprint, jsonify, request
 from pyarr import LidarrAPI, RadarrAPI, ReadarrAPI, SonarrAPI
-from tmdbv3api import Find
 
 from chocolate_app import config
 
 arr_bp = Blueprint("arr", __name__)
+
 
 @arr_bp.route("/lookup", methods=["POST"])
 def lookup():
@@ -180,12 +182,11 @@ def add_media():
         # print(f"mediaID: {mediaID} | quality_profile: {quality_profile} | lidarrFolder: {lidarrFolder}")
         if file_type == "album":
             album = lidarr.lookup(term=term)[int(media_id)]["album"]
-            add_album = lidarr.add_album(
+            lidarr.add_album(
                 album=album,
                 quality_profile_id=int(quality_profile),
                 root_dir=lidarr_folder,
             )
-            print(add_album)
         elif file_type == "artist":
             artist = lidarr.lookup(term=term)[int(media_id)]
             lidarr.add_artist(

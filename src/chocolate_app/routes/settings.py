@@ -1,7 +1,8 @@
 from flask import Blueprint, jsonify, request
 
-from chocolate_app import config, write_config, tmdb
+from chocolate_app.plugins_loader import events
 from chocolate_app.tables import Users, Libraries
+from chocolate_app import config, write_config, tmdb
 
 settings_bp = Blueprint("settings", __name__)
 
@@ -126,7 +127,7 @@ def save_settings():
         client_secret = igdb_secret_key
 
     if language != "undefined":
-        config.set("ChocolateSettings", "language", language)
+        config.set("ChocolateSettings", "language", language.lower())
 
     try:
         allow_download = body["allowDownloadsCheckbox"]
@@ -138,5 +139,7 @@ def save_settings():
         config.set("ChocolateSettings", "allowdownload", "false")
 
     write_config(config)
+    
+    events.execute_event(events.SETTINGS_UPDATE, config)
 
     return jsonify({"error": "success"})

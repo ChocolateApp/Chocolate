@@ -3,7 +3,7 @@ import requests
 
 directory = r'G:\Projets\Chocolate\src\chocolate\static\lang'
 api_url_template = "https://hosted.weblate.org/api/translations/chocolate/{component}/{lang}/file/"
-token = "wlu_Hxw8cIkWrl0DXIPWwFW3kGbi7iMKAk9cckUP"
+token = os.environ.get("WEBLATE_TOKEN")
 author_name = "imprevisible"
 author_email = "impr.visible@gmail.com"
 upload_method = "translate"

@@ -161,14 +161,3 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-# User-specific stuff
-src/chocolate/static/img/mediaImages/*
-src/chocolate/static/img/avatars/*
-!src/chocolate/static/img/avatars/defaultUserProfilePic.png
-
-src/chocolate/*.db
-src/chocolate/*.ini
-!src/chocolate/empty_config.ini
-src/chocolate/send_languages_to_weblate.py
-src/chocolate/intro.py
-src/chocolate/convert.py

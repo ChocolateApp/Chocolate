@@ -109,11 +109,9 @@ This is what you have to do to get started with Chocolate :
 
 ### Start Chocolate
 
-#### For Linux
-* execute 'chocolate' in your terminal
+#### For Linux & Windows
+* execute 'python3 -m chocolate_app' in your terminal
 
-#### For Windows
-* Execute app.py
 
 #### For Docker
 /!\ The docker image has some problems, it's not working for now /!\
@@ -149,21 +147,21 @@ Don't forget to give the project a star! Thanks again!
 <!-- TO-DO -->
 ## TO-DO for Chocolate Server
 - [ ] A docker image **URGENT**
-- [ ] Allow library fusion (for example, if you have two libraries for movies, you can merge them, so only one library will be displayed)
-- [ ] Create a plugin system
+- [X] Allow library fusion (for example, if you have two libraries for movies, you can merge them, so only one library will be displayed)
+- [X] Create a plugin system
 - [ ] Add the mobile ui of the video player
 - [ ] Add a watchtogether system
 - [ ] Multiple interface
 - [ ] Allow custom css
 - [ ] Statistics
 - [ ] Custom intro
-- [ ] Add a system to search for subtitles (By using OpenSubtitles API [here](https://opensubtitles.stoplight.io/docs/opensubtitles-api/b1eb44d4c8502-open-subtitles-api) )
+- [ ] Add a system to search for subtitles (By using OpenSubtitles API [here](https://opensubtitles.stoplight.io/docs/opensubtitles-api/b1eb44d4c8502-open-subtitles-api) ) (with the plugin system)
 - [ ] Send issues directly from the website
-- [ ] Add watched movies, and series to TRAKT
-- [ ] Add support to trakt
-- [ ] Use the GPU to encode videos if possible
+- [ ] Add watched movies, and series to TRAKT (with the plugin system)
+- [ ] Add support to trakt (with the plugin system)
+- [X] Use the GPU to encode videos if possible
 - [ ] Change season with the buttons
-- [ ] Add logs
+- [X] Add logs
 - [ ] Design a UI for the path selection instead of a string
 - [ ] Use two pages for books on horizontal screen
 - [ ] NFO support
