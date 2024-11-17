@@ -1,6 +1,6 @@
 [project]
 name = "chocolate_app"
-version = "10.1.0-alpha"
+version = "10.1.1-alpha"
 description = ""
 authors = [
     { name = "Imprevisible", email = "impr.visible@gmail.com" },
