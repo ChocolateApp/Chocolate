@@ -225,11 +225,6 @@ def check_dependencies() -> None:
             "ffmpeg is not installed. Chocolate will not be able to play videos."
         )
 
-    if not shutil.which("npm"):
-        logging.warning(
-            "npm is not installed. Chocolate will not be able to install plugins."
-        )
-
     if not shutil.which("git"):
         logging.warning(
             "git is not installed. Chocolate will not be able to install plugins."
