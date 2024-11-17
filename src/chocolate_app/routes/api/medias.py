@@ -627,7 +627,10 @@ def get_home_medias(current_user) -> Response:
     if len(all_medias) > 0:
         data["main_media"] = random.choice(all_medias)  # type: ignore
     else:
-        data["main_media"] = get_all_medias_without_albums(current_user.id)[0]  # type: ignore
+        all_medias = get_all_medias_without_albums(current_user.id)
+        if len(all_medias) == 0:
+            return generate_response(Codes.MEDIA_NOT_FOUND, True)
+        data["main_media"] = all_medias[0]  # type: ignore
 
     return generate_response(Codes.SUCCESS, False, data)
 
