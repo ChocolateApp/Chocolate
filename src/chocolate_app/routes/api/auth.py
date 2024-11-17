@@ -74,7 +74,14 @@ def token_required(f):
 @auth_bp.route("/check", methods=["GET", "POST"])
 @token_required
 def check_auth(current_user):
-    profile_picture = os.path.join(dir_path, current_user.profile_picture)
+    profile_picture = current_user.profile_picture
+
+    if not profile_picture.startswith("data:image"):
+        profile_picture = os.path.join(dir_path, current_user.profile_picture)
+        profile_picture = (
+            f"data:image/jpeg;base64,{image_to_base64(profile_picture, 200, 200)}"
+        )
+
     return generate_response(
         Codes.SUCCESS,
         False,
@@ -82,7 +89,7 @@ def check_auth(current_user):
             "username": current_user.name,
             "account_type": current_user.account_type,
             "account_id": current_user.id,
-            "profile_picture": f"data:image/jpeg;base64,{image_to_base64(profile_picture, 200, 200)}",
+            "profile_picture": profile_picture,
         },
     )
 
@@ -126,11 +133,17 @@ def login():
 
     profile_picture = os.path.join(dir_path, user.profile_picture)
 
+    profile_picture = user.profile_picture
+    if not profile_picture.startswith("data:imag"):
+        profile_picture = (
+            f"data:image/jpeg;base64,{image_to_base64(profile_picture, 200, 200)}"
+        )
+
     user_object = {
         "username": user.name,
         "account_type": user.account_type,
         "account_id": user.id,
-        "profile_picture": f"data:image/jpeg;base64,{image_to_base64(profile_picture, 200, 200)}",
+        "profile_picture": profile_picture,
     }
 
     return generate_response(
