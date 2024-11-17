@@ -5,7 +5,7 @@ import jinja2
 from typing import Any, Callable, Dict
 from flask import Flask, Response, jsonify, make_response, request, send_file
 
-from chocolate_app import TemplateNotFound
+from chocolate_app import TemplateNotFound, get_dir_path
 
 app = Flask(__name__)
 
@@ -77,13 +77,13 @@ def have_route(path: str) -> bool:
 
     if not path.startswith('/'):
         path = '/' + path
-    
+
     for rule in ROUTES:
         if match_rule(rule[0], path):
             return True
-    
+
     return False
-        
+
 def get_attributes(pattern: str, path: str) -> list:
     """
     Get the attributes of a path
@@ -156,7 +156,7 @@ def execute_route(path: str, *args, **kwargs) -> Any:
     """
     if not path.startswith('/'):
         path = '/' + path
-        
+
     with app.app_context():
         response = None
 
@@ -173,7 +173,7 @@ def execute_route(path: str, *args, **kwargs) -> Any:
                     return response
                 except:
                     break
-                
+
         if isinstance(response, str):
             return send_file(f"{folder_path}/{response}")
         elif isinstance(response, Dict):
@@ -182,3 +182,55 @@ def execute_route(path: str, *args, **kwargs) -> Any:
             response = make_response(response)
 
         return response
+
+
+def have_static_file(path: str) -> bool:
+    """
+    Check if a static file exists
+
+    Args:
+        path (str): The path to check
+
+    Returns:
+        bool: True if the static file exists, False otherwise
+    """
+    if path is None:
+        return False
+
+    cwd = get_dir_path()
+
+    walk = os.walk(cwd + "/static")
+
+    for folder_path, _, files in walk:
+        for file in files:
+            file = os.path.join(folder_path, file)
+            if file.endswith(path):
+                return True
+
+    return False
+
+
+def get_static_file(path: str) -> Response:
+    """
+    Get a static file
+
+    Args:
+        path (str): The path of the static file
+
+    Returns:
+        Response: The response of the static file
+    """
+    if path is None:
+        return make_response("Not found", 404)
+
+    cwd = get_dir_path()
+
+    walk = os.walk(cwd + "/static")
+
+    for folder_path, _, files in walk:
+        for file in files:
+            file = os.path.join(folder_path, file)
+            if file.endswith(path):
+                return send_file(file)
+
+    return make_response("Not found", 404)
