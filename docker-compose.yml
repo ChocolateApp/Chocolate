@@ -3,8 +3,8 @@ version: '3.9'
 services:
   chocolate:
     container_name: chocolate
-    image: imprevisible/chocolate:latest
+    image: imprevisible/chocolate:dev
     ports:
-      - 8500:8500
+      - 8888:8888
     volumes:
       - ./:/chocolate
