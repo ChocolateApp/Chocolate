@@ -134,10 +134,13 @@ def login():
     profile_picture = os.path.join(dir_path, user.profile_picture)
 
     profile_picture = user.profile_picture
-    if not profile_picture.startswith("data:imag"):
-        profile_picture = (
-            f"data:image/jpeg;base64,{image_to_base64(profile_picture, 200, 200)}"
-        )
+    if not profile_picture.startswith("data:image"):
+        if not os.path.exists(profile_picture):
+            profile_picture = f"data:image/jpeg;base64,{image_to_base64(dir_path + '/static/img/avatars/defaultUserProfilePic.png', 200, 200)}"
+        else:
+            profile_picture = (
+                f"data:image/jpeg;base64,{image_to_base64(profile_picture, 200, 200)}"
+            )
 
     user_object = {
         "username": user.name,
