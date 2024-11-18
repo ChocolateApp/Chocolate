@@ -10,7 +10,7 @@ lib_bp = Blueprint("profil", __name__, url_prefix="/profil")
 
 @lib_bp.route("/refresh/<lib_id>", methods=["GET", "POST"])
 @token_required
-def profil(current_user, lib_id):
+def refresh(current_user, lib_id):
     if not current_user.account_type == "Admin":
         return generate_response(Codes.NOT_LOGGED_IN, True)
 
