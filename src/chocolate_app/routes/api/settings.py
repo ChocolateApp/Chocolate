@@ -3,14 +3,14 @@ import os
 from iso639 import Lang
 
 from chocolate_app import DB, get_config, get_dir_path, write_config
-from chocolate_app.routes.api.auth import token_required
+from chocolate_app.routes.api.auth import image_to_base64, token_required
 from flask import Blueprint, request, Response
 from chocolate_app.tables import Libraries, Users
 from chocolate_app.utils.utils import generate_response, Codes
 
 
 settings_bp = Blueprint("settings", __name__, url_prefix="/settings")
-
+dir_path = get_dir_path()
 
 def clean_json_for_config(json: dict) -> dict:
     for key, value in json.items():
@@ -123,7 +123,7 @@ def handle_accounts_settings(method) -> Response:
             name=data["name"],
             password=data["password"],
             account_type=data["account_type"],
-            profile_picture="static/images/default_profile_picture.jpg",
+            profile_picture=f"data:image/jpeg;base64,{image_to_base64(dir_path+'/static/img/avatars/defaultUserProfilePic.png', 200, 200)}",
         )
         DB.session.add(user)
         DB.session.commit()
@@ -255,7 +255,6 @@ def settings(section) -> Response:
 @settings_bp.route("/languages", methods=["GET"])
 def languages() -> Response:
     languages = []
-    dir_path = get_dir_path()
     for file in os.listdir(f"{dir_path}/static/lang"):
         if file.endswith(".json"):
             languages.append(file[:-5])

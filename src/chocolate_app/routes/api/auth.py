@@ -225,7 +225,7 @@ def signup():
         name=account_name,
         password=account_password,
         account_type=account_type,
-        profile_picture="static/images/default_profile_picture.jpg",
+        profile_picture=f"data:image/jpeg;base64,{image_to_base64(dir_path+'/static/img/avatars/defaultUserProfilePic.png', 200, 200)}",
     )
 
     DB.session.add(user)

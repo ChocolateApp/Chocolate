@@ -2,7 +2,7 @@ FROM python:3.10
 
 RUN apt-get update && apt-get install -y ffmpeg unrar-free
 
-RUN pip install chocolate_app==10.1.2a0
+RUN pip install chocolate_app==10.1.3a0
 
 EXPOSE 8888
 
