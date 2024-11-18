@@ -5,7 +5,7 @@ from chocolate_app.tables import Libraries, Users
 from chocolate_app.routes.api.auth import token_required
 from chocolate_app.utils.utils import generate_response, Codes
 
-lib_bp = Blueprint("profil", __name__, url_prefix="/profil")
+lib_bp = Blueprint("libraries", __name__, url_prefix="/libraries")
 
 
 @lib_bp.route("/refresh/<lib_id>", methods=["GET", "POST"])
