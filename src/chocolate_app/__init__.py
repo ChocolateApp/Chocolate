@@ -45,7 +45,7 @@ parser.add_argument(
     "-sqlite_file", "--sqlite_file", help="Path to the SQLLite file (a .db file)"
 )
 parser.add_argument(
-    "-db", "--database-uri", help="Database URI to use (PostgreSQL, MySQL, etc.)"
+    "-db", "--database-uri", help="Database URI to use (PostgreSQL, MySQL, etc.)",
 )
 parser.add_argument("-i", "--images", help="Path to the images folder (a folder)")
 parser.add_argument("-pl", "--plugins", help="Path to the plugins folder (a folder)")
@@ -104,37 +104,77 @@ if OPERATING_SYSTEM not in paths.keys():
     )
 
 CONFIG_PATH: str = ARGUMENTS.config or paths[OPERATING_SYSTEM]["config"]
+
+if os.getenv("CHOCOLATE_CONFIG"):
+    CONFIG_PATH = os.getenv("CHOCOLATE_CONFIG")
+
 CONFIG_PATH = CONFIG_PATH.replace("\\", "/")
 
+
 SQLITE_PATH: str = ARGUMENTS.sqlite_file or paths[OPERATING_SYSTEM]["sqlite_file"]
+
+if os.getenv("CHOCOLATE_SQLITE_FILE"):
+    SQLITE_PATH = os.getenv("CHOCOLATE_SQLITE_FILE")
+
 SQLITE_PATH = SQLITE_PATH.replace("\\", "/")
 
-DB_URI: str = ARGUMENTS.database_uri
+
+DB_URI: str = ARGUMENTS.database_uri or f"sqlite:///{SQLITE_PATH}"
+
+if os.getenv("CHOCOLATE_DATABASE_URI"):
+    DB_URI = os.getenv("CHOCOLATE_DATABASE_URI")
 
 LOG_PATH: str = ARGUMENTS.logs or paths[OPERATING_SYSTEM]["logs"]
+
+if os.getenv("CHOCOLATE_LOGS"):
+    LOG_PATH = os.getenv("CHOCOLATE_LOGS")
+
 LOG_PATH = LOG_PATH.replace("\\", "/")
 
+
 IMAGES_PATH: str = ARGUMENTS.images or paths[OPERATING_SYSTEM]["images"]
+
+if os.getenv("CHOCOLATE_IMAGES"):
+    IMAGES_PATH = os.getenv("CHOCOLATE_IMAGES")
+
 IMAGES_PATH = IMAGES_PATH.replace("\\", "/")
 if IMAGES_PATH.endswith("/"):
     IMAGES_PATH = IMAGES_PATH[:-1]
+    
 
 PLUGINS_PATH: str = ARGUMENTS.plugins or paths[OPERATING_SYSTEM]["plugins"]
+
+if os.getenv("CHOCOLATE_PLUGINS"):
+    PLUGINS_PATH = os.getenv("CHOCOLATE_PLUGINS")
+
 PLUGINS_PATH = PLUGINS_PATH.replace("\\", "/")
 if PLUGINS_PATH.endswith("/"):
     PLUGINS_PATH = PLUGINS_PATH[:-1]
 
 ARTEFACTS_PATH: str = ARGUMENTS.artefacts or paths[OPERATING_SYSTEM]["artefacts"]
+
+if os.getenv("CHOCOLATE_ARTEFACTS"):
+    ARTEFACTS_PATH = os.getenv("CHOCOLATE_ARTEFACTS")
+
 ARTEFACTS_PATH = ARTEFACTS_PATH.replace("\\", "/")
 if ARTEFACTS_PATH.endswith("/"):
     ARTEFACTS_PATH = ARTEFACTS_PATH[:-1]
 
 SERVER_PORT: int = ARGUMENTS.port or 8888
 
+if os.getenv("CHOCOLATE_PORT"):
+    SERVER_PORT = os.getenv("CHOCOLATE_PORT")
+
 
 VIDEO_CODEC: str = ARGUMENTS.video_codec
 
+if os.getenv("CHOCOLATE_VIDEO_CODEC"):
+    VIDEO_CODEC = os.getenv("CHOCOLATE_VIDEO_CODEC")
+
 AUDIO_CODEC: str = ARGUMENTS.audio_codec
+
+if os.getenv("CHOCOLATE_AUDIO_CODEC"):
+    AUDIO_CODEC = os.getenv("CHOCOLATE_AUDIO_CODEC")
 
 FFMPEG_ARGS: list = ARGUMENTS.ffmpeg_args or []
 if len(FFMPEG_ARGS) == 1:
@@ -193,10 +233,7 @@ def create_app() -> Flask:
     app.secret_key = generate_secret_key()
 
     CORS(app, supports_credentials=True, resources={r"/*": {"origins": "*"}})
-    if DB_URI:
-        app.config["SQLALCHEMY_DATABASE_URI"] = DB_URI
-    else:
-        app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{SQLITE_PATH}"
+    app.config["SQLALCHEMY_DATABASE_URI"] = DB_URI
     app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_size": 30, "max_overflow": 0}
     app.config["MAX_CONTENT_LENGTH"] = 4096 * 4096
     app.config["UPLOAD_FOLDER"] = f"{dir_path}/static/img/"
