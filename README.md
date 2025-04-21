@@ -34,6 +34,7 @@ This product uses the TMDB API but is not endorsed or certified by TMDB | <img s
 </a>
 
 ## GitAds Sponsored
+### By clicking on this ad, you support the project, for free.
 [![Sponsored by GitAds](https://gitads.dev/v1/ad-serve?source=chocolateapp/chocolate@github)](https://gitads.dev/v1/ad-track?source=chocolateapp/chocolate@github)
 
 
