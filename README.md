@@ -204,3 +204,4 @@ This tool was made with ❤ and ☕ by Impre-visible.
     <img src="https://img.shields.io/badge/License-GPL%20v3-blue.svg" alt="GNU GENERAL PUBLIC LICENSE">
   </a>
 </div>
+<!-- GitAds-Verify: RLUVZB4LL9JH8H8WQTDARVCR2ZAVU8BL -->
