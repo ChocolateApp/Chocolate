@@ -2,6 +2,7 @@
     <img src="https://user-images.githubusercontent.com/69050895/185436929-c80736b3-07ce-434b-ba96-d753c8e9f83c.png" height="300px" width="575px">
 </p>
 
+
 <div style="font-style: italic; text-align: center;" markdown="1" align="center">
 
   ![wakatime](https://wakatime.com/badge/user/4cf4132a-4ced-411d-b714-67bdbdc84527/project/ecce3f45-dba9-4e4b-8f78-693c6d237d1c.svg)
@@ -31,6 +32,10 @@ This product uses the TMDB API but is not endorsed or certified by TMDB | <img s
 <a href="https://hosted.weblate.org/engage/chocolate/">
   <img src="https://hosted.weblate.org/widget/chocolate/translation/multi-auto.svg"/>
 </a>
+
+## GitAds Sponsored
+[![Sponsored by GitAds](https://gitads.dev/v1/ad-serve?source=chocolateapp/chocolate@github)](https://gitads.dev/v1/ad-track?source=chocolateapp/chocolate@github)
+
 
 ### Built With
 
